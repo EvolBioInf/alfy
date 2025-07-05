@@ -291,6 +291,7 @@ void printUsage(char *version){
   printf("Purpose: Determine local homology along one or more DNA query sequences\n");
   printf("\twhen compared to a set of subject DNA sequences\n");
   printf("Usage: %s -i <FILE> [options]\n", progname());
+  printf("Example: %s -i data/A+DQ083238.fasta -j data/hiv42.fasta\n", progname());
   printf("Options:\n");
   printf("\t[-j <FILE> read subject sequence(s) from FILE(s)]\n"); 
   printf("\t[-d <FILE> read subject sequence(s) from file(s) located in DIRECTORY]\n"); 
