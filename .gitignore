@@ -1,5 +1,8 @@
 /alfy
 /alfy64
+
+src/alfy/alfy*
+
 data
 
 doc/alfyDoc.aux
@@ -11,7 +14,6 @@ doc/alfyDoc.pdf
 doc/alfyDoc.ps
 doc/date.txt
 doc/version.txt
-
 
 externSrc/*/src/*.o
 externSrc/*/src/*~
@@ -26,6 +28,5 @@ scripts/*~
 
 src/alfy/*.o
 src/alfy/*~
-
 src/common/*/*.o
 src/common/*/*~
