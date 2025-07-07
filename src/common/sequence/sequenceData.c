@@ -442,7 +442,7 @@ Sequence *freeSequence(Sequence *seq) {
 	}
 	free(seq->freqTab);
   free(seq);
-  return seq;
+  return NULL;
 }
 
 /* cloneSeq: make exact copy of Sequence object */

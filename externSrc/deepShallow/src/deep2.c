@@ -176,7 +176,10 @@ void qs_unrolled_lcp(Int32 *a, int n, int depth, int blind_limit)
       while(++i<hi) {
 	ris=cmp_unrolled_lcp(text_depth+a[i], text_pos_pivot);
         if(ris>0) {
-	  if(Cmp_done < lcp_hi) lcp_hi=Cmp_done; break;
+	  if(Cmp_done < lcp_hi) {
+	    lcp_hi=Cmp_done;
+	    break;
+	  }
 	} else if(Cmp_done < lcp_lo) lcp_lo=Cmp_done;
       }
       while(--j>lo) {
