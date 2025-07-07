@@ -48,6 +48,14 @@
 #endif
 #define MAXLEN_SUBJECTNAME 1024
 
+#ifndef VERSION
+#define VERSION "vx.y"
+#endif
+
+#ifndef DATE
+#define DATE "dd_month_yyyy"
+#endif
+
 int main(int argc, char *argv[]){
 
 	FILE *fpout = NULL;
@@ -55,7 +63,8 @@ int main(int argc, char *argv[]){
 	int subjectDscr, queryDscr;
 	int i; 
 	Int64 subjectNumSeq, queryNumSeq;
-	char *version = "1.6";
+	char *version = emalloc(strlen(VERSION) + strlen(DATE) + 3);
+	sprintf(version, "%s, %s", VERSION, DATE);
 	Sequence **query = NULL, **subject = NULL; //*cat = NULL, *catOld = NULL, ; //**sArray,   
 	//Sequence **qArrayAll = NULL, **sArrayAll = NULL; //*cat = NULL, *catOld = NULL, ; //**sArray,   
 	Sequence **sArrayAll = NULL; //*cat = NULL, *catOld = NULL, ; //**sArray,   

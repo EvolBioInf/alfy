@@ -122,7 +122,7 @@ void getBorders (Int64 *curr_rb, Int64 *curr_lb, Int64 startSeg, Int64 endSeg, I
 qNode ***windowAnalysis(Args *args, SequenceUnion *seq, FILE *fwout, queryInterval **listQueryIntervalsFwd, Int64 *strandBorders, Int64 *leftBorders
 										, qNode **root, int binsearch, Int64 *minSumWin, FILE *fpout) {
 	
-	Int64 k, ns, iQuery;
+	Int64 k, iQuery;
 	Int64 winLen = 0, winInc = 0;
 
 	///////////// binsearch variables //////////////////
@@ -154,7 +154,7 @@ qNode ***windowAnalysis(Args *args, SequenceUnion *seq, FILE *fwout, queryInterv
 	/////////////////////////
 
 	//fprintf(fwout, "[WINDOW ANALYSIS]window size: %lld\tincrement: %lld\n", (long long)args->w, (long long)args->c);
-	ns = seq->numOfSubjects / WORDSIZE; // number of locations of size WORDSIZE used for subjects represented as bits
+	/* ns = seq->numOfSubjects / WORDSIZE; // number of locations of size WORDSIZE used for subjects represented as bits */
 	
 	winLen = args->w; // window size/length
 	winInc = args->c; // window increment
@@ -495,7 +495,7 @@ void queryWinAnalysisNew(SequenceUnion *seq, FILE *fwout, qNode *p, Int64 leftBo
 				////// !!!
 				++ k;
 				if (k >= maxNumOfElem) {
-          computeLastAnnotation(computeSum, i, sums, w, seq->numOfSubjects, winEnd, winStart, s.rb, &maxAvgSl, &runnerUpAvgSl);
+				  computeLastAnnotation(computeSum, i, sums, w, seq->numOfSubjects, winEnd, winStart, s.rb, &maxAvgSl, &runnerUpAvgSl);
           winSize = *winEnd - *winStart + 1;
           printWinMaxRunnerUp(*winStart, *winEnd, winSize, incLen, maxAvgSl, runnerUpAvgSl, minSumWin, seq, sums, fwout, printRunnerUp, 
 						&an, &prevAn, &currAn, lastWindow, fpout, list, &prev, slist, args);
@@ -950,7 +950,7 @@ void getFinalAnnotation(Annotation **an, int f, Int64 numOfSubjects, Int64 *slis
 
 
 /* compute the sum over a last window or a less than a window (in case of query sequence end, i.e. left border encountered) */
-void computeIncompleteWindowSums(int *computeSum, int *i, long long int *sums, long long int **w, Int64 numOfSubjects) {
+void computeIncompleteWindowSums(int *computeSum, Int64 *i, long long int *sums, long long int **w, Int64 numOfSubjects) {
   int j, l;
 
 	/* first window */
@@ -976,17 +976,17 @@ void computeIncompleteWindowSums(int *computeSum, int *i, long long int *sums, l
 
 
 /* compute last annotation for an incomplete window*/
-void computeLastAnnotation(int *computeSum, int *i, long long int *sums, long long int **w, Int64 numOfSubjects, Int64 *winEnd, Int64 *winStart, Int64 s_rb
+void computeLastAnnotation(int *computeSum, Int64 *i, long long int *sums, long long int **w, Int64 numOfSubjects, Int64 *winEnd, Int64 *winStart, Int64 s_rb
                          , long long int *maxAvgSl, long long int *runnerUpAvgSl) {
 
   //long long int maxAvgSl, runnerUpAvgSl;
-  Int64 winSize;
+  /* Int64 winSize; */
 
   computeIncompleteWindowSums(computeSum, i, sums, w, numOfSubjects);
-  if (s_rb < *winEnd) {
-    *winEnd = s_rb;
-    winSize = *winEnd - *winStart + 1;
-  }
+  /* if (s_rb < *winEnd) { */
+  /*   *winEnd = s_rb; */
+  /*   winSize = *winEnd - *winStart + 1; */
+  /* } */
   /* find the winner across all segments within an interval - maxAvgSl */
   findMaxRunnerUp(sums, numOfSubjects, maxAvgSl, runnerUpAvgSl);
 

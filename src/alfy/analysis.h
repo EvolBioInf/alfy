@@ -39,8 +39,8 @@ void getFinalAnnotation(Annotation **an, int f, Int64 numOfSubjects, Int64 *slis
 qNode ***windowAnalysis(Args *args, SequenceUnion *seq, FILE *fwout, queryInterval **listQueryIntervalsFwd, Int64 *strandBorders, Int64 *leftBorders
 										, qNode **p, int binsearch, Int64 *minSumWin, FILE *fpout);
 
-void computeIncompleteWindowSums(int *computeSum, int *i, long long int *sums, long long int **w, Int64 numOfSubjects);
-void computeLastAnnotation(int *computeSum, int *i, long long int *sums, long long int **w, Int64 numOfSubjects, Int64 *winEnd, Int64 *winStart, Int64 s_rb
+void computeIncompleteWindowSums(int *computeSum, Int64 *i, long long int *sums, long long int **w, Int64 numOfSubjects);
+void computeLastAnnotation(int *computeSum, Int64 *i, long long int *sums, long long int **w, Int64 numOfSubjects, Int64 *winEnd, Int64 *winStart, Int64 s_rb
                          , long long int *maxAvgSl, long long int *runnerUpAvgSl);
 
 /* auxiliary matrix functions */

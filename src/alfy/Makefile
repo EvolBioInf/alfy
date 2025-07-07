@@ -5,17 +5,18 @@ CC=gcc
 #CFLAGS= -g -Wall -Wshadow -pedantic -DSTRMAT -DSTATS
 #CFLAGS= -O3 -DSTRMAT -DSTATS
 
-VERSION = "1.6"
+VERSION = $(shell bash ../../scripts/getVersion.sh)
+DATE = $(shell bash ../../scripts/getDate.sh)
 
 #32 bit version
 #when the option VER32 is set, the source will be compiled as the 32 bit version          
 # preprocessor options: VER32 -> 32-bit version, DEBUG -> debug version, UNIX -> unix version (as opposed to windows version); m64 for unix/mac, exclude for linux!
-CFLAGS= -O3 -Wall -Wshadow -pedantic -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -std=c99 -DVER32 -DUNIX -I/opt/local/include/ -L/opt/local/lib
+CFLAGS= -O3 -Wall -Wshadow -pedantic -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -std=c99 -DVER32 -DUNIX -I/opt/local/include/ -L/opt/local/lib -DVERSION="\"$(VERSION)\"" -DDATE="\"$(DATE)\""
 
 
 #64 bit version
 # option VER32 is not set
-CFLAGS64= -O3 -Wall -Wshadow -pedantic -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -std=c99 -DUNIX -I/opt/local/include/ -L/opt/local/lib
+CFLAGS64= -O3 -Wall -Wshadow -pedantic -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -std=c99 -DUNIX -I/opt/local/include/ -L/opt/local/lib -DVERSION="\"$(VERSION)\"" -DDATE="\"$(DATE)\""
 
 ################################################
 #include directories
@@ -96,6 +97,8 @@ $(EXECFILE64) : $(OBJFILES64)
 	$(CC) $(CFLAGS64) $(INCLUDES64) -c -o $*64.o $*.c 
 
 ###############################################
+test: $(EXECFILE)
+	bash test.sh
 #
 # Other Standard make rules
 #

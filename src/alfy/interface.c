@@ -225,11 +225,7 @@ Args *getArgs(int argc, char *argv[]){
       //}
       break;
 
-    case 'o1':                           /* each annotation has the same subject set over all windows within annotation */
-      args->o1 = 1;
-      break;
-
-    case 'o2':                           /* subject set of an annotation is a subset of all windows within annotation */
+    case 'O':                           /* subject set of an annotation is a subset of all windows within annotation */
       args->o2 = 1;
       break;
 
@@ -305,8 +301,7 @@ void printUsage(char *version){
   printf("\t[-c <NUM> increment sliding window by NUM positions; default: w / 10]\n");	
   printf("\t[-f <NUM> minimal length of recombination fragment; default: w / 4]\n");	  
   printf("\t[-I <FILE> read list of query intervals from FILE; used for windows analysis based on precomputed intervals (testing purpose)]\n");  
-  printf("\t[-o1 each annotation has the same subject set over all windows within annotation; default behavior]\n");			     
-  printf("\t[-o2 subject set of an annotation is a subset of all windows within annotation; exludes o1]\n");			     
+  printf("\t[-O subject set of an annotation is a subset of all windows within annotation; default: each annotation has the same subject set over all windows within annotation]\n");			     
   printf("\t[-r print runner-up information (sliding window analysis)]\n");			     
   printf("\t[-t print run-time]\n");			     
   printf("\t[-h print this help message]\n");

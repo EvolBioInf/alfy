@@ -22,6 +22,9 @@ data:
 	tar -xvzf alfyData.tgz
 	rm alfyData.tgz
 
+test:
+	make test -C src/alfy
+
 #
 # Other Standard make rules
 #

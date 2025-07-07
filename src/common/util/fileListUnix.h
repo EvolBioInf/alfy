@@ -7,6 +7,7 @@
 #ifndef FILELISTUNIX_H
 #define FILELISTUNIX_H
 
+struct direct;
 int selectFile(const struct direct *entry); /* pointer to this function is needed for listFilesUnix */
 char **listFilesUnix(char *dir, int *count);
 

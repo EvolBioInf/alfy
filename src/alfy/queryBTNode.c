@@ -368,8 +368,12 @@ qNode *freadIntervals(FILE *f, char **subjectNames, Int64 numOfSubjects) {
 	Word subjectIndex[1];  // simplifying: numOfSubjects < WORDSIZE 
 	char subjects[4096];
 	
-	fscanf(f, "%*s"); // skip title
-	while(fscanf(f, "%lld %lld %lld %[^\n]", &lb, &rb, &sl, subjects) > 3) {
+	int numScanned = fscanf(f, "%*s"); // skip title
+	if(numScanned != 1) {
+	  fprintf(stderr, "ERROR[alfy]: failed reading interval file\n");
+	  exit(1);
+	}
+	while(fscanf(f, "%d %d %d %[^\n]", (int *)&lb, (int *)&rb, (int *)&sl, subjects) > 3) {
 		subjectIndex[0] = 0;
 		temp = 1LL;
 		for (i = 0; i < numOfSubjects; i++) {

@@ -140,7 +140,7 @@ void freeListQueryIntervals(queryInterval **listF, queryInterval **listR, Int64 
 /* debug option: check all lcp intervals for a query */
 void checkQueryIntervals(SequenceUnion *seqUnion, Int64 numOfQueries, FILE *fpout, queryInterval **listQueryIntervalsFwd, Int64 *leftBorders, char **headers) {
 	
-	Int64 i, j, shulen, t;
+	Int64 i, j, shulen;
 	queryInterval *p;
 	char *s, *q;
 	char temp[2096], temp2[2096];
@@ -151,10 +151,6 @@ void checkQueryIntervals(SequenceUnion *seqUnion, Int64 numOfQueries, FILE *fpou
 		fprintf(fpout, "\nQuery: %lld %s\n", (long long)i + 1, &headers[i][1]);
 		for (p = listQueryIntervalsFwd[i]; p != NULL; p = p->next) {
 			for (j = p->lb; j <= p->rb; j++) {
-			//for (j = p->lb; j <= p->rb; j++) {
-				if (j == 183) {
-					t = 1;
-				}
 				q = &seqUnion->seqUnion->seq[leftBorders[i] + j]; // position in a query
 				shulen = p->sl - (j - p->lb); // shustring length for the position Qi(x)
 

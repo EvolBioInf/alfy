@@ -399,7 +399,7 @@ void traverseLcpTree(Int64 *lcpTab, Int64 *sa, Sequence *seq, Int64 numOfSubject
 			qn->left = qn->right = NULL;
 			freeQNode(qn); 
 		}
-		freeStack(reserveQIStack, freeQNode);
+		freeStack(reserveQIStack, (void (*)(void *))freeQNode);
 	
 	}
 	else {
@@ -408,7 +408,7 @@ void traverseLcpTree(Int64 *lcpTab, Int64 *sa, Sequence *seq, Int64 numOfSubject
 			qi->next = qi->prev = NULL;
 			freeQueryInterval(qi); 
 		}
-		freeStack(reserveQIStack, freeQueryInterval);
+		freeStack(reserveQIStack, (void (*)(void *))freeQueryInterval);
 	}
 
 #if DEBUG  

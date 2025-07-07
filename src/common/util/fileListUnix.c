@@ -43,9 +43,9 @@
 
 		strcpy(pathname, "./");
 		strcat(pathname, dir);
-		if (pathname == NULL ) { 
-			eprintf("Error getting path\n");
-		}
+		/* if (pathname == NULL ) {  */
+		/* 	eprintf("Error getting path\n"); */
+		/* } */
 		#if DEBUG
 			printf("Subject directory = %s\n", pathname);
 		#endif 
