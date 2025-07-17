@@ -1,0 +1,8 @@
+#+begin_export latex
+!Package \ty{util} collects utility functions for \ty{alfy}.
+
+Our outline of \ty{util}...
+#+end_export
+#+begin_src go <<util.go>>=
+  package util
+#+end_src

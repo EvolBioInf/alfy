@@ -1,0 +1,12 @@
+#+begin_export latex
+Hello sir!
+#+end_export
+#+begin_src go <<sir.go>>=
+  package main
+
+  import "fmt"
+
+  func main() {
+	  fmt.Println("Hello sir!")
+  }
+#+end_src

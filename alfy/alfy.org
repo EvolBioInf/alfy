@@ -1,0 +1,14 @@
+#+begin_export latex
+Hello \ty{alfy}!
+#+end_export
+#+begin_src go <<alfy.go>>=
+  package main
+
+  import "fmt"
+
+  func main() {
+	  fmt.Println("Hello alfy!")
+  }
+#+end_src
+#+begin_export latex
+#+end_export

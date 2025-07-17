@@ -1,10 +1,11 @@
-/alfy
-/alfy64
+alfy/alfy
 
+bin
 src/alfy/alfy*
 
 data
 
+doc/alfy.tex
 doc/alfyDoc.aux
 doc/alfyDoc.bbl
 doc/alfyDoc.blg
@@ -13,7 +14,9 @@ doc/alfyDoc.log
 doc/alfyDoc.pdf
 doc/alfyDoc.ps
 doc/date.txt
+doc/intro.tex
 doc/version.txt
+doc/sir.tex
 
 externSrc/*/src/*.o
 externSrc/*/src/*~
@@ -21,10 +24,16 @@ externSrc/*/src/bwt
 externSrc/*/src/ds
 externSrc/*/src/unbwt
 
+intro/seedms
+intro/*.fasta
+intro/intro.sh
+
 lib/*.a
 lib/*/*.a
 
 scripts/*~
+
+sir/sir
 
 src/alfy/*.o
 src/alfy/*~

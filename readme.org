@@ -1,0 +1,26 @@
+* [[https://owncloud.gwdg.de/index.php/s/Iog846B7B3E3d8n][alfy]]: ALignment-Free local homologY
+
+- Original author: Mirjana Domazet-Loso
+- Authors of version >= 2.0: Beatriz Vieira Mourato & Bernhard Haubold
+- License: Gnu GPL
+- Contact: mourato@evolbio.mpg.de
+
+** Make and Use program
+Run
+#+begin_src sh 
+make
+#+end_src
+to build the two programs =alfy= and =makeAlfyDb= located in directory
+=bin=. To get the example data used in the tutorial, run
+#+begin_src sh
+  make data
+#+end_src
+which generates the directory =data= containing the data files. This
+can be converted into the database =test.db= with =makeAlfyDb=.
+#+begin_src sh
+  makeAlfyDb -q data/A*.fasta -s data/hiv42.fasta test.db
+#+end_src
+We analyze =test.db= with =alfy=.
+#+begin_src sh
+  alfy test.db
+#+end_src
