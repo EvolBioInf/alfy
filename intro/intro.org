@@ -187,9 +187,9 @@ sequence containing each match.
     initialized to zero
     \FOR{$i\leftarrow 1$ \TO $n$}
        \STATE $\mbox{esa}\leftarrow\mbox{getEsa}(\mbox{subjects}[i])$
-       $j\leftarrow 1$
+       \STATE $j\leftarrow 1$
        \WHILE{$j\le m$}
-          \STATE $\ell\leftarrow\mbox{match}(q[j:],\mbox{esa}$
+          \STATE $\ell\leftarrow\mbox{match}(q[j:],\mbox{esa})$
           \IF{$\mbox{ml}[j]<\ell$}
              \STATE $\mbox{ml}[j]\leftarrow\ell$
              \STATE $\mbox{su}[j]\leftarrow i$
