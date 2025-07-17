@@ -169,6 +169,9 @@ average match length zero.
       awk '$3==0'
 #+end_src
 #+begin_export latex
+\begin{verbatim}
+7316  7360   0.000000    S2  S1
+\end{verbatim}
 \section{Reimplementation}
 Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
 our reimplementation of Alfy. It is essentially the algorithm used in
