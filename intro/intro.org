@@ -1,22 +1,23 @@
 #+begin_export latex
 Alfy is a program for alignment-free detection of local homology
-between DNA sequences~\cite{dom11:ali}. It takes as input a directory
-of one or more query sequences and a directory of one or more subject
-sequences. For each query, Alfy reports a set of covering intervals,
-the name of the most closely related subject sequence per interval, if
-any, and a score of the local homology.
+between DNA sequences~\cite{dom11:ali}. It takes as input one query
+sequence and one or more subject sequences. Its output is a set of
+intervals covering the query, the name of the most closely related
+subject sequence per interval, if any, and a score of the local
+homology.
 
 Figure~\ref{fig:alf} illustrates this for a 10\,kb query that is a
 recombinant of two subject sequences. The recombination event is very
 recent, so from position 1--4,500 the query is an exact match to
 subject $s_1$, for the next 1\,kb it is an exact match to $s_2$,
-before it switches back to $s_1$. So in the boxed output in
-Figure~\ref{fig:alf} interval 1--4500 is annotated $s_1$, interval
-4501--5500 $s_2$, and interval $4501--10,000$ $s_1$ again. The fourth
-column gives the score, which is the average match length. Since the
-recombination is recent, almost all matches extend to the end of their
-matching interval. Let the length of that interval be $\ell$; then the
-average match length is roughly $\ell(\ell-1)/2/\ell\approx\ell/2$.
+before it switches back to $s_1$. Correspondingly, in the boxed output
+in Figure~\ref{fig:alf} interval 1--4500 is annotated $s_1$, interval
+4501--5500 $s_2$, and interval 4501--10,000 $s_1$ again. The fourth
+column in the output gives the score, which is the average match
+length. Since the recombination is recent, almost all matches extend
+to the end of their matching interval. Let the length of that interval
+be $\ell$; then the average match length is roughly
+$\ell(\ell-1)/2/\ell\approx\ell/2$.
 
 \begin{figure}
   \begin{center}
@@ -35,12 +36,13 @@ average match length is roughly $\ell(\ell-1)/2/\ell\approx\ell/2$.
     \end{minipage}
     }
   \end{center}
-  \caption{One 10\,kb query, $q$, and two subjects, $s_1$ and $s_2$, as input
-    for Alfy, and the corresponding output.}\label{fig:alf}
+  \caption{One 10\,kb query, $q$, and two subjects, $s_1$ and $s_2$,
+    as input for Alfy, and the corresponding boxed
+    output.}\label{fig:alf}
 \end{figure}
 #+end_export
 #+begin_export latex
-\subsection{Alfy v1.6}
+\section{Alfy v1.6}
 Up to version v1.6 Alfy was written in C and had issues that we wish
 to address in a re-implementation in Go. The first issue is the
 dependence of Alfy on the deep-shallow algorithm for constructing
@@ -48,11 +50,10 @@ suffix arrays~\cite{man02:eng}. This algorithm has been superseded by
 more efficient alternatives, we shall use the divsufsort
 algorithm~\cite{fis17:dis}.
 
-A less straightforward problem with Alfy v1.6 is that its results,
-though qualitatively useful, are numerically not correct. To see that,
-let's simulate the scenario sketched in Figure~\ref{fig:alf}. So we
-first simulate two subject sequences, then we construct the query
-from them.
+A more fundamental problem with Alfy v1.6 is that its results, though
+qualitatively useful, are numerically not correct. To see that, let's
+simulate the scenario sketched in Figure~\ref{fig:alf} by first
+simulating two subject sequences from which we construct the query.
 #+end_export
 #+begin_src sh <<intro.sh>>=
   ##<<Construct two subject sequences, Ch. \ref{ch:int}>>
@@ -61,7 +62,7 @@ from them.
 #+begin_export latex
 We use the program \ty{ms}~\cite{hud02:gen} to simulate two haplotyes
 10\,kb long with 100 SNPs. These haplotypes are converted into DNA
-sequences by the program \ty{ms2dna}, which we save in the file
+sequences by the program \ty{ms2dna}. We save its output in the file
 \ty{sbjct.fasta}.
 #+end_export
 #+begin_src sh <<Construct two subject sequences, Ch. \ref{ch:int}>>=
@@ -78,7 +79,7 @@ for our query sequence.
 #+end_src
 #+begin_export latex
 Then we cut the first 4500\,bp from $s_1$, strip its header, and
-append it to \ty{query.fasta}.
+append the rest to \ty{query.fasta}.
 #+end_export
 #+begin_src sh <<Construct query from subject sequences, Ch. \ref{ch:int}>>=
   getSeq S1 sbjct.fasta |
@@ -124,10 +125,12 @@ So far so good. However, it is possible to find scenarios where the
 score of an interval returned by Alfy is zero. Clearly, given subject
 sequences of non-trivial length, any query position has a match. So an
 interval with average match length of zero must be due to an error in
-the calculation. Let's simulate such a configuration of sequences. We
-could only do this with three subject sequences and further mutating
-the query sequence. So we simulate three subject sequences, construct
-the query from $s_1$ and $s_2$ as before, and mutate it.
+the calculation. Let's construct a configuration of sequences that
+reproduces this bug. When we played around with various parameter
+combinations, we could only do this with at least three subject
+sequences and further mutating the query sequence. So we simulate
+three subject sequences, construct the query from $s_1$ and $s_2$ as
+before, and mutate it.
 #+end_export
 #+begin_src sh <<intro.sh>>=
   ##<<Construct three subject sequences, Ch. \ref{ch:int}>>
@@ -135,9 +138,13 @@ the query from $s_1$ and $s_2$ as before, and mutate it.
   ##<<Mutate query, Ch. \ref{ch:int}>>
 #+end_src
 #+begin_export latex
-We copy the file containing the seed for the random number generator
-used by \ty{ms}, \ty{seedms}, from the file \ty{seedms3}. For the
-program \ty{ms2dna} we seed the random number generator with 3.
+Our simulations are all stochastic, so in order to get the desired
+result, we need to seed the random number generators used in the
+programs \ty{ms}, \ty{ms2dna}, and \ty{mutator}. For the latter two we
+just use their \ty{-s} option. The program \ty{ms}, however, reads its
+seed from a file called \ty{seedms}. The desired seed is contained in
+file \ty{seedms3}, which we copy to \ty{seedms}. For \ty{ms2dna} we
+set the seed to 3.
 #+end_export
 #+begin_src sh <<Construct three subject sequences, Ch. \ref{ch:int}>>=
   cp seedms3 seedms
@@ -162,7 +169,7 @@ average match length zero.
       awk '$3==0'
 #+end_src
 #+begin_export latex
-\subsection{Reimplementation}
+\section{Reimplementation}
 Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
 our reimplementation of Alfy. It is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
@@ -170,30 +177,14 @@ most significant change is that for Alfy we augment the iterative
 record of match lengths used in Fur by a record of the subject
 sequence containing each match.
 
-For a given query sequence, $q$, our algorithm iterates over the
-subjects and first converts a given subject into an enhanced suffix
-array, $\mbox{esa}$. It then iterates across $q$ and calculates an
-array of longest match lengths, $\mbox{ml}$, and an array of subjects
-inducing these lengths, $\mbox{su}$.
-
-For a given subject $i$, the matching starts at the first position of
-$q$, $q[1]$, and ends just before the first mismatch at
-$q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
-at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
-$i$. Then the active point of the analysis,$j$, skips to the first
-position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$ and
-the analysis is repeated.
-
-The arrays of match lengths and subject indexes are later used to
-cover $q$ with intervals of closest relatives among the subjects.
-
 \begin{algorithm}
 \caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
-  \begin{algorithmic}
-    \REQUIRE $q$ query sequence length $m$
-    \REQUIRE $\mbox{subjects}$ array of $n$ subject sequences
+  \begin{algorithmic}[1]
+    \REQUIRE $q$---query sequence length $m$
+    \REQUIRE $\mbox{subjects}$---array of $n$ subject sequences
     \ENSURE Array of longest match lengths, $\mbox{ml}$, and array  of 
-    subjects containing the longest matches, $\mbox{su}$
+    subjects containing the longest matches, $\mbox{su}$; these come
+    initialized to zero
     \FOR{$i\leftarrow 1$ \TO $n$}
        \STATE $\mbox{esa}\leftarrow\mbox{getEsa}(\mbox{subjects}[i])$
        $j\leftarrow 1$
@@ -205,7 +196,48 @@ cover $q$ with intervals of closest relatives among the subjects.
           \ENDIF
           \STATE $j\leftarrow j + \ell + 1$
        \ENDWHILE
+       \STATE $\mbox{interpolate}(\mbox{ml},\mbox{su})$
     \ENDFOR
   \end{algorithmic}
 \end{algorithm}
+
+For a given query sequence of length $m$, $q$, our algorithm iterates
+over the subjects and first converts a given subject to its enhanced
+suffix array, $\mbox{esa}$ (line 2). Next it iterates across $q$ and
+calculates an array of longest match lengths, $\mbox{ml}$, and an
+array of subjects inducing these lengths, $\mbox{su}$.
+
+For a given subject $i$, the matching starts at the first position of
+$q$, $q[1]$, and ends just before the first mismatch at
+$q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
+at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
+$i$ (lines 5--8). Then the active point of the analysis,$j$, skips to
+the first position beyond the terminating mismatch, $j\leftarrow
+1+\ell+1$ (line 9) and the analysis is repeated.
+
+Once the query has been traversed, the match lengths are interpolated
+as shown in Algorithm~\ref{alg:int}. At each position $\mbox{ml}[i]$
+the match to its left, $\mbox{ml}[i-1]$ is extended, unless we are at
+the start of a new match.
+
+\begin{algorithm}
+  \caption{Interpolation of match lengths and subject
+    indexes}\label{alg:int}
+  \begin{algorithmic}
+    \REQUIRE $\mbox{ml}$---array of $m$ match lengths
+    \REQUIRE $\mbox{su}$---array of $m$ subject indexes
+    \ENSURE $\mbox{ml}$ and $\mbox{su}$ are complete
+    \FOR{$i\leftarrow 2$ \TO $m$}
+       \STATE $x\leftarrow \mbox{ml}[i-1]-1$
+       \IF{$x>\mbox{ml}[i]$}
+          \STATE $\mbox{ml}[i]\leftarrow x$
+          \STATE $\mbox{su}[i]\leftarrow\mbox{su}[i-1]$
+       \ENDIF
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+The arrays of match lengths and subject indexes are later used to
+cover $q$ with intervals of closest relatives among the subjects.
+
 #+end_export

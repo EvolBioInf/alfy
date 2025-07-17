@@ -1,0 +1,8 @@
+#+begin_export latex
+!Package \ty{mat} implements the matching procedure of \ty{alfy}.
+
+Our outline of \ty{mat}...
+#+end_export
+#+begin_src go <<mat.go>>=
+  package mat
+#+end_src
