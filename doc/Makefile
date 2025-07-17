@@ -19,7 +19,7 @@ alfyDoc.pdf: alfyDoc.tex $(src1) $(src2)
 	dvips -o -q alfyDoc
 	ps2pdf -dALLOWPSTRANSPARENCY alfyDoc.ps
 publish: alfyDoc.pdf
-	if [ -d ~/win/ownCloud ]; then \
+	if [ -d ~/WinHome/ownCloud ]; then \
 		cp alfyDoc.pdf ~/WinHome/ownCloud/docs/alfyGoDoc.pdf; \
 	fi
 clean:
