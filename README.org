@@ -1,7 +1,7 @@
 * [[https://owncloud.gwdg.de/index.php/s/avUDEXOlixlQk4q][alfy]]: ALignment-Free local homologY
 
 - Original author: Mirjana Domazet-Loso
-- Authors of version >= 2.0: Beatriz Vieira Mourato & Bernhard Haubold
+- Authors of versions > 1.6: Beatriz Vieira Mourato & Bernhard Haubold
 - License: Gnu GPL
 - Contact: mourato@evolbio.mpg.de
 

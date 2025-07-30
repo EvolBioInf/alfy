@@ -177,8 +177,8 @@ Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
 our reimplementation of Alfy. It is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
 most significant change is that for Alfy we augment the iterative
-record of match lengths used in Fur by a record of the subject
-sequence containing each match.
+recording of match lengths used in Fur by also recording the subject
+containing each match.
 
 \begin{algorithm}
 \caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
@@ -204,19 +204,21 @@ sequence containing each match.
   \end{algorithmic}
 \end{algorithm}
 
-For a given query sequence of length $m$, $q$, our algorithm iterates
+For a given query sequence of length $m$, $q$, the algorithm iterates
 over the subjects and first converts a given subject to its enhanced
-suffix array, $\mbox{esa}$ (line 2). Next it iterates across $q$ and
-calculates an array of longest match lengths, $\mbox{ml}$, and an
-array of subjects inducing these lengths, $\mbox{su}$.
+suffix array, $\mbox{esa}$ (line 2). Then we initialize the matching
+start in $q$, $j$, to 1 (line 3). With these preparations out of the
+way, we iterate across $q$ and calculate an array of longest match
+lengths, $\mbox{ml}$, and an array of subjects inducing these lengths,
+$\mbox{su}$.
 
 For a given subject $i$, the matching starts at the first position of
 $q$, $q[1]$, and ends just before the first mismatch at
 $q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
 at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
-$i$ (lines 5--8). Then the active point of the analysis,$j$, skips to
-the first position beyond the terminating mismatch, $j\leftarrow
-1+\ell+1$ (line 9) and the analysis is repeated.
+$i$ (lines 6--9). Then the matching start, $j$, skips to the first
+position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$ (line
+10) and the analysis repeats.
 
 Once the query has been traversed, the match lengths are interpolated
 as shown in Algorithm~\ref{alg:int}. At each position $\mbox{ml}[i]$
