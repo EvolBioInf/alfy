@@ -2,7 +2,7 @@ date = $(shell git log | grep -m 1 Date | sed -r 's/Date: +[A-Z][a-z]+ ([A-Z][a-
 version = $(shell git describe)
 
 src1 = header.tex ../intro/pic.tex
-src2 = alfy.tex intro.tex mat.tex sir.tex util.tex
+src2 = alfy.tex intro.tex mat.tex prepAlfy.tex sir.tex util.tex
 
 all: alfyDoc.pdf
 

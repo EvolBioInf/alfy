@@ -1,0 +1,12 @@
+#+begin_export latex
+Hello \ty{prepAlfy}!
+#+end_export
+#+begin_src go <<prepAlfy.go>>=
+  package main
+
+  import "fmt"
+
+  func main() {
+	  fmt.Println("Hello prepAlfy!")
+  }
+#+end_src

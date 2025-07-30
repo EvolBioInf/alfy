@@ -1,5 +1,5 @@
 packs = util
-progs = alfy sir
+progs = alfy prepAlfy sir
 
 all:
 	test -d bin || mkdir bin

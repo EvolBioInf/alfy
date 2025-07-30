@@ -19,6 +19,7 @@ doc/intro.tex
 doc/mat.tex
 doc/util.tex
 doc/version.txt
+doc/prepAlfy.tex
 doc/sir.tex
 
 externSrc/*/src/*.o
@@ -33,6 +34,8 @@ intro/intro.sh
 
 lib/*.a
 lib/*/*.a
+
+prepAlfy/prepAlfy
 
 scripts/*~
 
