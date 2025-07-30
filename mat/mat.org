@@ -1,8 +1,36 @@
 #+begin_export latex
 !Package \ty{mat} implements the matching procedure of \ty{alfy}.
 
-Our outline of \ty{mat}...
+Our outline of \ty{mat} contains hooks for imports and functions.
+\bpa{mat}{pa:mat}
 #+end_export
 #+begin_src go <<mat.go>>=
   package mat
+  import (
+	  <<Imports, Pa. \ref{pa:mat}>>
+  )
+
+  <<Functions, Pa. \ref{pa:mat}>>
+#+end_src
+#+begin_export latex
+\epa
+!The function \ty{Match} takes as arguments a query sequence and the
+!enhanced suffix array (ESA) of a subject sequence. It returns two
+!arrays, match lengths and subject identifiers.
+
+We prepare the matching before we calculate the match lengths and
+record the subject identifiers.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
+  func Match(q []byte, s *esa.Esa) (ml, su []int) {
+	  //<<Prepare matching, Pa. \ref{pa:mat}>>
+	  //<<Calculate $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
+	  return ml, su
+  }
+#+end_src
+#+begin_export latex
+We import \ty{esa}.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:mat}>>=
+  "github.com/evolbioinf/esa"
 #+end_src

@@ -173,6 +173,7 @@ average match length zero.
 7316  7360   0.000000    S2  S1
 \end{verbatim}
 \section{Reimplementation}
+\subsection{Algorithm}
 Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
 our reimplementation of Alfy. It is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
@@ -245,4 +246,49 @@ the start of a new match.
 The arrays of match lengths and subject indexes are later used to
 cover $q$ with intervals of closest relatives among the subjects.
 
+\subsection{User Perspective}
+The program \ty{alfy} consists of matching and a sliding window
+analysis of the result of the matching. Since the sliding window
+analysis might be run repeatedly on the same matching result, it is a
+good idea to separate it from the time-consuming matching step. Since
+the matching can be seen as preparation for the sliding window
+analysis, we call the two programs \ty{prepAlfy} and \ty{alfy}. The
+user should be able to run them as a pipeline,
+\begin{verbatim}
+prepAlfy -q queries/ -s subjects/ | alfy
+\end{verbatim}
+or as separate steps,
+\begin{verbatim}
+prepAlfy -q queries/ -s subjects/ > alfy.in
+alfy alfy.in
+\end{verbatim}
+
+The program \ty{prepAlfy} takes as mandatory options \ty{-q} and
+\ty{-s}, which specify the directories of query and subject FASTA
+files, respectively. The structure here is the same as the switches
+for targets and neighbors in \ty{makeNeiDb}. The output of
+\ty{prepAlfy} is a table with two columns for each query consisting of
+the query name, followed by pairs of match lengths and subject
+identifiers,
+\begin{verbatim}
+#q1
+50 1
+49 1
+48 1
+...
+#q2
+34 5
+33 5
+32 5
+...
+\end{verbatim}
+The tables are understood to cover every position in the respective
+query.
+
+\subsection{Coding}
+The subpackage \ty{mat} contains the function \ty{Match}, which takes
+as argument a query sequence, and the ESA of a subject sequence. It
+then carries out lines 3--10 of Algorithm~\ref{alg:alf} and returns
+two arrays, match lengths, $\mbox{ml}$, and subject identifiers,
+$\mbox{su}$.
 #+end_export
