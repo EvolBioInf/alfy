@@ -1,4 +1,5 @@
 #+begin_export latex
+\section{Implementation}
 !Package \ty{mat} implements the matching procedure of \ty{alfy}.
 
 Our outline of \ty{mat} contains hooks for imports and functions.
@@ -14,18 +15,24 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 #+end_src
 #+begin_export latex
 \epa
-!The function \ty{Match} takes as arguments a query sequence and the
-!enhanced suffix array (ESA) of a subject sequence. It returns two
-!arrays, match lengths and subject identifiers.
 
-We prepare the matching before we calculate the match lengths and
-record the subject identifiers.
+!The function \ty{UpdateMatchLengths} takes as arguments a query
+!sequence, the enhanced suffix array (ESA) of a subject
+!sequence, the label of that subject sequence, an array of match
+!lengths, and an array of subject labels. It then updates the arrays of
+!match lengths and subject labels.
+
+As described in Algorithm~\ref{alg:alf}, we initialize the query
+position, $j$, to the leftmost position in the query sequence (line
+3). Then we calculate the match lengths in the while loop, before we
+interpolate the match lengths.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
-  func Match(q []byte, s *esa.Esa) (ml, su []int) {
-	  //<<Prepare matching, Pa. \ref{pa:mat}>>
-	  //<<Calculate $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
-	  return ml, su
+  func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
+	  ml, su []int) {
+	  j := 0
+	  //<<Calculate match lengths, Pa. \ref{pa:mat}>>
+	  //<<Interpolate match lengths, Pa. \ref{pa:mat}>>
   }
 #+end_src
 #+begin_export latex
@@ -34,3 +41,170 @@ We import \ty{esa}.
 #+begin_src go <<Imports, Pa. \ref{pa:mat}>>=
   "github.com/evolbioinf/esa"
 #+end_src
+#+begin_export latex
+In the while loop of Algorithm~\ref{alg:alf}, we first determine the
+length, $\ell$, of the longest match of the prefix of $q[j...]$ in
+$s$. Then we check whether $\ell$ is greater than $\mbox{ml}[j]$, in
+which case we update $\mbox{ml}[j]$ and note the subject label,
+$i$. Then we skip $j$ to the position just beyond the terminal
+mismatch.
+#+end_export
+#+begin_src go <<Calculate match lengths, Pa. \ref{pa:mat}>>=
+  for j < len(q) {
+	  l := s.MatchPref(q[j:]).L
+	  if l > ml[j] {
+		  ml[j] = l
+		  su[j] = i
+	  }
+	  j += l + 1
+  }
+#+end_src
+#+begin_export latex
+We interpolate the match lengths and subject labels according to
+Algorithm~\ref{alg:int}.
+#+end_export
+#+begin_src go <<Interpolate match lengths, Pa. \ref{pa:mat}>>=
+  for i := 1; i < len(q); i++ {
+	  x := ml[i-1] - 1
+	  if x > ml[i] {
+		  ml[i] = x
+		  su[i] = su[i-1]
+	  }
+  }
+#+end_src
+#+begin_export latex
+We've finished writing package \ty{mat}, let's test it.
+\section{Testing}
+The outline of our testing code contains hooks for imports, functions,
+and the testing logic.
+#+end_export
+#+begin_src go <<mat_test.go>>=
+  package mat
+
+  import (
+	  //<<Testing imports, Pa. \ref{pa:mat}>>
+  )
+
+  //<<Testing functions, Pa. \ref{pa:mat}>>
+  func TestMat(t *testing.T) {
+	  //<<Testing, Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{testing}.
+#+end_export
+#+begin_src go <<Testing imports, Pa. \ref{pa:mat}>>=
+  "testing"
+#+end_src
+#+begin_export latex
+For testing we construct queries, subjects, and the results we
+want. Then we iterate over the queries and subjects to carry out the
+actual testing.
+#+end_export
+#+begin_src go <<Testing, Pa. \ref{pa:mat}>>=
+  //<<Construct queries, Pa. \ref{pa:mat}>>
+  //<<Construct subjects, Pa. \ref{pa:mat}>>
+  //<<Construct wanted results, Pa. \ref{pa:mat}>>
+  //<<Iterate over queries and subjects, Pa. \ref{pa:mat}>>
+#+end_src
+#+begin_export latex
+We construct short queries and subjects. To get matches, we reduce the
+nucloetide alphabet largely to $\{\ty{A},\ty{T}\}$. Our first query is 
+\ty{AAATAATATT}, or second distinguished by one mutation to an
+extraneous nucleotide, \ty{G}
+#+end_export
+#+begin_src go <<Construct queries, Pa. \ref{pa:mat}>>=
+  queries := [][]byte{
+	  []byte("AAATAATATT"),
+	  []byte("AAATAGTATT")}
+#+end_src
+#+begin_export latex
+Similarly, we construct two short subjects. However, here we do stick
+to the \ty{AT} alphabet.
+#+end_export
+#+begin_src go <<Construct subjects, Pa. \ref{pa:mat}>>=
+  subjects := [][]byte{
+	  []byte("AATTTAAATT"),
+	  []byte("TAATAATATT")}
+#+end_src
+#+begin_export latex
+We construct the match lengths and the subject labels we want.
+#+end_export
+#+begin_src go <<Construct wanted results, Pa. \ref{pa:mat}>>=
+  wml := [][]int{
+	  []int{4,3,2,7,6,5,4,3,2,1},
+	  []int{4,3,2,2,1,0,4,3,2,1}}
+  wsu := [][]int{
+	  []int{0,0,0,1,1,1,1,1,0,0},
+	  []int{0,0,0,1,1,0,1,1,1,0}}
+#+end_src
+#+begin_export latex
+For each query we prepare an array of match lengths and an array of
+subject labels. Then we iterate over the subjects and check the
+match lengths and subject labels we get from that iteration.
+#+end_export
+#+begin_src go <<Iterate over queries and subjects, Pa. \ref{pa:mat}>>=
+  for i, q := range queries {
+	  //<<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
+	  //<<Iterate over subjects, Pa. \ref{pa:mat}>>
+	  //<<Check $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_export latex
+We create a new pair of arrays to hold the match lengths and the
+subject labels for each query position. Since zero is a legitimate
+value for match lengths and subject labels, we initialize both arrays
+to -1. This allows us to check for gaps in our analysis.
+#+end_export
+#+begin_src go <<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>=
+  n := len(q)
+  ml := make([]int, n)
+  su := make([]int, n)
+  for j := 0; j < n; j++ {
+    ml[j] = -1
+    su[j] = -1
+  }
+#+end_src
+#+begin_export latex
+We convert each subject to its enhanced suffix array and update the
+match lengths accordingly.
+#+end_export
+#+begin_src go <<Iterate over subjects, Pa. \ref{pa:mat}>>=
+  for j, subject := range subjects {
+	  s := esa.MakeEsa(subject)
+	  UpdateMatchLengths(q, s, j, ml, su)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{esa}.
+#+end_export
+#+begin_src go <<Testing imports, Pa. \ref{pa:mat}>>=
+  "github.com/evolbioinf/esa"
+#+end_src
+#+begin_export latex
+We check the updated arrays by calling the function \ty{check}.
+#+end_export
+#+begin_src go <<Check $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>=
+  check(t, ml, wml[i])
+  check(t, su, wsu[i])
+#+end_src
+#+end_src
+#+begin_export latex
+The function \ty{check} compares the array of integers we get with the
+one we want and reports and error if there's a discrepancy.
+#+end_export
+#+begin_src go <<Testing functions, Pa. \ref{pa:mat}>>=
+  func check(t *testing.T, get, want []int) {
+	  for i, _ := range get {
+		  if get[i] != want[i] {
+			  t.Errorf("\nget:  %v\n" +
+				  "want: %v",
+				  get, want)
+		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+Note that in a production setting we would concatenate the subject
+sequences with their reverse complement before calculating their esa.
+#+end_export

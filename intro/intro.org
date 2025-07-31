@@ -184,16 +184,17 @@ containing each match.
 \begin{algorithm}
 \caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
   \begin{algorithmic}[1]
-    \REQUIRE $q$---query sequence length $m$
-    \REQUIRE $\mbox{subjects}$---array of $n$ subject sequences
-    \ENSURE Array of longest match lengths, $\mbox{ml}$, and array  of 
-    subjects containing the longest matches, $\mbox{su}$; these come
-    initialized to zero
+    \REQUIRE $q$, query sequence length $m$
+    \REQUIRE $\mbox{subjects}$, array of $n$ subject sequences
+    \ENSURE $\mbox{ml}$, array of $m$ longest match lengths of $q$
+    w.r.t. all subjects; initialized to -1
+    \ENSURE $\mbox{su}$, subjects containing the longest match
+    lengths; initialized to 0
     \FOR{$i\leftarrow 1$ \TO $n$}
-       \STATE $\mbox{esa}\leftarrow\mbox{getEsa}(\mbox{subjects}[i])$
+       \STATE $s\leftarrow\mbox{getEsa}(\mbox{subjects}[i])$
        \STATE $j\leftarrow 1$
        \WHILE{$j\le m$}
-          \STATE $\ell\leftarrow\mbox{match}(q[j:],\mbox{esa})$
+          \STATE $\ell\leftarrow s.\mbox{MatchPrefix}(q[j:])$
           \IF{$\mbox{ml}[j]<\ell$}
              \STATE $\mbox{ml}[j]\leftarrow\ell$
              \STATE $\mbox{su}[j]\leftarrow i$
@@ -207,19 +208,19 @@ containing each match.
 
 For a given query sequence of length $m$, $q$, the algorithm iterates
 over the subjects and first converts a given subject to its enhanced
-suffix array, $\mbox{esa}$ (line 2). Then we initialize the matching
-start in $q$, $j$, to 1 (line 3). With these preparations out of the
-way, we iterate across $q$ and calculate an array of longest match
-lengths, $\mbox{ml}$, and an array of subjects inducing these lengths,
+suffix array, $s$ (line 2). Then we initialize the matching start in
+$q$, $j$, to 1 (line 3). With these preparations out of the way, we
+iterate across $q$ and calculate an array of longest match lengths,
+$\mbox{ml}$, and an array of subjects inducing these lengths,
 $\mbox{su}$.
 
-For a given subject $i$, the matching starts at the first position of
-$q$, $q[1]$, and ends just before the first mismatch at
+For a given subject labeled $i$, the matching starts at the first
+position of $q$, $q[1]$, and ends just before the first mismatch at
 $q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
 at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
 $i$ (lines 6--9). Then the matching start, $j$, skips to the first
-position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$ (line
-10) and the analysis repeats.
+position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$, and
+the analysis repeats (lines 10 and 11).
 
 Once the query has been traversed, the match lengths are interpolated
 as shown in Algorithm~\ref{alg:int}. At each position $\mbox{ml}[i]$
@@ -230,8 +231,8 @@ the start of a new match.
   \caption{Interpolation of match lengths and subject
     indexes}\label{alg:int}
   \begin{algorithmic}
-    \REQUIRE $\mbox{ml}$---array of $m$ match lengths
-    \REQUIRE $\mbox{su}$---array of $m$ subject indexes
+    \REQUIRE $\mbox{ml}$, array of $m$ match lengths
+    \REQUIRE $\mbox{su}$, array of $m$ subject indexes
     \ENSURE $\mbox{ml}$ and $\mbox{su}$ are complete
     \FOR{$i\leftarrow 2$ \TO $m$}
        \STATE $x\leftarrow \mbox{ml}[i-1]-1$
