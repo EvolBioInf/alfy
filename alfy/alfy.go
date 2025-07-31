@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/evolbioinf/alfy/util"
+)
 
 func main() {
-	fmt.Println("Hello alfy!")
+	util.Version("alfy")
 }

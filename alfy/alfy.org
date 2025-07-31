@@ -4,11 +4,17 @@ Hello \ty{alfy}!
 #+begin_src go <<alfy.go>>=
   package main
 
-  import "fmt"
+  import (
+	  //<<Imports, Ch. \ref{ch:alf}>>
+  )
 
   func main() {
-	  fmt.Println("Hello alfy!")
+	  util.Version("alfy")
   }
 #+end_src
 #+begin_export latex
+We import \ty{util}.
 #+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+  "github.com/evolbioinf/alfy/util"
+#+end_src

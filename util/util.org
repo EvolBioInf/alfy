@@ -12,7 +12,7 @@ functions.
 	  //<<Imports, Pa. \ref{pa:uti}>>
   )
 
-  //<Variables, Pa. \ref{pa:uti}>>
+  //<<Variables, Pa. \ref{pa:uti}>>
   //<<Functions, Pa. \ref{pa:uti}>>
 #+end_src
 #+begin_export latex
@@ -25,7 +25,7 @@ We set the authors, their email addresses, and the program license,
 before we print this information together with the program version and
 date, and then exit with a no-error status.
 #+end_export
-#+begin_src go <<Functions
+#+begin_src go <<Functions, Pa. \ref{pa:uti}>>=
   func Version(name string) {
 	  var authors, emails, license string
 	  //<<Set authors, Pa. \ref{pa:uti}>>
