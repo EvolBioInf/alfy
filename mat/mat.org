@@ -66,7 +66,7 @@ Algorithm~\ref{alg:int}.
 #+begin_src go <<Interpolate match lengths, Pa. \ref{pa:mat}>>=
   for i := 1; i < len(q); i++ {
 	  x := ml[i-1] - 1
-	  if x > ml[i] {
+	  if x >= ml[i] {
 		  ml[i] = x
 		  su[i] = su[i-1]
 	  }
@@ -108,10 +108,7 @@ actual testing.
   //<<Iterate over queries and subjects, Pa. \ref{pa:mat}>>
 #+end_src
 #+begin_export latex
-We construct short queries and subjects. To get matches, we reduce the
-nucloetide alphabet largely to $\{\ty{A},\ty{T}\}$. Our first query is 
-\ty{AAATAATATT}, or second distinguished by one mutation to an
-extraneous nucleotide, \ty{G}
+We take the queries used in Chapter~\ref{ch:int}.
 #+end_export
 #+begin_src go <<Construct queries, Pa. \ref{pa:mat}>>=
   queries := [][]byte{
@@ -119,8 +116,7 @@ extraneous nucleotide, \ty{G}
 	  []byte("AAATAGTATT")}
 #+end_src
 #+begin_export latex
-Similarly, we construct two short subjects. However, here we do stick
-to the \ty{AT} alphabet.
+Similarly, we take the subjects from Chapter~\ref{ch:int}.
 #+end_export
 #+begin_src go <<Construct subjects, Pa. \ref{pa:mat}>>=
   subjects := [][]byte{
@@ -135,8 +131,8 @@ We construct the match lengths and the subject labels we want.
 	  []int{4,3,2,7,6,5,4,3,2,1},
 	  []int{4,3,2,2,1,0,4,3,2,1}}
   wsu := [][]int{
-	  []int{0,0,0,1,1,1,1,1,0,0},
-	  []int{0,0,0,1,1,0,1,1,1,0}}
+	  []int{0,0,0,1,1,1,1,1,1,1},
+	  []int{0,0,0,1,1,1,1,1,1,1}}
 #+end_src
 #+begin_export latex
 For each query we prepare an array of match lengths and an array of

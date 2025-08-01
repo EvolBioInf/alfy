@@ -19,7 +19,7 @@ func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
 	}
 	for i := 1; i < len(q); i++ {
 		x := ml[i-1] - 1
-		if x > ml[i] {
+		if x >= ml[i] {
 			ml[i] = x
 			su[i] = su[i-1]
 		}

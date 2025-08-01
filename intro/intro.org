@@ -1,23 +1,23 @@
 #+begin_export latex
 Alfy is a program for alignment-free detection of local homology
-between DNA sequences~\cite{dom11:ali}. It takes as input one query
-sequence and one or more subject sequences. Its output is a set of
-intervals covering the query, the name of the most closely related
-subject sequence per interval, if any, and a score of the local
-homology.
+between DNA sequences~\cite{dom11:ali}. It takes as input one or more
+query sequences and one or more subject sequences. Its produced per
+query and consists of a set of intervals covering the query, the name
+of the most closely related subject sequence per interval, if any, and
+a score of the local homology.
 
-Figure~\ref{fig:alf} illustrates this for a 10\,kb query that is a
-recombinant of two subject sequences. The recombination event is very
-recent, so from position 1--4,500 the query is an exact match to
-subject $s_1$, for the next 1\,kb it is an exact match to $s_2$,
-before it switches back to $s_1$. Correspondingly, in the boxed output
-in Figure~\ref{fig:alf} interval 1--4500 is annotated $s_1$, interval
-4501--5500 $s_2$, and interval 4501--10,000 $s_1$ again. The fourth
-column in the output gives the score, which is the average match
-length. Since the recombination is recent, almost all matches extend
-to the end of their matching interval. Let the length of that interval
-be $\ell$; then the average match length is roughly
-$\ell(\ell-1)/2/\ell\approx\ell/2$.
+Figure~\ref{fig:alf} illustrates this for a 10\,kb query, $q$, that is
+a recombinant of two the subject sequences, $s_1$ and $s_2$. The
+recombination event is very recent, so from position 1--4,500 the
+query is an exact match to subject $s_1$, for the next 1\,kb it is an
+exact match to $s_2$, before it switches back to
+$s_1$. Correspondingly, in the boxed output in Figure~\ref{fig:alf}
+interval 1--4500 is annotated $s_1$, interval 4501--5500 $s_2$, and
+interval 4501--10,000 $s_1$ again. The fourth column in the output
+gives the score, which is the average match length. Since the
+recombination is recent, almost all matches extend to the end of their
+matching interval. Let the length of that interval be $\ell$; then the
+average match length is roughly $\ell(\ell-1)/2/\ell\approx\ell/2$.
 
 \begin{figure}
   \begin{center}
@@ -27,7 +27,7 @@ $\ell(\ell-1)/2/\ell\approx\ell/2$.
   \begin{center}
     \fbox{
       \begin{minipage}{5cm}
-        $>\ty{q}$\\
+        $\#\ty{q}$\\
         \begin{tabular}{rrcr}
           \ty{1} &  \ty{4500} & \ty{s1} & \ty{1250}\\
        \ty{4501} &  \ty{5500} & \ty{s2} & \ty{500}\\
@@ -175,11 +175,12 @@ average match length zero.
 \section{Reimplementation}
 \subsection{Algorithm}
 Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
-our reimplementation of Alfy. It is essentially the algorithm used in
+our reimplementation of Alfy reduced to a single query input. This
+procedure is simply iterated to deal with multiple
+queries. Algorithm~\ref{alg:alf} is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
-most significant change is that for Alfy we augment the iterative
-recording of match lengths used in Fur by also recording the subject
-containing each match.
+most significant change is that in Alfy we subject labels in addition
+to match lengths
 
 \begin{algorithm}
 \caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
@@ -192,24 +193,37 @@ containing each match.
     lengths; initialized to 0
     \FOR{$i\leftarrow 1$ \TO $n$}
        \STATE $s\leftarrow\mbox{getEsa}(\mbox{subjects}[i])$
-       \STATE $j\leftarrow 1$
-       \WHILE{$j\le m$}
-          \STATE $\ell\leftarrow s.\mbox{MatchPrefix}(q[j:])$
-          \IF{$\mbox{ml}[j]<\ell$}
-             \STATE $\mbox{ml}[j]\leftarrow\ell$
-             \STATE $\mbox{su}[j]\leftarrow i$
-          \ENDIF
-          \STATE $j\leftarrow j + \ell + 1$
-       \ENDWHILE
-       \STATE $\mbox{interpolate}(\mbox{ml},\mbox{su})$
+       \STATE $\langle\mbox{match}\rangle$
+       \STATE $\langle\mbox{interpolate}\rangle$
     \ENDFOR
+    \STATE $\langle\mbox{output}\rangle$
   \end{algorithmic}
 \end{algorithm}
 
 For a given query sequence of length $m$, $q$, the algorithm iterates
-over the subjects and first converts a given subject to its enhanced
-suffix array, $s$ (line 2). Then we initialize the matching start in
-$q$, $j$, to 1 (line 3). With these preparations out of the way, we
+over $n$ subjects and first converts a given subject to its enhanced
+suffix array, $s$ (line 2). This is used to carry out the match phase
+of the algorithm (line 3), followed by the interpolation phase (line
+3). After matching and interpolation, the results are output.
+
+\begin{algorithm}
+  \caption{$\langle\mbox{match}\rangle$ from
+    Algorithm~\ref{alg:alf}.}\label{alg:mat}
+  \begin{algorithmic}[1]
+    \STATE $j\leftarrow 1$
+    \WHILE{$j\le m$}
+       \STATE $\ell\leftarrow s.\mbox{MatchPrefix}(q[j:])$
+       \IF{$\mbox{ml}[j]<\ell$}
+          \STATE $\mbox{ml}[j]\leftarrow\ell$
+          \STATE $\mbox{su}[j]\leftarrow i$
+       \ENDIF
+       \STATE $j\leftarrow j + \ell + 1$
+    \ENDWHILE
+  \end{algorithmic}
+\end{algorithm}
+
+In the match phase (Algorithm~\ref{alg:mat}) we initialize the
+matching start in $q$, $j$, to 1 (line 1). Then we use a while loop to
 iterate across $q$ and calculate an array of longest match lengths,
 $\mbox{ml}$, and an array of subjects inducing these lengths,
 $\mbox{su}$.
@@ -218,25 +232,26 @@ For a given subject labeled $i$, the matching starts at the first
 position of $q$, $q[1]$, and ends just before the first mismatch at
 $q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
 at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
-$i$ (lines 6--9). Then the matching start, $j$, skips to the first
+$i$ (lines 4--7). Then the matching start, $j$, skips to the first
 position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$, and
-the analysis repeats (lines 10 and 11).
+the analysis repeats (lines 8 and 9).
 
 Once the query has been traversed, the match lengths are interpolated
 as shown in Algorithm~\ref{alg:int}. At each position $\mbox{ml}[i]$
 the match to its left, $\mbox{ml}[i-1]$ is extended, unless we are at
-the start of a new match.
+the start of a new match. The rule that we wait for the start of a new
+match, rather than the end of a current one, is expressed by using
+``greater or equal'' in line 3 rather than strict ``greater''. It is
+intended to reduce subject switching at the right hand side of
+matches.
 
 \begin{algorithm}
-  \caption{Interpolation of match lengths and subject
-    indexes}\label{alg:int}
-  \begin{algorithmic}
-    \REQUIRE $\mbox{ml}$, array of $m$ match lengths
-    \REQUIRE $\mbox{su}$, array of $m$ subject indexes
-    \ENSURE $\mbox{ml}$ and $\mbox{su}$ are complete
+  \caption{$\langle\mbox{interpolate}\rangle$ from
+    Algorithm~\ref{alg:alf}.}\label{alg:int}
+  \begin{algorithmic}[1]
     \FOR{$i\leftarrow 2$ \TO $m$}
        \STATE $x\leftarrow \mbox{ml}[i-1]-1$
-       \IF{$x>\mbox{ml}[i]$}
+       \IF{$x\ge\mbox{ml}[i]$}
           \STATE $\mbox{ml}[i]\leftarrow x$
           \STATE $\mbox{su}[i]\leftarrow\mbox{su}[i-1]$
        \ENDIF
@@ -244,11 +259,63 @@ the start of a new match.
   \end{algorithmic}
 \end{algorithm}
 
-The arrays of match lengths and subject indexes are later used to
-cover $q$ with intervals of closest relatives among the subjects.
+The analysis of $q_2$ is left as an exercise, you can find the answer
+in Figure~\ref{fig:out}. Notice that in a real
+program we'd concatenate the subject sequence with its
+reverse-complement before calculating the enhanced suffix array.
+
+The arrays of match lengths and subject labels we just obtained can
+then be used to cover $q_i$ with intervals of closest relatives among
+the subjects.
+
+\subsection{Example}
+We construct two short example queries and subjects each. To get
+matches, we reduce the nucloetide alphabet largely to
+$\{\ty{A},\ty{T}\}$. Our first query is $q_1=\ty{AAATAATATT}$, or
+second is distinguished by one mutation to an extraneous nucleotide,
+\ty{G}, $q_2=\ty{AAATAGTATT}$. Our subjects are $s_1=\ty{AATTTAAATT}$
+and $s_2=\ty{TAATAATATT}$. We concentrate on $q_1$ and start with
+$\mbox{ml}$ initialized to -1 and $\mbox{su}$ initialized to 0 to
+indicate missing values in each case. We match $q_1[1...]$ to $s_1$
+and find \ty{AAAT}, which has length $\ell=4$. So we set
+$\mbox{ml}[1]$ to that value and $\mbox{su}[1]$ to the subject label,
+1. We skip to position $1+4+1=6$ and resume matching at $q_1[6...]$ to
+find \ty{AT}, so we set $\mbox{ml}[6]\leftarrow 2$ and
+$\mbox{su}[6]\leftarrow 1$. One more match gives us $\mbox{ml}$ and
+$\mbox{su}$ at the end of the matching phase shown in lines 1 and 2 of
+Table~\ref{tab:alg}.
+
+  \begin{table}
+    \caption{Tracing Algorithm~\ref{alg:alf} for $q_1=\ty{AAATAATATT}$.}\label{tab:alg}
+    \begin{center}
+    \begin{tabular}{rclccccccccccc}\hline
+&&&&  1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\ \cline{5-14}
+\# & $i$ & phase & array & \ty{A} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{T} & \ty{T}\\\hline
+1 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{ml}$ & 4 & -1 & -1 & -1 & -1 & 2 & -1 & -1 & 2 & -1\\
+2 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{su}$ & 1 &  0 &  0 &  0 &  0 & 1 &  0 &  0 & 1 &  0\\
+3 & 1 & $\langle\mbox{interpolate}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 1 & 0 & 2 & 1 & 0 & 2 & 1\\
+4 & 1 & $\langle\mbox{interpolate}\rangle$ & $\mbox{su}$& 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\\\hline
+5 & 2 & $\langle\mbox{match}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 7 & 0 & 2 & 1 & 0 & 2 & 1\\
+6 & 2 & $\langle\mbox{match}\rangle$ & $\mbox{su}$ & 1 & 1 & 1 & 2 & 1 & 1 & 1 & 1 & 1 & 1\\
+7 & 2 & $\langle\mbox{interpolate}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 7 & 6 & 5 & 4 & 3 & 2 & 1\\
+8 & 2 & $\langle\mbox{interpolate}\rangle$ & $\mbox{su}$& 1 & 1 & 1 & 2 & 2 & 2 & 2 & 2 & 2 & 2\\\hline
+    \end{tabular}
+    \end{center}
+\end{table}
+
+In the interpolation phase we extend the matches, unless a new one
+starts. The result of the first interpolation phase is listed in lines
+3 and 4 of Table~\ref{tab:alg}. Note that the subject label is now 1
+throughout, as this is the only subject we have compared the query to
+at this point. Lines 5--8 in Table~\ref{tab:alg} show the results when
+including $s_2$. Here we can see the effect of ``greater or equal'' in
+line 3 of Algorithm~\ref{alg:int} on the interpolation of subject
+labels. If we had used strict ``greater than'', the last entries of
+$\mbox{su}$ would be 1 instead of 2. So we have avoided an additional
+switch in the subject designation.
 
 \subsection{User Perspective}
-The program \ty{alfy} consists of matching and a sliding window
+The program Alfy consists of matching and a sliding window
 analysis of the result of the matching. Since the sliding window
 analysis might be run repeatedly on the same matching result, it is a
 good idea to separate it from the time-consuming matching step. Since
@@ -256,12 +323,12 @@ the matching can be seen as preparation for the sliding window
 analysis, we call the two programs \ty{prepAlfy} and \ty{alfy}. The
 user should be able to run them as a pipeline,
 \begin{verbatim}
-prepAlfy -q queries/ -s subjects/ | alfy
+$ prepAlfy -q queries/ -s subjects/ | alfy
 \end{verbatim}
 or as separate steps,
 \begin{verbatim}
-prepAlfy -q queries/ -s subjects/ > alfy.in
-alfy alfy.in
+$ prepAlfy -q queries/ -s subjects/ > alfy.in
+$ alfy alfy.in
 \end{verbatim}
 
 The program \ty{prepAlfy} takes as mandatory options \ty{-q} and
@@ -270,21 +337,66 @@ files, respectively. The structure here is the same as the switches
 for targets and neighbors in \ty{makeNeiDb}. The output of
 \ty{prepAlfy} is a table with two columns for each query consisting of
 the query name, followed by pairs of match lengths and subject
-identifiers,
+identifiers. Figure~\ref{fig:out} shows an example for two short
+queries that were compared to two subjects.
+
+\begin{figure}
+  \caption{The output of \ty{prepAlfy}.}\label{fig:out}
+  \begin{center}
+    \footnotesize
+\begin{tabular}{|c|c|}
+\hline
+      \begin{minipage}{5.2cm}
 \begin{verbatim}
-#q1
-50 1
-49 1
-48 1
-...
-#q2
-34 5
-33 5
-32 5
-...
+#q1.fasta 1=s1.fasta 2=s2.fasta
+4 1
+3 1
+2 1
+7 2
+6 2
+5 2
+4 2
+3 2
+2 2
+1 2
 \end{verbatim}
-The tables are understood to cover every position in the respective
-query.
+\end{minipage}
+      &
+\begin{minipage}{5.2cm}
+\begin{verbatim}
+#q2.fasta 1=s1.fasta 2=s2.fasta
+4 1
+3 1
+2 1
+2 2
+1 2
+0 2
+4 2
+3 2
+2 2
+1 2
+\end{verbatim}
+\end{minipage}\\
+\hline
+\end{tabular}
+%% }
+  \end{center}
+\end{figure}
+The table header starts with a hash, followed by the name of the file
+containing the query, followed by a legend to the subject names. This
+legend consists of key/value pairs
+\begin{verbatim}
+subject_id=subject_file
+\end{verbatim}
+We print subject identifiers rather than names in column 2, to save
+space---identifiers are usually shorter than file names. Each table is
+understood to cover every position in the respective
+query. Algorithm~\ref{alg:out} summarizes the procedure to generate
+the output of \ty{prepAlfy}.
+\begin{algorithm}
+  \caption{$\langle\mbox{output}\rangle$ from
+    Algorithm~\ref{alg:alf}.}\label{alg:out}
+\end{algorithm}
 
 \subsection{Coding}
 The subpackage \ty{mat} contains the function \ty{Match}, which takes
