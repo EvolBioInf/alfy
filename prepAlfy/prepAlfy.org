@@ -1,12 +1,649 @@
 #+begin_export latex
-Hello \ty{prepAlfy}!
+\section{Introduction}
+The program \ty{prepAlfy} takes as input a directory of query fasta
+files and a directory of subject fasta files. \ty{prepAlfy} will then
+calculate the match lengths between the queries and subjects. The
+output file is a two column table consisting of the query name,
+followed by pairs of match lengths and sequence identifiers.
+#+end_export
+#+begin_export latex
+\section{Implementation}
+
+The outline for \ty{preAlfy} contains hooks for imports, functions and
+the logic of the main function.
 #+end_export
 #+begin_src go <<prepAlfy.go>>=
   package main
 
-  import "fmt"
+  import (
+	  //<<Imports, Ch. \ref{ch:prep}>>
+  )
 
-  func main() {
-	  fmt.Println("Hello prepAlfy!")
+  //<<Functions, Ch. \ref{ch:prep}>>
+  func main() {	 
+	  //<<Main function, Ch. \ref{ch:prep}>>	
   }
+#+end_src
+#+begin_export latex
+In the main function we prepare the error handling, declare the
+options, set the usage, parse the options and construct the index
+tables.
+#+end_export
+#+begin_src go <<Main function, Ch. \ref{ch:prep}>>=
+  //<<Prepare error handling, Ch. \ref{ch:prep}>>
+  //<<Declare options, Ch. \ref{ch:prep}>>
+  //<<Set usage, Ch. \ref{ch:prep}>>
+  //<<Parse options, Ch. \ref{ch:prep}>>
+  //<<Construct alfy input table, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+We declare options for printing the version, picking the query and
+subject directories and the number of threads. By default this will
+corresponds to the number of logical CPUs available on the system.
+#+end_export
+#+begin_src go <<Declare options, Ch. \ref{ch:prep}>>=
+  optV := flag.Bool("v", false, "version")
+  optQ := flag.String("q", "", "query directory")
+  optS := flag.String("s", "", "subject directory")
+  ncpu := runtime.NumCPU()
+  optT := flag.Int("T", ncpu , "number of threads")
+#+end_src
+#+begin_export latex
+We import flag and runtime.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "flag"
+  "runtime"
+#+end_src
+#+begin_export latex
+The usage constis of three parts, the actual usage message, an
+explanation of the purpose of \ty{prepAlfy}, and an example command.
+#+end_export
+#+begin_src go <<Set usage, Ch. \ref{ch:prep}>>=
+  u :="prepAlfy -q <queryDir> -s <subjectDir>"
+  p :="Prepare alfy input"
+  e :="prepAlfy -q queries/ -s subjects/"
+
+  clio.Usage(u,p,e)
+#+end_src
+#+begin_export latex
+We import clio.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "github.com/evolbioinf/clio"
+#+end_src
+#+begin_export latex
+We parse the options and respond to the version option, -v, the two
+directory options, \ty{-q}, \ty{-s} and the number of threads \ty{-T}.
+#+end_export
+#+begin_src go <<Parse options, Ch. \ref{ch:prep}>>=
+  flag.Parse()
+  //<<Respond to \ty{-v}, Ch. \ref{ch:prep}>>
+  //<<Respond to \ty{-q}, Ch. \ref{ch:prep}>>
+  //<<Respond to \ty{-s}, Ch. \ref{ch:prep}>>
+  //<<Respond to \ty{-T}, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+If the user requested the version, we call the utility function
+\ty{Version} with the program name.
+#+end_export
+#+begin_src go <<Respond to \ty{-v}, Ch. \ref{ch:prep}>>=
+  if *optV {
+	  util.Version("prepAlfy")
+  }
+#+end_src
+#+begin_export latex
+We import util.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "github.com/evolbioinf/alfy/util"
+#+end_src
+#+begin_export latex
+If the user didn't set a query directory, we exit with a friendly
+message.
+#+end_export
+#+begin_src go <<Respond to \ty{-q}, Ch. \ref{ch:prep}>>=
+  if *optQ == "" {
+	  m := "please provide a directory " +
+		  "of query sequences"
+	  fmt.Fprintf(os.Stderr,"%s\n",m)
+	  os.Exit(1)
+  }
+#+end_src
+#+begin_export latex
+We import fmt and os.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "fmt"
+  "os"
+#+end_src
+#+begin_export latex
+We also exit with a friendly message if the subject directory was not
+set.
+#+end_export
+#+begin_src go <<Respond to \ty{-s}, Ch. \ref{ch:prep}>>=
+  if *optS == "" {
+	  m := "please provide a directory " +
+		  "of subject sequences"
+	  fmt.Fprintf(os.Stderr,"%s\n",m)
+	  os.Exit(1)
+  }
+#+end_src
+#+begin_export latex
+If the user set a negative number of threads, we throw a fatal error.
+#+end_export
+#+begin_src go <<Respond to \ty{-T}, Ch. \ref{ch:prep}>>=
+  if *optT < 0 {
+	  log.Fatalf("Can't set %d threads.", *optT)
+  }
+#+end_src
+#+begin_export latex
+We import log.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "log"
+#+end_src
+#+begin_export latex
+To construct the alfy input table, we read the names of the queries
+and subjects and make sure there are no overlaps. This is done by
+storing the names of the files in maps. Since maps aren't ordered, we
+also sort the names beforehand.
+
+Then we construct the elements required for the output table: the
+query name, the subject ID-key pairing and the matches lengths.
+#+end_export
+#+begin_src go <<Construct alfy input table, Ch. \ref{ch:prep}>>=
+  //<<Read names of queries and subjects, Ch. \ref{ch:prep}>>
+  //<<Sort names of queries and subjects, Ch. \ref{ch:prep}>>
+  //<<Do queries and subjects overlap, Ch. \ref{ch:prep}>>
+  //<<Write match factors, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+The reading of the queries and subjects is done by the function
+readDir. If either of the directories are empty, we exit and warn the
+user.
+#+end_export
+#+begin_src go <<Read names of queries and subjects, Ch. \ref{ch:prep}>>=
+  queries := readDir(*optQ)
+
+  if len(queries) == 0 {
+	  fmt.Fprintf(os.Stderr, "%s is empty\n", *optQ)
+	  os.Exit(1)
+  }
+
+  subjects := readDir(*optS)
+
+  if len(subjects) == 0 {
+	  fmt.Fprintf(os.Stderr, "%s is empty\n", *optS)
+	  os.Exit(1)
+  }
+#+end_src
+#+begin_export latex
+The function \ty{readDir} takes as input the name of a directory and
+returns a map of the names of the sequence files within the
+directory. We check each directory entry before storing its name.
+#+end_export
+#+begin_src go <<Functions, Ch. \ref{ch:prep}>>=
+  func readDir(dir string) map[string]bool {
+	  dirEntries, err := os.ReadDir(dir)
+	  util.Check(err)
+	  names := make(map[string]bool)
+
+	  for _, dirEntry := range dirEntries {
+		  //<<Check directory entry, Ch. \ref{ch:prep}>>
+		  names[dirEntry.Name()] = true
+	  }
+	  return names
+  }
+#+end_src
+#+begin_export latex
+Directory entries should consists of files and not subdirectories. The
+files themselves should be nucleotide FASTA files.
+#+end_export
+#+begin_src go <<Check directory entry, Ch. \ref{ch:prep}>>=
+  //<<Check if entry is a file, Ch. \ref{ch:prep}>>
+  //<<Check if entry is nucleotide FASTA, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+If the entry is a subdirectory, we skip it and warn the user.
+#+end_export
+#+begin_src go <<Check if entry is a file, Ch. \ref{ch:prep}>>=
+  if dirEntry.IsDir() {
+	  p := dir + "/" + dirEntry.Name()
+	  fmt.Fprintf(os.Stderr,
+		  "Skipping subdirectory %s\n", p)
+	  continue
+  }
+#+end_src
+#+begin_export latex
+Then we check if the entry is a nucleotide FASTA format. There are
+currently five filenames extensions that can refer to nucleotide FASTA
+files listed on
+Wikipedia\footnote{\ty{https://en.wikipedia.org/wiki/FASTA\_format}}:
+fasta, fna, ffn, frn and fa. If the file has a different extension, or
+none, we skip it and warn the user.
+#+end_export
+#+begin_src go <<Check if entry is nucleotide FASTA, Ch. \ref{ch:prep}>>=
+  ext := filepath.Ext(dirEntry.Name())
+
+  if ext != ".fasta" && ext != ".fna" &&
+	  ext != ".ffn" && ext != ".fnr" &&
+	  ext != ".fa" {
+	  m := "%s doesnt have the extension of a " +
+		  "nucleotide FASTA file." +
+		  "Skipping it \n"
+	  p := dir + "/" + dirEntry.Name()
+	  fmt.Fprintf(os.Stderr, m, p)
+	  continue
+  }
+#+end_src
+#+begin_export latex
+We import filepath.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "path/filepath"
+#+end_src
+#+begin_export latex
+We store the names of the neighbors and targets in slices and sort them.
+#+end_export
+#+begin_src go <<Sort names of queries and subjects, Ch. \ref{ch:prep}>>=
+  var queryNames, subjectNames []string
+
+  for query := range queries {
+	  queryNames = append(queryNames, query)
+  }
+
+  sort.Strings(queryNames)
+
+  for subject := range subjects {
+	  subjectNames = append(subjectNames, subject)
+  }
+
+  sort.Strings(subjectNames)
+#+end_src
+#+begin_export latex
+We import sort.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "sort"
+#+end_src
+#+begin_export latex
+We then check if there is an overlap in the queries and subject
+files. To do so, we search for pairs of repeated file names and exit
+with a message if we find one.
+#+end_export
+#+begin_src go <<Do queries and subjects overlap, Ch. \ref{ch:prep}>>=           
+  for _, query := range queryNames {
+	  if subjects[query] {
+		  m := "Found %s%s and %s%s." +
+			  "Please ensure queries and " +
+			  "subjects do not " +
+			  "overlap."
+
+		  fmt.Fprintf(os.Stderr, m, *optQ, query,
+			  *optS, query)
+		  os.Exit(1)
+	  }
+  }
+#+end_src
+#+begin_export latex
+\subsection{Write match factors}
+
+We now move on to the calculation of the match factors. This is main
+algorithm of \ty{prepAlfy}. Since subjects sequences may be composed
+by several short contigs, it is more efficient to concatenate shorter
+contigs into a larger sequences. To do so, we first determine the
+maximum subject length. This value will be later using during the
+streaming step where we stream the queries against the subjects. Since
+the maximum length only needs to be calculated once, we do it before
+we iterate over the query sequences. Each query is to be streamed
+against the subjects to calculate the matches lengths. This process is
+distributed among goroutines. The distribution of the sequences across
+the goroutines will depend on the maximum subject length previously
+calculated.
+
+Once all the queries have been individually streamed against the
+subjects, the resulting match lengths per query are merged, while
+taking note of the subject they were found in. At the end the pair
+match length and subject ID is written out to a file.
+#+end_export
+#+begin_src go <<Write match factors, Ch. \ref{ch:prep}>>=
+  //<<Find maximum subject length, Ch. \ref{ch:prep}>>
+  //<<Label subject sequences, Ch. \ref{ch:prep}>>
+
+  for query, _ := range queries {
+
+	  //<<Read query sequences, Ch. \ref{ch:prep}>>
+	  //<<Distribute streaming among goroutines, Ch. \ref{ch:prep}>>
+	  //<<Merge match lengths, Ch. \ref{ch:prep}>>
+	  //<<Write match lenghts, Ch. \ref{ch:prep}>>
+
+  }
+#+end_src
+#+begin_export latex
+To find the maximal subject length, we iterate over the subject files
+and for each file iterate over the sequences it contains to find the
+longest. We also label each subject sequence with a numeric ID, and
+save it into an array.
+#+end_export
+#+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
+  msl := -1
+
+  for _, subject := range subjectNames {
+	  p := *optS + "/" + subject
+	  f, err := os.Open(p)
+	  util.Check(err)
+	  //<<Iterate over subjects, Ch. \ref{ch:prep}>>
+	  f.Close()
+  }
+#+end_src
+#+begin_export latex
+We use a scanner to iterate over the sequences in the current neighbor file.
+#+end_export
+#+begin_src go <<Iterate over subjects, Ch. \ref{ch:prep}>>=
+  sc := fasta.NewScanner(f)
+
+  for sc.ScanSequence() {
+	  l := len(sc.Sequence().Data())
+	  if l > msl {
+		  msl = l
+	  }
+  }
+#+end_src
+#+begin_export latex
+We import fasta
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"github.com/evolbioinf/fasta"
+#+end_src
+#+begin_export latex
+We then create a list of numerical IDs that match the order of the
+subjectNames.
+#+end_export
+#+begin_src go <<Label subject sequences, Ch. \ref{ch:prep}>>=
+  ids := make(map[int]string)
+
+  for i, subject := range subjectNames {
+	  ids[i] = subject
+  }
+#+end_src
+#+begin_export latex
+We then iterate over the query sequences. For each query we store the
+forward and reverse strands of the sequence and close the file again.
+#+end_export
+#+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
+  p := *optQ + "/" + query
+  f, err := os.Open(p)
+  util.Check(err)
+
+  var querySeqs, revQuerySeqs []*fasta.Sequence
+
+  sc := fasta.NewScanner(f)
+
+  for sc.ScanSequence() {
+	  s := sc.Sequence()
+	  querySeqs = append( querySeqs, s)
+	  s= fasta.NewSequence(s.Header(), s.Data())
+	  s.ReverseComplement()
+	  revQuerySeqs = append(revQuerySeqs, s)
+  }
+
+  f.Close()
+#+end_src
+#+begin_export latex
+Since we are doing exact matching, we conver all nucleotides to
+uppercase. This ignores all masking information in the sequences.
+#+end_export
+#+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
+  for i, querySeq := range querySeqs {
+	  h := querySeq.Header()
+	  d := bytes.ToUpper(querySeq.Data())
+	  querySeqs[i] = fasta.NewSequence(h,d)
+
+	  h = revQuerySeqs[i].Header()
+	  d = bytes.ToUpper(revQuerySeqs[i].Data())
+	  revQuerySeqs[i] = fasta.NewSequence(h, d)
+  }
+
+#+end_src
+#+begin_export latex
+We import bytes.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "bytes"
+#+end_src
+#+begin_export latex
+After reading the queries we can now prepare to distribute the
+streaming across the go routines. For this we split the list of
+subject files into packages of size n. Then we concurrently stream the
+current query against the set of subject files. For this we use a
+concurrency pattern built from a channel and a \ty{WaitGroup} from
+\ty{sync.WaitGroup}. The channel and the \ty{WaitGroup} are
+initialized outside the loop from which the goroutines are
+started. Inside the loop we increment the counter of working
+goroutines and construct the streaming goroutine. After the loop we
+construct the closer and the iterator.
+#+end_export
+#+begin_src go <<Distribute streaming among goroutines, Ch. \ref{ch:prep}>>=
+  subjectNameSets := make([][]string, 0)
+
+  //<<Split subject file names, Ch. \ref{ch:prep}>>
+  lengthSets := make(chan [][]int)
+//  IDSets := make(chan [][]int)
+
+  var wg sync.WaitGroup
+
+  for _, subjectNames := range subjectNameSets {
+	  wg.Add(1)
+	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
+  }
+  //<<Streaming closer, Ch. \ref{ch:prep}>>
+  //<<Streaming iterator, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+We import sync.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "sync"
+#+end_src
+#+begin_export latex
+The subject filenames are split into slices of length $\ell=n/T$,
+where $n$ is the number of subject files and $T$ the number of
+threads. We also make sure the last slice does not extend beyong the
+length of the slice of subject names.
+#+end_export
+#+begin_src go <<Split subject files names, Ch. \ref{ch:prep}>>=
+  n := len(subjectNames)
+  length := int(math.Ceil(float64(n)/float64(*optT)))
+
+  start := 0
+  end := length
+
+  for start < n {
+	  subjectNameSets = append(subjectNameSets,
+		  subjectNames[start:end])
+	  start = end
+	  end += length
+	  if end > n {
+		  end = n
+	  }
+  }
+#+end_src
+#+begin_export latex
+Then we pass the split set of subject names to the goroutine. We also
+declare a variable for holding the matches lengths as well as the ID
+of the subject they relate to, stream the current query against the
+subjects, and pass the resulting match lengths and the subject IDs,
+along the channel.
+#+end_export
+#+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
+  go func(subjectNames []string) {
+	  defer wg.Done()
+	  var matchLengths [][]int
+	  //<<Allocate space for match lengths, Ch. \ref{ch:prep}>>
+	  //<<Stream current query against subjects, Ch. \ref{ch:prep}>>
+	  lengthSets <- matchLengths
+  }(subjectNames)
+#+end_src
+#+begin_export latex
+To hold the matches lengths and the matching subjects IDs, we allocate
+two arrays of integers for each sequence that make up the query.
+#+end_export
+#+begin_src go <<Allocate space for match lengths, Ch. \ref{ch:prep}>>=
+  for _, querySeq := range querySeqs {
+	  n := len(querySeq.Data())
+	  lengths := make([]int,n)
+	  matchLengths = append(matchLengths, lengths)
+  }
+#+end_src
+#+begin_export latex
+For the streaming step we iterate over each subject sequence while
+keeping track of their lengths with the index \ty{li}, and their IDs
+with the index \ty{ni}. At the end of every iteration we increase the
+counter of \ty{ni}.
+#+end_export
+#+begin_src go <<Stream current query against subjects, Ch. \ref{ch:prep}>>=
+  li := 0
+  ni := 0
+
+  for _, subject := range subjectNames {
+	  p := *optS + "/" + subject
+	  f, err := os.Open(p)
+	  util.Check(err)
+	  //<<Iterate over subject sequences, Ch. \ref{ch:prep}>>
+	  f.Close()
+
+	  ni++
+  }
+#+end_src
+#+begin_export latex
+While iterating over the subject files we concatenate the nucleotides,
+construct the suffix aray and stream the current query against it. The
+concatenation occurs within subject files, like contigs, not across
+subject files.
+#+end_export
+#+begin_src go <<Iterate over subject sequences, Ch. \ref{ch:prep}>>=
+  sc := fasta.NewScanner(f)
+  for sc.ScanSequence() {
+	  //<<Concatenate nucleotides, Ch. \ref{ch:prep}>>
+	  //<<Construct enhanced suffix array, Ch. \ref{ch:prep}>>
+	  //<<Stream query against esa, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+To concactenate the nucleotides we declare a variable for a sequences,
+and two byte slices for the sequence header and data. Then we loop
+until we accumulated fewer than the maximum number of nucleotides
+previously defined. Inside the loop we scan the sequence and append to
+it.
+#+end_export
+#+begin_src go <<Concatenate nucleotides, Ch. \ref{ch:prep}>>=
+  s := sc.Sequence()
+  d := s.Data()
+  h := []byte(s.Header())
+
+  for len(d)  < msl && sc.ScanSequence() {
+	  s = sc.Sequence()
+	  h = append(h , '|')
+	  h = append(h, []byte(s.Header())...)
+	  d = append(d, s.Data()...)
+	  li++
+  }
+#+end_src
+#+begin_export latex
+Then we convert the current subject into uppercase and construct the
+enhanced suffix array. Here we calculate the ESA on the forward strand
+and stream both the forward and reverse strand of the current query.
+#+end_export
+#+begin_src go <<Construct enhanced suffix array, Ch. \ref{ch:prep}>>=
+  d = bytes.ToUpper(d)
+  e := esa.MakeEsa(d)
+#+end_src
+#+begin_export latex
+We import esa.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"github.com/evolbioinf/esa"
+#+end_src
+#+begin_export latex
+Then we iterate over the sequences of the current query. For each
+sequence we match the forward and the reverse strands by calling the
+function \ty{matchSeq}.
+#+end_export
+#+begin_src go <<Stream query against esa, Ch. \ref{ch:prep}>>=
+  for i, querySeq := range querySeqs {
+	  d := querySeq.Data()
+	  rev := false
+	  matchSeq( d, e, matchLengths[i], rev)
+	  rev = true
+	  matchSeq(d, e, matchLengths[i], rev)
+  }
+#+end_src
+#+begin_export latex
+The \ty{matchSeq} function traverses the sequences in steps of
+matching prefixes. Each match is analyzed and stored before advancing
+by its length past the mismatching nucleotide.
+#+end_export
+#+begin_src go <<Functions, Ch. \ref{ch:prep}>>=
+  func matchSeq(d []byte, e *esa.Esa, ml []int, rev bool) {
+	  for i := 0; i < len(d); {
+		  match := e.MatchPref(d[i:])
+		  //<<Analyze the match, Ch. \ref{ch:prep}>>
+		  //<<Store the match, Ch. \ref{ch:prep}>>
+		  i += match.L +1
+	  }
+  }
+#+end_src
+#+begin_export latex
+If the current query suffix has no matching prefix we advance by one
+position to avoid being stuck in an infinite loop.
+#+end_export
+#+begin_src go <<Analyze match, Ch. \ref{ch:prep}>>=
+  if match.L == 0 {
+	  match.L = 1
+  }
+#+end_src
+#+begin_export latex
+Matches are stored by their starting positions with respect to the
+forward strand. If a shorter match is found at the same position, it
+is overwritten by the longest match.
+#+end_export
+#+begin_src go <<Store the match, Ch. \ref{ch:prep}>>=
+  p := i
+
+  if rev {
+	  p = len(d) -i - match.L
+  }
+
+  if ml[p] < match.L {
+	  ml[p] = match.L
+  }
+#+end_src
+#+begin_export latex
+We have now finished describing the goroutine and move on to the
+closer. In the closer we wait untill all working goroutines have
+finished and then close the channel.
+#+end_export
+#+begin_src go <<Streaming closer, Ch. \ref{ch:prep}>>=
+  go func(){
+	  wg.Wait()
+	  close(lengthSets)
+  }()
+#+end_src
+#+begin_export latex
+The iterator that drives the goroutines picks two-dimensional slices
+of match lengths from the channel. These are stored in a master set of
+match lengths.
+#+end_export
+#+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
+   matchLengths := make([][]int, 0)
+
+   for _, ts := range querySeqs {
+	   ml := make([]int, len(ts.Data()))
+	   matchLengths = append(matchLengths, ml)
+   }
+
+  //  for lengthSet := range lengthSets {
+  // 	 //<<Store match lengths. Ch. \ref{ch:prep}>>
+  // }  
 #+end_src
