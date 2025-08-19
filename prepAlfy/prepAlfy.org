@@ -302,29 +302,19 @@ distributed among goroutines. The distribution of the sequences across
 the goroutines will depend on the maximum subject length previously
 calculated.
 
-Once all the queries have been individually streamed against the
-subjects, the resulting match lengths per query are merged, while
+The subjects will be streamed against each query at a time. After
+streaming the subjects the resulting match lengths are merged while
 taking note of the subject they were found in. At the end the pair
 match length and subject ID is written out to a file.
 #+end_export
 #+begin_src go <<Write match factors, Ch. \ref{ch:prep}>>=
   //<<Find maximum subject length, Ch. \ref{ch:prep}>>
-  //<<Label subject sequences, Ch. \ref{ch:prep}>>
-
-  for query, _ := range queries {
-
-	  //<<Read query sequences, Ch. \ref{ch:prep}>>
-	  //<<Distribute streaming among goroutines, Ch. \ref{ch:prep}>>
-	  //<<Merge match lengths, Ch. \ref{ch:prep}>>
-	  //<<Write match lenghts, Ch. \ref{ch:prep}>>
-
-  }
+  //<<Read query sequences, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
 To find the maximal subject length, we iterate over the subject files
 and for each file iterate over the sequences it contains to find the
-longest. We also label each subject sequence with a numeric ID, and
-save it into an array.
+longest.
 #+end_export
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
@@ -357,21 +347,24 @@ We import fasta
 "github.com/evolbioinf/fasta"
 #+end_src
 #+begin_export latex
-We then create a list of numerical IDs that match the order of the
-subjectNames.
+We then start reading the query sequences. For each sequence we
+calculate the forward and the reverse strands, and we remove the
+masking information from the sequence. Then we iterate over their
+sequences and stream the subjects against it. After streaming all the
+subjects we update the final matches lengths and write it to a file.
 #+end_export
-#+begin_src go <<Label subject sequences, Ch. \ref{ch:prep}>>=
-  ids := make(map[int]string)
-
-  for i, subject := range subjectNames {
-	  ids[i] = subject
+#+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
+  for query, _ := range queries {
+	  //<<Store forward and reverse strand, Ch. \ref{ch:prep}>>
+	  //<<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>
+	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
-We then iterate over the query sequences. For each query we store the
-forward and reverse strands of the sequence and close the file again.
+We read the query files and we store the forward and the reverse
+complement of the sequence. We close the file at the end.
 #+end_export
-#+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Store forward and reverse strand, Ch. \ref{ch:prep}>>= 
   p := *optQ + "/" + query
   f, err := os.Open(p)
   util.Check(err)
@@ -382,180 +375,99 @@ forward and reverse strands of the sequence and close the file again.
 
   for sc.ScanSequence() {
 	  s := sc.Sequence()
-	  querySeqs = append( querySeqs, s)
-	  s= fasta.NewSequence(s.Header(), s.Data())
+	  querySeqs = append(querySeqs, s)
+	  s = fasta.NewSequence(s.Header(), s.Data())
 	  s.ReverseComplement()
 	  revQuerySeqs = append(revQuerySeqs, s)
   }
-
   f.Close()
 #+end_src
 #+begin_export latex
-Since we are doing exact matching, we conver all nucleotides to
-uppercase. This ignores all masking information in the sequences.
+Since we are interested in exact matching we convert all nucleotides
+to uppercase, removing the masking information from the sequence. Both
+in the forward and in the reverse strand.
 #+end_export
-#+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>=
   for i, querySeq := range querySeqs {
 	  h := querySeq.Header()
 	  d := bytes.ToUpper(querySeq.Data())
-	  querySeqs[i] = fasta.NewSequence(h,d)
+	  querySeqs[i] = fasta.NewSequence(h, d)
 
 	  h = revQuerySeqs[i].Header()
 	  d = bytes.ToUpper(revQuerySeqs[i].Data())
 	  revQuerySeqs[i] = fasta.NewSequence(h, d)
   }
-
 #+end_src
 #+begin_export latex
-We import bytes.
+We import byte.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-  "bytes"
+"bytes"
 #+end_src
 #+begin_export latex
-After reading the queries we can now prepare to distribute the
-streaming across the go routines. For this we split the list of
-subject files into packages of size n. Then we concurrently stream the
-current query against the set of subject files. For this we use a
-concurrency pattern built from a channel and a \ty{WaitGroup} from
-\ty{sync.WaitGroup}. The channel and the \ty{WaitGroup} are
-initialized outside the loop from which the goroutines are
-started. Inside the loop we increment the counter of working
-goroutines and construct the streaming goroutine. After the loop we
-construct the closer and the iterator.
+Then we iterate over the range of existing sequences and allocate
+space for the array of matches lengths and another for the array of
+subject IDs.
 #+end_export
-#+begin_src go <<Distribute streaming among goroutines, Ch. \ref{ch:prep}>>=
-  subjectNameSets := make([][]string, 0)
-
-  //<<Split subject file names, Ch. \ref{ch:prep}>>
-  lengthSets := make(chan [][]int)
-//  IDSets := make(chan [][]int)
-
-  var wg sync.WaitGroup
-
-  for _, subjectNames := range subjectNameSets {
-	  wg.Add(1)
-	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
-  }
-  //<<Streaming closer, Ch. \ref{ch:prep}>>
-  //<<Streaming iterator, Ch. \ref{ch:prep}>>
-#+end_src
-#+begin_export latex
-We import sync.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-  "sync"
-#+end_src
-#+begin_export latex
-The subject filenames are split into slices of length $\ell=n/T$,
-where $n$ is the number of subject files and $T$ the number of
-threads. We also make sure the last slice does not extend beyong the
-length of the slice of subject names.
-#+end_export
-#+begin_src go <<Split subject files names, Ch. \ref{ch:prep}>>=
-  n := len(subjectNames)
-  length := int(math.Ceil(float64(n)/float64(*optT)))
-
-  start := 0
-  end := length
-
-  for start < n {
-	  subjectNameSets = append(subjectNameSets,
-		  subjectNames[start:end])
-	  start = end
-	  end += length
-	  if end > n {
-		  end = n
-	  }
-  }
-#+end_src
-#+begin_export latex
-Then we pass the split set of subject names to the goroutine. We also
-declare a variable for holding the matches lengths as well as the ID
-of the subject they relate to, stream the current query against the
-subjects, and pass the resulting match lengths and the subject IDs,
-along the channel.
-#+end_export
-#+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
-  go func(subjectNames []string) {
-	  defer wg.Done()
-	  var matchLengths [][]int
-	  //<<Allocate space for match lengths, Ch. \ref{ch:prep}>>
-	  //<<Stream current query against subjects, Ch. \ref{ch:prep}>>
-	  lengthSets <- matchLengths
-  }(subjectNames)
-#+end_src
-#+begin_export latex
-To hold the matches lengths and the matching subjects IDs, we allocate
-two arrays of integers for each sequence that make up the query.
-#+end_export
-#+begin_src go <<Allocate space for match lengths, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
   for _, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
-	  lengths := make([]int,n)
-	  matchLengths = append(matchLengths, lengths)
+	  matchLengths := make([]int,n)
+	  subjectID := make([]int,n)
+
+	  for j := 0 ; j < n; j++ {
+		  matchLengths[j] = -1
+		  subjectID[j] = -1
+	  }
+	  //<<Stream against subject files, Ch. \ref{prep}>>
   }
+  f.Close()
 #+end_src
 #+begin_export latex
-For the streaming step we iterate over each subject sequence while
-keeping track of their lengths with the index \ty{li}, and their IDs
-with the index \ty{ni}. At the end of every iteration we increase the
-counter of \ty{ni}.
+We then iterate and read the subject files. After streaming the files
+we write the matches lengths to a file.
 #+end_export
-#+begin_src go <<Stream current query against subjects, Ch. \ref{ch:prep}>>=
-  li := 0
-  ni := 0
-
-  for _, subject := range subjectNames {
+#+begin_src go <<Stream against subject files, Ch. \ref{prep}>>=
+  for j, subject := range subjectNames {
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
-	  //<<Iterate over subject sequences, Ch. \ref{ch:prep}>>
-	  f.Close()
 
-	  ni++
+	  //<<Read subject files, Ch. \ref{ch:prep}>>
+	  //<<Write matches to file, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
-While iterating over the subject files we concatenate the nucleotides,
-construct the suffix aray and stream the current query against it. The
-concatenation occurs within subject files, like contigs, not across
-subject files.
+We first read the subject files, then we aggregate smaller sequences
+or contigs until they reach the maximum subject length, \ty{msl},
+which was calculated above. Note that the aggregation is done only
+within files and not across.
+
+After aggregating the sequences we calculate the enhanced suffix array
+of the subject and calculate the matches lengths.
 #+end_export
-#+begin_src go <<Iterate over subject sequences, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Read subject files, Ch. \ref{ch:prep}>>=
   sc := fasta.NewScanner(f)
   for sc.ScanSequence() {
-	  //<<Concatenate nucleotides, Ch. \ref{ch:prep}>>
-	  //<<Construct enhanced suffix array, Ch. \ref{ch:prep}>>
-	  //<<Stream query against esa, Ch. \ref{ch:prep}>>
-  }
-#+end_src
-#+begin_export latex
-To concactenate the nucleotides we declare a variable for a sequences,
-and two byte slices for the sequence header and data. Then we loop
-until we accumulated fewer than the maximum number of nucleotides
-previously defined. Inside the loop we scan the sequence and append to
-it.
-#+end_export
-#+begin_src go <<Concatenate nucleotides, Ch. \ref{ch:prep}>>=
-  s := sc.Sequence()
-  d := s.Data()
-  h := []byte(s.Header())
+	  s := sc.Sequence()
+	  d := s.Data()
+	  h := []byte(s.Header())
 
-  for len(d)  < msl && sc.ScanSequence() {
-	  s = sc.Sequence()
-	  h = append(h , '|')
-	  h = append(h, []byte(s.Header())...)
-	  d = append(d, s.Data()...)
-	  li++
+	  for len(d) < msl && sc.ScanSequence() {
+		  s = sc.Sequence()
+		  h = append(h, '|')
+		  h = append(h, []byte(s.Header())...)
+		  d = append(d, s.Data()...)
+	  }
+	  //<<Calculate enhanced suffix array, Ch. \ref{prep:ch}>>
+  	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
-Then we convert the current subject into uppercase and construct the
-enhanced suffix array. Here we calculate the ESA on the forward strand
-and stream both the forward and reverse strand of the current query.
+We calculate the enhanced suffix array or \ty{esa} of the subject
+sequences.
 #+end_export
-#+begin_src go <<Construct enhanced suffix array, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Calculate enhanced suffix array, Ch. \ref{prep:ch}>>=
   d = bytes.ToUpper(d)
   e := esa.MakeEsa(d)
 #+end_src
@@ -563,87 +475,44 @@ and stream both the forward and reverse strand of the current query.
 We import esa.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-"github.com/evolbioinf/esa"
+  "github.com/evolbioinf/esa"
 #+end_src
 #+begin_export latex
-Then we iterate over the sequences of the current query. For each
-sequence we match the forward and the reverse strands by calling the
-function \ty{matchSeq}.
+We update the array of matches lengths and subjects IDs.
 #+end_export
-#+begin_src go <<Stream query against esa, Ch. \ref{ch:prep}>>=
-  for i, querySeq := range querySeqs {
-	  d := querySeq.Data()
-	  rev := false
-	  matchSeq( d, e, matchLengths[i], rev)
-	  rev = true
-	  matchSeq(d, e, matchLengths[i], rev)
-  }
-#+end_src
-#+begin_export latex
-The \ty{matchSeq} function traverses the sequences in steps of
-matching prefixes. Each match is analyzed and stored before advancing
-by its length past the mismatching nucleotide.
-#+end_export
-#+begin_src go <<Functions, Ch. \ref{ch:prep}>>=
-  func matchSeq(d []byte, e *esa.Esa, ml []int, rev bool) {
-	  for i := 0; i < len(d); {
-		  match := e.MatchPref(d[i:])
-		  //<<Analyze the match, Ch. \ref{ch:prep}>>
-		  //<<Store the match, Ch. \ref{ch:prep}>>
-		  i += match.L +1
-	  }
-  }
-#+end_src
-#+begin_export latex
-If the current query suffix has no matching prefix we advance by one
-position to avoid being stuck in an infinite loop.
-#+end_export
-#+begin_src go <<Analyze match, Ch. \ref{ch:prep}>>=
-  if match.L == 0 {
-	  match.L = 1
-  }
-#+end_src
-#+begin_export latex
-Matches are stored by their starting positions with respect to the
-forward strand. If a shorter match is found at the same position, it
-is overwritten by the longest match.
-#+end_export
-#+begin_src go <<Store the match, Ch. \ref{ch:prep}>>=
-  p := i
+#+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
+  q := querySeq.Data()
 
-  if rev {
-	  p = len(d) -i - match.L
+  mat.UpdateMatchLengths(q, e, j, matchLengths, subjectID)
+#+end_src
+#+begin_export latex
+We import the mat package.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "github.com/evolbioinf/alfy/mat"
+#+end_src
+#+begin_export latex
+After finishing streaming the subject files and updating the arrays of
+matches lengths and IDs we write them out to file.
+#+end_export
+#+begin_src go <<Write matches to file, Ch. \ref{ch:prep}>>=
+  f, err = os.Create(querySeq.Header() + ".txt")
+  util.Check(err)
+
+  wr := bufio.NewWriter(f)
+
+  for j := 0; j < len(matchLengths); j++ {
+	  fmt.Fprintf(wr, "%v\t%v\n",matchLengths[j],subjectID[j])
   }
 
-  if ml[p] < match.L {
-	  ml[p] = match.L
-  }
+  err = wr.Flush()
+  util.Check(err)
+
+  f.Close()
 #+end_src
 #+begin_export latex
-We have now finished describing the goroutine and move on to the
-closer. In the closer we wait untill all working goroutines have
-finished and then close the channel.
+We import the bufio writer.
 #+end_export
-#+begin_src go <<Streaming closer, Ch. \ref{ch:prep}>>=
-  go func(){
-	  wg.Wait()
-	  close(lengthSets)
-  }()
-#+end_src
-#+begin_export latex
-The iterator that drives the goroutines picks two-dimensional slices
-of match lengths from the channel. These are stored in a master set of
-match lengths.
-#+end_export
-#+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
-   matchLengths := make([][]int, 0)
-
-   for _, ts := range querySeqs {
-	   ml := make([]int, len(ts.Data()))
-	   matchLengths = append(matchLengths, ml)
-   }
-
-  //  for lengthSet := range lengthSets {
-  // 	 //<<Store match lengths. Ch. \ref{ch:prep}>>
-  // }  
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"bufio"
 #+end_src
