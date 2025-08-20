@@ -406,36 +406,45 @@ We import byte.
 #+end_src
 #+begin_export latex
 Then we iterate over the range of existing sequences and allocate
-space for the array of matches lengths and another for the array of
-subject IDs.
+space for the array of matches lengths, one for the array of subject
+IDs and a map between the subject ID and subject file names.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
   for _, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
 	  matchLengths := make([]int,n)
 	  subjectID := make([]int,n)
+	  sID := make(map[int]string)
 
 	  for j := 0 ; j < n; j++ {
 		  matchLengths[j] = -1
 		  subjectID[j] = -1
 	  }
-	  //<<Stream against subject files, Ch. \ref{prep}>>
+	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
   }
   f.Close()
 #+end_src
 #+begin_export latex
-We then iterate and read the subject files. After streaming the files
-we write the matches lengths to a file.
+We then iterate, map the subject files to an ID and read the
+sequences. After streaming the files we write the matches lengths to a
+file.
 #+end_export
-#+begin_src go <<Stream against subject files, Ch. \ref{prep}>>=
+#+begin_src go <<Stream against subject files, Ch. \ref{ch:prep}>>=
   for j, subject := range subjectNames {
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
-
+	  //<<Map subject files to ID>>
 	  //<<Read subject files, Ch. \ref{ch:prep}>>
-	  //<<Write matches to file, Ch. \ref{ch:prep}>>
   }
+  	  //<<Write matches to file, Ch. \ref{ch:prep}>>
+
+#+end_src
+#+begin_export latex
+We create a map of the subject files.
+#+end_export
+#+begin_src go <<Map subject files to ID>>=
+  sID[j] = subject
 #+end_src
 #+begin_export latex
 We first read the subject files, then we aggregate smaller sequences
@@ -459,7 +468,7 @@ of the subject and calculate the matches lengths.
 		  h = append(h, []byte(s.Header())...)
 		  d = append(d, s.Data()...)
 	  }
-	  //<<Calculate enhanced suffix array, Ch. \ref{prep:ch}>>
+	  //<<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>
   	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
   }
 #+end_src
@@ -467,7 +476,7 @@ of the subject and calculate the matches lengths.
 We calculate the enhanced suffix array or \ty{esa} of the subject
 sequences.
 #+end_export
-#+begin_src go <<Calculate enhanced suffix array, Ch. \ref{prep:ch}>>=
+#+begin_src go <<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>=
   d = bytes.ToUpper(d)
   e := esa.MakeEsa(d)
 #+end_src
@@ -501,10 +510,8 @@ matches lengths and IDs we write them out to file.
 
   wr := bufio.NewWriter(f)
 
-  for j := 0; j < len(matchLengths); j++ {
-	  fmt.Fprintf(wr, "%v\t%v\n",matchLengths[j],subjectID[j])
-  }
-
+  //<<Write output file header, Ch. \ref{ch:prep}>>
+  //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
   err = wr.Flush()
   util.Check(err)
 
@@ -515,4 +522,70 @@ We import the bufio writer.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "bufio"
+#+end_src
+#+begin_export latex
+The header consists of a single line that starts with a hash followed
+by the name of the query file and a key/value map to the subject
+id. The pairs are written in the following manner :
+\ty{subject\_id=subject\_file}.
+
+We start by constructing the list of existing key/value pairs that are
+contained inside the subjectID array. Then we print it out in a single
+line.
+#+end_export
+#+begin_src go <<Write output file header, Ch. \ref{ch:prep}>>=
+  var pair []string
+  seen := make(map[string]bool)
+
+  //<<Check if key/value exists, Ch. \ref{ch:prep}>>
+  //<<Write header, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+For every ID present in the subjectID array, we map it to the map of
+subject IDs previously contructed and if its the first time it appears
+we append it to the list of key-values to print.
+#+end_export
+#+begin_src go <<Check if key/value exists, Ch. \ref{ch:prep}>>=
+  for _, ID := range subjectID {
+	  if seq, exists := sID[ID]; exists {
+		  if !seen[seq] {
+			  pair = append(pair,
+				  fmt.Sprintf("%d=%s",
+					  ID,seq))
+			  seen[seq] = true
+		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+Then we write the header to the file. First we print the hash
+character denoting the header and the name of the query file.  Then we
+iterate over the pairs of subject IDs and filenames and print them
+into the same line.
+
+At the end we print a newline.
+#+end_export
+#+begin_src go <<Write header, Ch. \ref{ch:prep}>>=
+  fmt.Fprintf(wr, "#%s\t", query)
+  fmt.Fprintf(wr, "%s", strings.Join(pair, "\t"))
+  fmt.Fprintf(wr,"\n")
+#+end_src
+#+begin_export latex
+We import strings.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"strings"
+#+end_src
+#+begin_export latex
+Then we write the matches and corresponding subject IDs where they
+were found. For this we iterate over the length of the matchesLength,
+and for each position print the corresponding matche length and the
+subject ID.
+#+end_export
+#+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
+  for j := 0; j < len(matchLengths); j++ {
+	  fmt.Fprintf(wr, "%d\t%d\n",
+		  matchLengths[j],
+		  subjectID[j])
+  }
 #+end_src
