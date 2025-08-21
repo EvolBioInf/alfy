@@ -10,5 +10,6 @@ all: $(exe)
 $(exe): $(exe).org
 	if [ "$(nw)" != "" ]; then\
 		bash ../scripts/org2nw $(exe).org | notangle -R$(exe).go | gofmt > $(exe).go;\
+		bash ../scripts/org2nw $(exe).org | notangle -R$(exe)_test.go | gofmt > $(exe)_test.go;\
 	fi
 	go build -ldflags "$(vs) $(ds)" $(exe).go
