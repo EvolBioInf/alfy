@@ -37,6 +37,13 @@ tables.
   //<<Construct alfy input table, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
+We take care of error handling by calling the function
+\ty{PrepareErrorMessages} from the \ty{util} package.
+#+end_export
+#+begin_src go <<Prepare error handling, Ch. \ref{ch:prep}>>=
+util.PrepareErrorMessages("prepAlfy")
+#+end_src
+#+begin_export latex
 We declare options for printing the version, picking the query and
 subject directories and the number of threads. By default this will
 corresponds to the number of logical CPUs available on the system.
@@ -588,4 +595,87 @@ subject ID.
 		  matchLengths[j],
 		  subjectID[j])
   }
+#+end_src
+#+begin_export latex
+We have now finished \ty{prepAlfy}, which still needs to be tested.
+
+\section{Testing}
+The program to test \ty{prepAlfy} has hooks for imports and the
+testing logic.
+#+end_export
+#+begin_src go <<prepAlfy_test.go>>=
+  package main
+
+  import(
+	  //<<Testing imports, Ch. \ref{ch:prep}>>
+  )
+
+  func TestPrepAlfy(t *testing.T) {
+	  //<<Testing, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+We import testing.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
+  "testing"
+#+end_src
+#+begin_export latex
+We construct a set of tests.
+#+end_export
+#+begin_src go <<Testing, Ch. \ref{ch:prep}>>=
+  var tests []*exec.Cmd
+
+  //<<Construct tests, Ch. \ref{ch:prep}>>
+  //<<Run test, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+We import exec.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
+"os/exec"
+#+end_src
+#+begin_export latex
+We test the program by setting the queries and the subjects.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
+  p := "./prepAlfy"
+  q := "query"
+  s := "subject"
+
+  test := exec.Command(p, "-q", q, "-s", s)
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+We run the test and compare the result from the first query sequence
+with the one we want stored in the file r1.txt.
+#+end_export
+#+begin_src go <<Run test, Ch. \ref{ch:prep}>>=
+  _, err := test.Output()
+  if err != nil {
+	  t.Error(err)
+  }
+
+  get, err := os.ReadFile("q1.txt")
+  if err != nil{
+	  t.Error(err)
+	  }
+
+  f := "r" + strconv.Itoa(1)+".txt"
+  want, err := os.ReadFile(f)
+  if err != nil {
+	  t.Error(err)
+  }
+
+  if !bytes.Equal(get,want) {
+	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
+  }
+#+end_src
+#+begin_export latex
+We import os, strconv and bytes.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
+  "os"
+  "strconv"
+  "bytes"
 #+end_src
