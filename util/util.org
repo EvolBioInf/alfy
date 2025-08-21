@@ -97,3 +97,25 @@ We import log.
 #+begin_src go <<Imports, Pa. \ref{pa:uti}>>=
 "log"
 #+end_src
+#+begin_export latex
+\subsection{PrepareErrorMessages}
+Errors are handled via the log package. By default this prefixes the
+error message with time and date. We change the format of the error
+messages so that it comes prefixed with the name of the program and
+supress the date and time information.
+!\ty{PrepareErrorMessages} takes as argument the program name and sets
+!this as the prefix for the error messages from the \ty{log} package.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:uti}>>=
+  func PrepareErrorMessages(name string) {
+	  m := fmt.Sprintf("%s - ",name)
+	  log.SetPrefix(m)
+	  log.SetFlags(0)
+  }
+#+end_src
+#+begin_export latex
+We import fmt.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:uti}>>=
+"fmt"
+#+end_src
