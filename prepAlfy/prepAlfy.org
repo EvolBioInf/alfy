@@ -9,8 +9,8 @@ followed by pairs of match lengths and sequence identifiers.
 #+begin_export latex
 \section{Implementation}
 
-The outline for \ty{preAlfy} contains hooks for imports, functions and
-the logic of the main function.
+The outline for \ty{preAlfy} contains hooks for imports,
+structures, functions and the logic of the main function.
 #+end_export
 #+begin_src go <<prepAlfy.go>>=
   package main
@@ -18,7 +18,7 @@ the logic of the main function.
   import (
 	  //<<Imports, Ch. \ref{ch:prep}>>
   )
-
+  //<<Structures, Ch. \ref{ch:prep}>>
   //<<Functions, Ch. \ref{ch:prep}>>
   func main() {	 
 	  //<<Main function, Ch. \ref{ch:prep}>>	
@@ -319,14 +319,19 @@ match length and subject ID is written out to a file.
   //<<Read query sequences, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
-To find the maximal subject length, we iterate over the subject files
-and for each file iterate over the sequences it contains to find the
-longest.
+We first create a map between the attributed numerical subject ID and
+the subject filename. Then to find the maximal subject length, we
+iterate over the subject files and for each file iterate over the
+sequences it contains to find the longest subject file. We also fill
+in the subject ID with the corresponding subject filename.
 #+end_export
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
+  sID := make(map[int]string)
 
-  for _, subject := range subjectNames {
+  for i, subject := range subjectNames {
+	  sID[i] = subject
+
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
@@ -364,7 +369,9 @@ subjects we update the final matches lengths and write it to a file.
   for query, _ := range queries {
 	  //<<Store forward and reverse strand, Ch. \ref{ch:prep}>>
 	  //<<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>
-	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
+	  //<<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>
+	  //<<Merge matches results, Ch. \ref{ch:prep}>>
+    	  //<<Write matches to file, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -412,21 +419,107 @@ We import byte.
 "bytes"
 #+end_src
 #+begin_export latex
+Since streaming is the rate limiting step, we distribute the streaming
+of the subjects across goroutines. For this we start by constructing a
+structure to hold both the match lengths and the subjects ID. This
+ensures both values are passed on together.
+#+end_export
+#+begin_src go <<Structures, Ch. \ref{ch:prep}>>=
+  type Matches struct {
+	  matchLengths [][]int
+	  subjectID [][]int
+  }
+#+end_src
+#+begin_export latex
+We distribute the streaming work along sets of neighbors files. Thus,
+we split the list of neighbor files into packages of size n. We then
+concurrently stream the query against the sets of subject files. The
+concurrency pattern is based on \ty{sync.WaitGroup}, and is built from
+a channel and a \ty{WaitGroup}, both of which we initialize outside of
+the loop from which the goroutines are started. Inside the loop we
+increament the counter of working goroutines and construct the
+goroutine for streaming. After the loop we construct the closer and
+the iterator that belong to the \ty{WaitGroup} concurrency pattern.
+#+end_export
+#+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
+  var matches Matches
+  subjectNameSets := make([][]string, 0)
+
+  //<<Split subject filenames, Ch. \ref{ch:prep}>>
+  matchesSets := make(chan Matches)
+
+  var wg sync.WaitGroup
+
+  for _, subjectNames := range subjectNameSets{
+	  wg.Add(1)
+	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
+  }
+  //<<Streaming closer, Ch. \ref{ch:prep}>>
+  //<<Streaming iterator, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+We import sync.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"sync"
+#+end_src
+#+begin_export latex
+The subject files are split into several sets such that $\ell=n/T$,
+where $n$ is the number of sets and $T$ is the number of threads. We
+also ensure that the last of the slices does not extend beyond the
+length of the slice of subject names.
+#+end_export
+#+begin_src go <<Split subject filenames, Ch. \ref{ch:prep}>>=
+  n := len(subjectNames)
+  length := int(math.Ceil(float64(n)/float64(*optT)))
+  start := 0
+  end := length
+
+  for start < n {
+	  subjectNameSets = append(subjectNameSets,
+		  subjectNames[start:end])
+	  start = end
+	  end += length
+	  if end > n {
+		  end = n
+	  }
+  }
+#+end_src
+#+begin_export latex
+We import math.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"math"
+#+end_src
+#+begin_export latex
+We pass the current set of subject names to the goroutine. Inside it
+we defer it closure. We also declare and allocate space for holding
+the matches lengths and subject IDs, stream the query against the
+subjects and pass the matches along the channel.
+#+end_export
+#+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
+  go func(subjectNames []string){
+	  defer wg.Done()
+	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
+	  matchesSets <- matches
+  }(subjectNames)
+#+end_src
+#+begin_export latex
 Then we iterate over the range of existing sequences and allocate
-space for the array of matches lengths, one for the array of subject
-IDs and a map between the subject ID and subject file names.
+space for the array of matches lengths and for the array of subject
+IDs.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
   for _, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
-	  matchLengths := make([]int,n)
-	  subjectID := make([]int,n)
-	  sID := make(map[int]string)
+	  lengths :=make([]int,n)
+	  matches.matchLengths = append(matches.matchLengths, lengths)
+	  matches.subjectID = append(matches.matchLengths, lengths)
 
-	  for j := 0 ; j < n; j++ {
-		  matchLengths[j] = -1
-		  subjectID[j] = -1
-	  }
+	  // for j := 0 ; j < n; j++ {
+	  // 	matches.matchLengths[j] = -1
+	  // 	matches.subjectID[j] = -1
+	  // }
 	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
   }
   f.Close()
@@ -441,18 +534,12 @@ file.
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
-	  //<<Map subject files to ID>>
 	  //<<Read subject files, Ch. \ref{ch:prep}>>
   }
-  	  //<<Write matches to file, Ch. \ref{ch:prep}>>
-
 #+end_src
 #+begin_export latex
 We create a map of the subject files.
 #+end_export
-#+begin_src go <<Map subject files to ID>>=
-  sID[j] = subject
-#+end_src
 #+begin_export latex
 We first read the subject files, then we aggregate smaller sequences
 or contigs until they reach the maximum subject length, \ty{msl},
@@ -499,7 +586,7 @@ We update the array of matches lengths and subjects IDs.
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
 
-  mat.UpdateMatchLengths(q, e, j, matchLengths, subjectID)
+  mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j], matches.subjectID[j])
 #+end_src
 #+begin_export latex
 We import the mat package.
@@ -508,10 +595,75 @@ We import the mat package.
   "github.com/evolbioinf/alfy/mat"
 #+end_src
 #+begin_export latex
+We reach the end of the goroutine. In the closer we wait until all
+working goroutines have finished and then close the channel.
+#+end_export
+#+begin_src go <<Streaming closer, Ch. \ref{ch:prep}>>=
+  go func() {
+	  wg.Wait()
+	  close(matchesSets)
+  }()
+#+end_src
+#+begin_export latex
+In the iterator we pick the matches structure with the results from
+the channel. The results from the matches lengths and the subject IDs
+are stored in a master set of lengths.
+#+end_export
+#+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
+  matchLengths := make([][]int,0)
+  subjectIDs := make([][]int,0)
+
+  for _, qs := range querySeqs {
+	  ml := make([]int, len(qs.Data()))
+	  matchLengths = append(matchLengths, ml)
+	  subjectIDs = append(subjectIDs,ml)
+  }
+
+  for match := range matchesSets {
+	  //<<Store match lengths, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+We store the longer of the matches for each position and the
+corresponding subject ID.
+#+end_export
+#+begin_src go <<Store match lengths, Ch. \ref{ch:prep}>>=
+  for i, lengths := range match.matchLengths {
+	  for j, length := range lengths {
+		  if matchLengths[i][j] < length {
+			  matchLengths[i][j] = length
+			  subjectIDs[i][j] = match.subjectID[i][j]
+		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+We then merge the matches from the several routines. We go through
+every position and note down the length of the longest match.
+#+end_export
+#+begin_src go <<Merge matches results, Ch. \ref{ch:prep}>>=
+  for i, ml := range matchLengths {
+	  l := 0
+	  id := 0
+	  for j := 0; j < len(ml); j++ {
+		  if ml[j] > l {
+			  l = ml[j]
+			  id = subjectIDs[i][j]
+		  }
+		  ml[j] = l
+		  subjectIDs[i][j] = id
+		  l--
+	  }
+  }
+#+end_src
+#+begin_export latex
 After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them out to file.
 #+end_export
 #+begin_src go <<Write matches to file, Ch. \ref{ch:prep}>>=
+  for i, querySeq := range querySeqs {
+	  ml := matchLengths[i]
+	  id := subjectIDs[i]
   f, err = os.Create(querySeq.Header() + ".txt")
   util.Check(err)
 
@@ -523,6 +675,7 @@ matches lengths and IDs we write them out to file.
   util.Check(err)
 
   f.Close()
+  }
 #+end_src
 #+begin_export latex
 We import the bufio writer.
@@ -553,7 +706,7 @@ subject IDs previously contructed and if its the first time it appears
 we append it to the list of key-values to print.
 #+end_export
 #+begin_src go <<Check if key/value exists, Ch. \ref{ch:prep}>>=
-  for _, ID := range subjectID {
+  for _, ID := range id {
 	  if seq, exists := sID[ID]; exists {
 		  if !seen[seq] {
 			  pair = append(pair,
@@ -590,10 +743,10 @@ and for each position print the corresponding matche length and the
 subject ID.
 #+end_export
 #+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
-  for j := 0; j < len(matchLengths); j++ {
+  for j := 0; j < len(ml); j++ {
 	  fmt.Fprintf(wr, "%d\t%d\n",
-		  matchLengths[j],
-		  subjectID[j])
+		  ml[j],
+		  id[j])
   }
 #+end_src
 #+begin_export latex
