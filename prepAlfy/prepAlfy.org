@@ -45,7 +45,7 @@ util.PrepareErrorMessages("prepAlfy")
 #+end_src
 #+begin_export latex
 We declare options for printing the version, picking the query and
-subject directories and the number of threads. By default this will
+subject directories and the number of threads. By default this
 corresponds to the number of logical CPUs available on the system.
 #+end_export
 #+begin_src go <<Declare options, Ch. \ref{ch:prep}>>=
@@ -80,7 +80,8 @@ We import clio.
 #+end_src
 #+begin_export latex
 We parse the options and respond to the version option, -v, the two
-directory options, \ty{-q}, \ty{-s} and the number of threads \ty{-T}.
+directory options, \ty{-q} and \ty{-s}, and the number of threads,
+\ty{-T}.
 #+end_export
 #+begin_src go <<Parse options, Ch. \ref{ch:prep}>>=
   flag.Parse()
@@ -257,12 +258,15 @@ We import filepath.
   "path/filepath"
 #+end_src
 #+begin_export latex
-We store the names of the queries in slices and sort them.
+We store the names of the queries in slices and sort them. Then we
+store the subject IDs.
 #+end_export
 #+begin_src go <<Sort names of queries and subjects, Ch. \ref{ch:prep}>>=
   var queryNames, subjectNames []string
+  var subjectIDs []int
   //<<Sort names of queries, Ch. \ref{ch:prep}>>
   //<<Sort names of subjects, Ch. \ref{ch:prep}>>
+  //<<Store subject IDs, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
 First we sort the queries.
@@ -287,6 +291,14 @@ Then we do the same for the subjects.
 	  subjectNames = append(subjectNames, subject)
   }
   sort.Strings(subjectNames)
+#+end_src
+#+begin_export latex
+The subject IDs are simply the indexes in the slice of subject names.
+#+end_export
+#+begin_src go <<Store subject IDs, Ch. \ref{ch:prep}>>=
+  for i, _ := range subjectNames {
+	  subjectIDs = append(subjectIDs, i)
+  }
 #+end_src
 #+begin_export latex
 We then check if there is an overlap in the queries and subject
@@ -448,13 +460,15 @@ goroutine for streaming. After the loop we construct the closer and
 the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+end_export
 #+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
-  var matches Matches
   subjectNameSets := make([][]string, 0)
+  subjectIDsets := make([][]int, 0)
   //<<Split subject filenames, Ch. \ref{ch:prep}>>
   matchesSets := make(chan Matches)
   var wg sync.WaitGroup
-  for _, subjectNames := range subjectNameSets{
+  for i, subjectNames := range subjectNameSets{
+	  subjectIDs := subjectIDsets[i]
 	  wg.Add(1)
+	  var matches Matches
 	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
   }
   //<<Streaming closer, Ch. \ref{ch:prep}>>
@@ -480,6 +494,8 @@ length of the slice of subject names.
   for start < n {
 	  subjectNameSets = append(subjectNameSets,
 		  subjectNames[start:end])
+	  subjectIDsets = append(subjectIDsets,
+		  subjectIDs[start:end])
 	  start = end
 	  end += length
 	  if end > n {
@@ -494,17 +510,17 @@ We import math.
 "math"
 #+end_src
 #+begin_export latex
-We pass the current set of subject names to the goroutine. Inside it
-we defer it closure. We also declare and allocate space for holding
-the matches lengths and subject IDs, stream the query against the
-subjects and pass the matches along the channel.
+We pass the current set of subject names and subject IDs to the
+goroutine. Inside it we defer it closure. We also declare and allocate
+space for holding the matches lengths and subject IDs, stream the
+query against the subjects and pass the matches along the channel.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
-  go func(subjectNames []string){
+  go func(subjectNames []string, subjectIDs []int){
 	  defer wg.Done()
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
-  }(subjectNames)
+  }(subjectNames, subjectIDs)
 #+end_src
 #+begin_export latex
 Then we iterate over the range of existing sequences and allocate
@@ -585,7 +601,8 @@ We update the array of matches lengths and subjects IDs.
 #+end_export
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
-  mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j],
+  mat.UpdateMatchLengths(q, e, subjectIDs[j],
+	  matches.matchLengths[j],
 	  matches.subjectID[j])
 #+end_src
 #+begin_export latex

@@ -92,6 +92,7 @@ func main() {
 		os.Exit(1)
 	}
 	var queryNames, subjectNames []string
+	var subjectIDs []int
 	for query := range queries {
 		queryNames = append(queryNames, query)
 	}
@@ -100,6 +101,9 @@ func main() {
 		subjectNames = append(subjectNames, subject)
 	}
 	sort.Strings(subjectNames)
+	for i, _ := range subjectNames {
+		subjectIDs = append(subjectIDs, i)
+	}
 	for _, query := range queryNames {
 		if subjects[query] {
 			m := "Found %s%s and %s%s." +
@@ -149,8 +153,8 @@ func main() {
 			d = bytes.ToUpper(revQuerySeqs[i].Data())
 			revQuerySeqs[i] = fasta.NewSequence(h, d)
 		}
-		var matches Matches
 		subjectNameSets := make([][]string, 0)
+		subjectIDsets := make([][]int, 0)
 		n := len(subjectNames)
 		length := int(math.Ceil(float64(n) / float64(*optT)))
 		start := 0
@@ -158,6 +162,8 @@ func main() {
 		for start < n {
 			subjectNameSets = append(subjectNameSets,
 				subjectNames[start:end])
+			subjectIDsets = append(subjectIDsets,
+				subjectIDs[start:end])
 			start = end
 			end += length
 			if end > n {
@@ -166,9 +172,11 @@ func main() {
 		}
 		matchesSets := make(chan Matches)
 		var wg sync.WaitGroup
-		for _, subjectNames := range subjectNameSets {
+		for i, subjectNames := range subjectNameSets {
+			subjectIDs := subjectIDsets[i]
 			wg.Add(1)
-			go func(subjectNames []string) {
+			var matches Matches
+			go func(subjectNames []string, subjectIDs []int) {
 				defer wg.Done()
 				for _, querySeq := range querySeqs {
 					n := len(querySeq.Data())
@@ -197,14 +205,15 @@ func main() {
 							d = bytes.ToUpper(d)
 							e := esa.MakeEsa(d)
 							q := querySeq.Data()
-							mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j],
+							mat.UpdateMatchLengths(q, e, subjectIDs[j],
+								matches.matchLengths[j],
 								matches.subjectID[j])
 						}
 					}
 				}
 				f.Close()
 				matchesSets <- matches
-			}(subjectNames)
+			}(subjectNames, subjectIDs)
 		}
 		go func() {
 			wg.Wait()
