@@ -46,9 +46,9 @@ average match length is roughly $\ell(\ell-1)/2/\ell\approx\ell/2$.
 Up to version v1.6 Alfy was written in C and had issues that we wish
 to address in a re-implementation in Go. The first issue is the
 dependence of Alfy on the deep-shallow algorithm for constructing
-suffix arrays~\cite{man02:eng}. This algorithm has been superseded by
-more efficient alternatives, we shall use the divsufsort
-algorithm~\cite{fis17:dis}.
+suffix arrays~\cite{man02:eng}. This algorithm has meanwhile been
+superseded by more efficient alternatives. Here we shall use the
+divsufsort algorithm~\cite{fis17:dis}.
 
 A more fundamental problem with Alfy v1.6 is that its results, though
 qualitatively useful, are numerically not correct. To see that, let's
@@ -179,8 +179,8 @@ our reimplementation of Alfy reduced to a single query input. This
 procedure is simply iterated to deal with multiple
 queries. Algorithm~\ref{alg:alf} is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
-most significant change is that in Alfy we subject labels in addition
-to match lengths
+most significant change is that in Alfy we keep track of the subject
+labels in addition to match lengths
 
 \begin{algorithm}
 \caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
@@ -230,7 +230,7 @@ $\mbox{su}$.
 
 For a given subject labeled $i$, the matching starts at the first
 position of $q$, $q[1]$, and ends just before the first mismatch at
-$q[\ell+1]$. If $\ell$ is greater than the longest match found so fart
+$q[\ell+1]$. If $\ell$ is greater than the longest match found so far
 at $q[1]$, $\mbox{ml}[1]$ is updated to $\ell$ and $\mbox{su}[1]$ to
 $i$ (lines 4--7). Then the matching start, $j$, skips to the first
 position beyond the terminating mismatch, $j\leftarrow 1+\ell+1$, and
@@ -270,7 +270,7 @@ the subjects.
 
 \subsection{Example}
 We construct two short example queries and subjects each. To get
-matches, we reduce the nucloetide alphabet largely to
+matches, we reduce the nucleotide alphabet largely to
 $\{\ty{A},\ty{T}\}$. Our first query is $q_1=\ty{AAATAATATT}$, or
 second is distinguished by one mutation to an extraneous nucleotide,
 \ty{G}, $q_2=\ty{AAATAGTATT}$. Our subjects are $s_1=\ty{AATTTAAATT}$
