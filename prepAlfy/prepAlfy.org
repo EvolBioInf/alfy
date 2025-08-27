@@ -297,9 +297,9 @@ with a message if we find one.
 \subsection{Write match factors}
 
 We now move on to the calculation of the match factors. This is main
-algorithm of \ty{prepAlfy}. Since subjects sequences may be composed
-by several short contigs, it is more efficient to concatenate shorter
-contigs into a larger sequences. To do so, we first determine the
+algorithm of \ty{prepAlfy}. Since subject sequences may be composed
+of several short contigs, it is more efficient to concatenate shorter
+contigs into one larger sequence. To do so, we first determine the
 maximum subject length. This value will be later using during the
 streaming step where we stream the queries against the subjects. Since
 the maximum length only needs to be calculated once, we do it before
@@ -437,7 +437,7 @@ concurrently stream the query against the sets of subject files. The
 concurrency pattern is based on \ty{sync.WaitGroup}, and is built from
 a channel and a \ty{WaitGroup}, both of which we initialize outside of
 the loop from which the goroutines are started. Inside the loop we
-increament the counter of working goroutines and construct the
+increment the counter of working goroutines and construct the
 goroutine for streaming. After the loop we construct the closer and
 the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+end_export
@@ -510,11 +510,13 @@ space for the array of matches lengths and for the array of subject
 IDs.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
+  println("Allocate space: len(querySeqs): ", len(querySeqs))
   for _, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
 	  lengths :=make([]int,n)
 	  matches.matchLengths = append(matches.matchLengths, lengths)
-	  matches.subjectID = append(matches.matchLengths, lengths)
+	  lengths = make([]int, n)
+	  matches.subjectID = append(matches.subjectID, lengths)
 
 	  // for j := 0 ; j < n; j++ {
 	  // 	matches.matchLengths[j] = -1
@@ -605,7 +607,7 @@ working goroutines have finished and then close the channel.
   }()
 #+end_src
 #+begin_export latex
-In the iterator we pick the matches structure with the results from
+In the iterator we pack the matches structure with the results from
 the channel. The results from the matches lengths and the subject IDs
 are stored in a master set of lengths.
 #+end_export
@@ -614,12 +616,24 @@ are stored in a master set of lengths.
   subjectIDs := make([][]int,0)
 
   for _, qs := range querySeqs {
-	  ml := make([]int, len(qs.Data()))
+	  n := len(qs.Data())
+	  println("n: ", n)
+	  ml := make([]int, n)
 	  matchLengths = append(matchLengths, ml)
+	  ml = make([]int, n)
 	  subjectIDs = append(subjectIDs,ml)
   }
 
   for match := range matchesSets {
+	  println("len(match.matchLengths):", len(match.matchLengths))
+	  println("len(match.matchLengths[0]:", len(match.matchLengths[0]))
+	  println("len(match.matchLengths[1]:", len(match.matchLengths[1]))
+	  for i := 0; i < len(match.matchLengths); i++ {
+		  println("i: ", i)
+		  for j := 0; j < len(match.matchLengths[i]); j++ {
+			  println(match.matchLengths[i][j])
+		  }
+	  }
 	  //<<Store match lengths, Ch. \ref{ch:prep}>>
   }
 #+end_src

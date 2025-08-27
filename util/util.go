@@ -2,7 +2,9 @@
 package util
 
 import (
+	"fmt"
 	"github.com/evolbioinf/clio"
+	"log"
 	"os"
 )
 
@@ -22,4 +24,18 @@ func Version(name string) {
 	clio.PrintInfo(name, version, date,
 		authors, emails, license)
 	os.Exit(0)
+}
+
+// The function Check checks for errors. If yes, it prints them and exits.
+func Check(e error) {
+	if e != nil {
+		log.Fatal(e)
+	}
+}
+
+// PrepareErrorMessages takes as argument the program name and sets this as the prefix for the error messages from the log package.
+func PrepareErrorMessages(name string) {
+	m := fmt.Sprintf("%s - ", name)
+	log.SetPrefix(m)
+	log.SetFlags(0)
 }
