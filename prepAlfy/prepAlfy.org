@@ -18,7 +18,7 @@ structures, functions and the logic of the main function.
   import (
 	  //<<Imports, Ch. \ref{ch:prep}>>
   )
-  //<<Structures, Ch. \ref{ch:prep}>>
+  //<<Types, Ch. \ref{ch:prep}>>
   //<<Functions, Ch. \ref{ch:prep}>>
   func main() {	 
 	  //<<Main function, Ch. \ref{ch:prep}>>	
@@ -63,14 +63,13 @@ We import flag and runtime.
   "runtime"
 #+end_src
 #+begin_export latex
-The usage constis of three parts, the actual usage message, an
+The usage consists of three parts, the actual usage message, an
 explanation of the purpose of \ty{prepAlfy}, and an example command.
 #+end_export
 #+begin_src go <<Set usage, Ch. \ref{ch:prep}>>=
   u :="prepAlfy -q <queryDir> -s <subjectDir>"
   p :="Prepare alfy input"
   e :="prepAlfy -q queries/ -s subjects/"
-
   clio.Usage(u,p,e)
 #+end_src
 #+begin_export latex
@@ -137,10 +136,10 @@ set.
   }
 #+end_src
 #+begin_export latex
-If the user set a negative number of threads, we throw a fatal error.
+If the user set fewer than one thread, we throw a fatal error.
 #+end_export
 #+begin_src go <<Respond to \ty{-T}, Ch. \ref{ch:prep}>>=
-  if *optT < 0 {
+  if *optT <= 0 {
 	  log.Fatalf("Can't set %d threads.", *optT)
   }
 #+end_src
@@ -171,15 +170,24 @@ readDir. If either of the directories are empty, we exit and warn the
 user.
 #+end_export
 #+begin_src go <<Read names of queries and subjects, Ch. \ref{ch:prep}>>=
+  //<<Read names of queries, Ch. \ref{ch:prep}>>
+  //<<Read names of subjects, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+We start by reading the query directory.
+#+end_export
+#+begin_src go <<Read names of queries, Ch. \ref{ch:prep}>>=
   queries := readDir(*optQ)
-
   if len(queries) == 0 {
 	  fmt.Fprintf(os.Stderr, "%s is empty\n", *optQ)
 	  os.Exit(1)
   }
-
+#+end_src
+#+begin_export latex
+We then read the subject directory.
+#+end_export
+#+begin_src go <<Read names of subjects, Ch. \ref{ch:prep}>>=
   subjects := readDir(*optS)
-
   if len(subjects) == 0 {
 	  fmt.Fprintf(os.Stderr, "%s is empty\n", *optS)
 	  os.Exit(1)
@@ -195,7 +203,6 @@ directory. We check each directory entry before storing its name.
 	  dirEntries, err := os.ReadDir(dir)
 	  util.Check(err)
 	  names := make(map[string]bool)
-
 	  for _, dirEntry := range dirEntries {
 		  //<<Check directory entry, Ch. \ref{ch:prep}>>
 		  names[dirEntry.Name()] = true
@@ -232,7 +239,6 @@ none, we skip it and warn the user.
 #+end_export
 #+begin_src go <<Check if entry is nucleotide FASTA, Ch. \ref{ch:prep}>>=
   ext := filepath.Ext(dirEntry.Name())
-
   if ext != ".fasta" && ext != ".fna" &&
 	  ext != ".ffn" && ext != ".fnr" &&
 	  ext != ".fa" {
@@ -251,28 +257,36 @@ We import filepath.
   "path/filepath"
 #+end_src
 #+begin_export latex
-We store the names of the neighbors and targets in slices and sort them.
+We store the names of the queries in slices and sort them.
 #+end_export
 #+begin_src go <<Sort names of queries and subjects, Ch. \ref{ch:prep}>>=
   var queryNames, subjectNames []string
-
+  //<<Sort names of queries, Ch. \ref{ch:prep}>>
+  //<<Sort names of subjects, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+First we sort the queries.
+#+end_export
+#+begin_src go <<Sort names of queries, Ch. \ref{ch:prep}>>=
   for query := range queries {
 	  queryNames = append(queryNames, query)
   }
-
   sort.Strings(queryNames)
-
-  for subject := range subjects {
-	  subjectNames = append(subjectNames, subject)
-  }
-
-  sort.Strings(subjectNames)
 #+end_src
 #+begin_export latex
 We import sort.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "sort"
+#+end_src
+#+begin_export latex
+Then we do the same for the subjects.
+#+end_export
+#+begin_src go <<Sort names of subjects, Ch. \ref{ch:prep}>>=
+  for subject := range subjects {
+	  subjectNames = append(subjectNames, subject)
+  }
+  sort.Strings(subjectNames)
 #+end_src
 #+begin_export latex
 We then check if there is an overlap in the queries and subject
@@ -286,7 +300,6 @@ with a message if we find one.
 			  "Please ensure queries and " +
 			  "subjects do not " +
 			  "overlap."
-
 		  fmt.Fprintf(os.Stderr, m, *optQ, query,
 			  *optS, query)
 		  os.Exit(1)
@@ -328,10 +341,8 @@ in the subject ID with the corresponding subject filename.
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
   sID := make(map[int]string)
-
   for i, subject := range subjectNames {
 	  sID[i] = subject
-
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
@@ -344,7 +355,6 @@ We use a scanner to iterate over the sequences in the current neighbor file.
 #+end_export
 #+begin_src go <<Iterate over subjects, Ch. \ref{ch:prep}>>=
   sc := fasta.NewScanner(f)
-
   for sc.ScanSequence() {
 	  l := len(sc.Sequence().Data())
 	  if l > msl {
@@ -382,11 +392,8 @@ complement of the sequence. We close the file at the end.
   p := *optQ + "/" + query
   f, err := os.Open(p)
   util.Check(err)
-
   var querySeqs, revQuerySeqs []*fasta.Sequence
-
   sc := fasta.NewScanner(f)
-
   for sc.ScanSequence() {
 	  s := sc.Sequence()
 	  querySeqs = append(querySeqs, s)
@@ -406,7 +413,6 @@ in the forward and in the reverse strand.
 	  h := querySeq.Header()
 	  d := bytes.ToUpper(querySeq.Data())
 	  querySeqs[i] = fasta.NewSequence(h, d)
-
 	  h = revQuerySeqs[i].Header()
 	  d = bytes.ToUpper(revQuerySeqs[i].Data())
 	  revQuerySeqs[i] = fasta.NewSequence(h, d)
@@ -424,7 +430,7 @@ of the subjects across goroutines. For this we start by constructing a
 structure to hold both the match lengths and the subjects ID. This
 ensures both values are passed on together.
 #+end_export
-#+begin_src go <<Structures, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Types, Ch. \ref{ch:prep}>>=
   type Matches struct {
 	  matchLengths [][]int
 	  subjectID [][]int
@@ -444,12 +450,9 @@ the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
   var matches Matches
   subjectNameSets := make([][]string, 0)
-
   //<<Split subject filenames, Ch. \ref{ch:prep}>>
   matchesSets := make(chan Matches)
-
   var wg sync.WaitGroup
-
   for _, subjectNames := range subjectNameSets{
 	  wg.Add(1)
 	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
@@ -474,7 +477,6 @@ length of the slice of subject names.
   length := int(math.Ceil(float64(n)/float64(*optT)))
   start := 0
   end := length
-
   for start < n {
 	  subjectNameSets = append(subjectNameSets,
 		  subjectNames[start:end])
@@ -510,18 +512,15 @@ space for the array of matches lengths and for the array of subject
 IDs.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
-  println("Allocate space: len(querySeqs): ", len(querySeqs))
   for _, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
 	  lengths :=make([]int,n)
-	  matches.matchLengths = append(matches.matchLengths, lengths)
+	  matches.matchLengths =
+		  append(matches.matchLengths,lengths)
+	  n = len(querySeq.Data())
 	  lengths = make([]int, n)
-	  matches.subjectID = append(matches.subjectID, lengths)
-
-	  // for j := 0 ; j < n; j++ {
-	  // 	matches.matchLengths[j] = -1
-	  // 	matches.subjectID[j] = -1
-	  // }
+	  matches.subjectID =
+		  append(matches.subjectID,lengths)
 	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
   }
   f.Close()
@@ -557,15 +556,14 @@ of the subject and calculate the matches lengths.
 	  s := sc.Sequence()
 	  d := s.Data()
 	  h := []byte(s.Header())
-
 	  for len(d) < msl && sc.ScanSequence() {
 		  s = sc.Sequence()
 		  h = append(h, '|')
-		  h = append(h, []byte(s.Header())...)
+	 	  h = append(h, []byte(s.Header())...)
 		  d = append(d, s.Data()...)
 	  }
 	  //<<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>
-  	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
+	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -587,8 +585,8 @@ We update the array of matches lengths and subjects IDs.
 #+end_export
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
-
-  mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j], matches.subjectID[j])
+  mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j],
+	  matches.subjectID[j])
 #+end_src
 #+begin_export latex
 We import the mat package.
@@ -613,29 +611,22 @@ are stored in a master set of lengths.
 #+end_export
 #+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
   matchLengths := make([][]int,0)
-  subjectIDs := make([][]int,0)
-
-  for _, qs := range querySeqs {
-	  n := len(qs.Data())
-	  println("n: ", n)
-	  ml := make([]int, n)
-	  matchLengths = append(matchLengths, ml)
-	  ml = make([]int, n)
-	  subjectIDs = append(subjectIDs,ml)
-  }
-
-  for match := range matchesSets {
-	  println("len(match.matchLengths):", len(match.matchLengths))
-	  println("len(match.matchLengths[0]:", len(match.matchLengths[0]))
-	  println("len(match.matchLengths[1]:", len(match.matchLengths[1]))
-	  for i := 0; i < len(match.matchLengths); i++ {
-		  println("i: ", i)
+    subjectIDs := make([][]int,0)
+    for _, qs := range querySeqs {
+	    n := len(qs.Data())
+	    ml := make([]int, n)
+	    matchLengths = append(matchLengths, ml)
+	    n = len(qs.Data())
+	    ml = make([]int, n)
+	    subjectIDs = append(subjectIDs,ml)
+    }
+    for match := range matchesSets {
+	    for i := 0; i < len(match.matchLengths); i++ {
 		  for j := 0; j < len(match.matchLengths[i]); j++ {
-			  println(match.matchLengths[i][j])
 		  }
-	  }
-	  //<<Store match lengths, Ch. \ref{ch:prep}>>
-  }
+	    }
+	    <<Store match lengths, Ch. \ref{ch:prep}>>
+    }
 #+end_src
 #+begin_export latex
 We store the longer of the matches for each position and the
@@ -644,6 +635,7 @@ corresponding subject ID.
 #+begin_src go <<Store match lengths, Ch. \ref{ch:prep}>>=
   for i, lengths := range match.matchLengths {
 	  for j, length := range lengths {
+		  println("range lengths: ",j, length)
 		  if matchLengths[i][j] < length {
 			  matchLengths[i][j] = length
 			  subjectIDs[i][j] = match.subjectID[i][j]
@@ -680,9 +672,7 @@ matches lengths and IDs we write them out to file.
 	  id := subjectIDs[i]
   f, err = os.Create(querySeq.Header() + ".txt")
   util.Check(err)
-
   wr := bufio.NewWriter(f)
-
   //<<Write output file header, Ch. \ref{ch:prep}>>
   //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
   err = wr.Flush()
@@ -710,7 +700,6 @@ line.
 #+begin_src go <<Write output file header, Ch. \ref{ch:prep}>>=
   var pair []string
   seen := make(map[string]bool)
-
   //<<Check if key/value exists, Ch. \ref{ch:prep}>>
   //<<Write header, Ch. \ref{ch:prep}>>
 #+end_src
@@ -724,8 +713,7 @@ we append it to the list of key-values to print.
 	  if seq, exists := sID[ID]; exists {
 		  if !seen[seq] {
 			  pair = append(pair,
-				  fmt.Sprintf("%d=%s",
-					  ID,seq))
+				  fmt.Sprintf("%d=%s",ID,seq))
 			  seen[seq] = true
 		  }
 	  }
@@ -776,7 +764,6 @@ testing logic.
   import(
 	  //<<Testing imports, Ch. \ref{ch:prep}>>
   )
-
   func TestPrepAlfy(t *testing.T) {
 	  //<<Testing, Ch. \ref{ch:prep}>>
   }
@@ -792,7 +779,6 @@ We construct a set of tests.
 #+end_export
 #+begin_src go <<Testing, Ch. \ref{ch:prep}>>=
   var tests []*exec.Cmd
-
   //<<Construct tests, Ch. \ref{ch:prep}>>
   //<<Run test, Ch. \ref{ch:prep}>>
 #+end_src
@@ -809,7 +795,6 @@ We test the program by setting the queries and the subjects.
   p := "./prepAlfy"
   q := "query"
   s := "subject"
-
   test := exec.Command(p, "-q", q, "-s", s)
   tests = append(tests, test)
 #+end_src
@@ -822,18 +807,15 @@ with the one we want stored in the file r1.txt.
   if err != nil {
 	  t.Error(err)
   }
-
   get, err := os.ReadFile("q1.txt")
   if err != nil{
 	  t.Error(err)
 	  }
-
   f := "r" + strconv.Itoa(1)+".txt"
   want, err := os.ReadFile(f)
   if err != nil {
 	  t.Error(err)
   }
-
   if !bytes.Equal(get,want) {
 	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
   }

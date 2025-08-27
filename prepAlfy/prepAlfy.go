@@ -29,7 +29,6 @@ func readDir(dir string) map[string]bool {
 	dirEntries, err := os.ReadDir(dir)
 	util.Check(err)
 	names := make(map[string]bool)
-
 	for _, dirEntry := range dirEntries {
 		if dirEntry.IsDir() {
 			p := dir + "/" + dirEntry.Name()
@@ -38,7 +37,6 @@ func readDir(dir string) map[string]bool {
 			continue
 		}
 		ext := filepath.Ext(dirEntry.Name())
-
 		if ext != ".fasta" && ext != ".fna" &&
 			ext != ".ffn" && ext != ".fnr" &&
 			ext != ".fa" {
@@ -63,7 +61,6 @@ func main() {
 	u := "prepAlfy -q <queryDir> -s <subjectDir>"
 	p := "Prepare alfy input"
 	e := "prepAlfy -q queries/ -s subjects/"
-
 	clio.Usage(u, p, e)
 	flag.Parse()
 	if *optV {
@@ -81,34 +78,27 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", m)
 		os.Exit(1)
 	}
-	if *optT < 0 {
+	if *optT <= 0 {
 		log.Fatalf("Can't set %d threads.", *optT)
 	}
 	queries := readDir(*optQ)
-
 	if len(queries) == 0 {
 		fmt.Fprintf(os.Stderr, "%s is empty\n", *optQ)
 		os.Exit(1)
 	}
-
 	subjects := readDir(*optS)
-
 	if len(subjects) == 0 {
 		fmt.Fprintf(os.Stderr, "%s is empty\n", *optS)
 		os.Exit(1)
 	}
 	var queryNames, subjectNames []string
-
 	for query := range queries {
 		queryNames = append(queryNames, query)
 	}
-
 	sort.Strings(queryNames)
-
 	for subject := range subjects {
 		subjectNames = append(subjectNames, subject)
 	}
-
 	sort.Strings(subjectNames)
 	for _, query := range queryNames {
 		if subjects[query] {
@@ -116,7 +106,6 @@ func main() {
 				"Please ensure queries and " +
 				"subjects do not " +
 				"overlap."
-
 			fmt.Fprintf(os.Stderr, m, *optQ, query,
 				*optS, query)
 			os.Exit(1)
@@ -124,15 +113,12 @@ func main() {
 	}
 	msl := -1
 	sID := make(map[int]string)
-
 	for i, subject := range subjectNames {
 		sID[i] = subject
-
 		p := *optS + "/" + subject
 		f, err := os.Open(p)
 		util.Check(err)
 		sc := fasta.NewScanner(f)
-
 		for sc.ScanSequence() {
 			l := len(sc.Sequence().Data())
 			if l > msl {
@@ -145,11 +131,8 @@ func main() {
 		p := *optQ + "/" + query
 		f, err := os.Open(p)
 		util.Check(err)
-
 		var querySeqs, revQuerySeqs []*fasta.Sequence
-
 		sc := fasta.NewScanner(f)
-
 		for sc.ScanSequence() {
 			s := sc.Sequence()
 			querySeqs = append(querySeqs, s)
@@ -162,19 +145,16 @@ func main() {
 			h := querySeq.Header()
 			d := bytes.ToUpper(querySeq.Data())
 			querySeqs[i] = fasta.NewSequence(h, d)
-
 			h = revQuerySeqs[i].Header()
 			d = bytes.ToUpper(revQuerySeqs[i].Data())
 			revQuerySeqs[i] = fasta.NewSequence(h, d)
 		}
 		var matches Matches
 		subjectNameSets := make([][]string, 0)
-
 		n := len(subjectNames)
 		length := int(math.Ceil(float64(n) / float64(*optT)))
 		start := 0
 		end := length
-
 		for start < n {
 			subjectNameSets = append(subjectNameSets,
 				subjectNames[start:end])
@@ -185,25 +165,20 @@ func main() {
 			}
 		}
 		matchesSets := make(chan Matches)
-
 		var wg sync.WaitGroup
-
 		for _, subjectNames := range subjectNameSets {
 			wg.Add(1)
 			go func(subjectNames []string) {
 				defer wg.Done()
-				println("Allocate space: len(querySeqs): ", len(querySeqs))
 				for _, querySeq := range querySeqs {
 					n := len(querySeq.Data())
 					lengths := make([]int, n)
-					matches.matchLengths = append(matches.matchLengths, lengths)
+					matches.matchLengths =
+						append(matches.matchLengths, lengths)
+					n = len(querySeq.Data())
 					lengths = make([]int, n)
-					matches.subjectID = append(matches.subjectID, lengths)
-
-					// for j := 0 ; j < n; j++ {
-					//    matches.matchLengths[j] = -1
-					//    matches.subjectID[j] = -1
-					// }
+					matches.subjectID =
+						append(matches.subjectID, lengths)
 					for j, subject := range subjectNames {
 						p := *optS + "/" + subject
 						f, err := os.Open(p)
@@ -213,7 +188,6 @@ func main() {
 							s := sc.Sequence()
 							d := s.Data()
 							h := []byte(s.Header())
-
 							for len(d) < msl && sc.ScanSequence() {
 								s = sc.Sequence()
 								h = append(h, '|')
@@ -223,8 +197,8 @@ func main() {
 							d = bytes.ToUpper(d)
 							e := esa.MakeEsa(d)
 							q := querySeq.Data()
-
-							mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j], matches.subjectID[j])
+							mat.UpdateMatchLengths(q, e, j, matches.matchLengths[j],
+								matches.subjectID[j])
 						}
 					}
 				}
@@ -238,28 +212,22 @@ func main() {
 		}()
 		matchLengths := make([][]int, 0)
 		subjectIDs := make([][]int, 0)
-
 		for _, qs := range querySeqs {
 			n := len(qs.Data())
-			println("n: ", n)
 			ml := make([]int, n)
 			matchLengths = append(matchLengths, ml)
+			n = len(qs.Data())
 			ml = make([]int, n)
 			subjectIDs = append(subjectIDs, ml)
 		}
-
 		for match := range matchesSets {
-			println("len(match.matchLengths):", len(match.matchLengths))
-			println("len(match.matchLengths[0]:", len(match.matchLengths[0]))
-			println("len(match.matchLengths[1]:", len(match.matchLengths[1]))
 			for i := 0; i < len(match.matchLengths); i++ {
-				println("i: ", i)
 				for j := 0; j < len(match.matchLengths[i]); j++ {
-					println(match.matchLengths[i][j])
 				}
 			}
 			for i, lengths := range match.matchLengths {
 				for j, length := range lengths {
+					println("range lengths: ", j, length)
 					if matchLengths[i][j] < length {
 						matchLengths[i][j] = length
 						subjectIDs[i][j] = match.subjectID[i][j]
@@ -285,18 +253,14 @@ func main() {
 			id := subjectIDs[i]
 			f, err = os.Create(querySeq.Header() + ".txt")
 			util.Check(err)
-
 			wr := bufio.NewWriter(f)
-
 			var pair []string
 			seen := make(map[string]bool)
-
 			for _, ID := range id {
 				if seq, exists := sID[ID]; exists {
 					if !seen[seq] {
 						pair = append(pair,
-							fmt.Sprintf("%d=%s",
-								ID, seq))
+							fmt.Sprintf("%d=%s", ID, seq))
 						seen[seq] = true
 					}
 				}
