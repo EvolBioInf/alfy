@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
-	"strconv"
 	"testing"
 )
 
@@ -15,16 +14,20 @@ func TestPrepAlfy(t *testing.T) {
 	s := "subject"
 	test := exec.Command(p, "-q", q, "-s", s)
 	tests = append(tests, test)
-	get, err := test.Output()
-	if err != nil {
-		t.Error(err)
-	}
-	f := "r" + strconv.Itoa(1) + ".txt"
-	want, err := os.ReadFile(f)
-	if err != nil {
-		t.Error(err)
-	}
-	if !bytes.Equal(get, want) {
-		t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
+	test = exec.Command(p, "-q", q, "-s", s, "-t", "1")
+	tests = append(tests, test)
+	for _, test := range tests {
+		get, err := test.Output()
+		if err != nil {
+			t.Error(err)
+		}
+		f := "r1.txt"
+		want, err := os.ReadFile(f)
+		if err != nil {
+			t.Error(err)
+		}
+		if !bytes.Equal(get, want) {
+			t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
+		}
 	}
 }

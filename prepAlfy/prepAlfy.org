@@ -794,12 +794,14 @@ We import testing.
   "testing"
 #+end_src
 #+begin_export latex
-We construct a set of tests.
+We construct a set of tests and iterate over them.
 #+end_export
 #+begin_src go <<Testing, Ch. \ref{ch:prep}>>=
   var tests []*exec.Cmd
-  //<<Construct tests, Ch. \ref{ch:prep}>>
-  //<<Run test, Ch. \ref{ch:prep}>>
+	  //<<Construct tests, Ch. \ref{ch:prep}>>
+  for _, test := range tests {
+	  //<<Run test, Ch. \ref{ch:prep}>>
+  }
 #+end_src
 #+begin_export latex
 We import exec.
@@ -808,7 +810,8 @@ We import exec.
 "os/exec"
 #+end_src
 #+begin_export latex
-We test the program by setting the queries and the subjects.
+In the first test, we test the program with the default settings. For
+that we set the queries and the subjects.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
   p := "./prepAlfy"
@@ -818,28 +821,47 @@ We test the program by setting the queries and the subjects.
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
-We run the test and compare the result from the first query sequence
-with the one we want stored in the file r1.txt.
+In a second test, we evaluate the number of threads by using a single
+thread.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
+  test = exec.Command(p, "-q", q, "-s", s, "-t", "1")
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+We run a test and compare the results with the one we want stored in
+the file r1.txt.
 #+end_export
 #+begin_src go <<Run test, Ch. \ref{ch:prep}>>=
-  get, err := test.Output()
-  if err != nil{
-	  t.Error(err)
-	  }
-  f := "r" + strconv.Itoa(1)+".txt"
-  want, err := os.ReadFile(f)
-  if err != nil {
-	  t.Error(err)
-  }
+  //<<Testing read output, Ch. \ref{ch:prep}>>
+  //<<Testing read want, Ch. \ref{ch:prep}>>
   if !bytes.Equal(get,want) {
 	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
   }
 #+end_src
 #+begin_export latex
-We import os, strconv and bytes.
+We read the output from \ty{prepAlfy}.
+#+end_export
+#+begin_src go <<Testing read output, Ch. \ref{ch:prep}>>=
+  get, err := test.Output()
+  if err != nil {
+	  t.Error(err)
+  }
+#+end_src
+#+begin_export latex
+We read the contents of the r1.txt file.
+#+end_export
+#+begin_src go <<Testing read want, Ch. \ref{ch:prep}>>=
+  f := "r1.txt"
+  want, err := os.ReadFile(f)
+  if err != nil {
+	  t.Error(err)
+  }
+#+end_src
+#+begin_export latex
+We import os and bytes.
 #+end_export
 #+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
   "os"
-  "strconv"
   "bytes"
 #+end_src
