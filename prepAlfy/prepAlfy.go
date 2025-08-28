@@ -81,6 +81,7 @@ func main() {
 	if *optT <= 0 {
 		log.Fatalf("Can't set %d threads.", *optT)
 	}
+	println(*optT)
 	queries := readDir(*optQ)
 	if len(queries) == 0 {
 		fmt.Fprintf(os.Stderr, "%s is empty\n", *optQ)
@@ -236,7 +237,6 @@ func main() {
 			}
 			for i, lengths := range match.matchLengths {
 				for j, length := range lengths {
-					println("range lengths: ", j, length)
 					if matchLengths[i][j] < length {
 						matchLengths[i][j] = length
 						subjectIDs[i][j] = match.subjectID[i][j]
@@ -257,35 +257,32 @@ func main() {
 				l--
 			}
 		}
-		for i, querySeq := range querySeqs {
+		for i := range querySeqs {
 			ml := matchLengths[i]
 			id := subjectIDs[i]
-			f, err = os.Create(querySeq.Header() + ".txt")
-			util.Check(err)
-			wr := bufio.NewWriter(f)
+			wr := bufio.NewWriter(os.Stdout)
 			var pair []string
 			seen := make(map[string]bool)
 			for _, ID := range id {
 				if seq, exists := sID[ID]; exists {
 					if !seen[seq] {
 						pair = append(pair,
-							fmt.Sprintf("%d=%s", ID, seq))
+							fmt.Sprintf("%d=%s", ID+1, seq))
 						seen[seq] = true
 					}
 				}
 			}
+
+			sort.Strings(pair)
 			fmt.Fprintf(wr, "#%s\t", query)
 			fmt.Fprintf(wr, "%s", strings.Join(pair, "\t"))
 			fmt.Fprintf(wr, "\n")
 			for j := 0; j < len(ml); j++ {
 				fmt.Fprintf(wr, "%d\t%d\n",
 					ml[j],
-					id[j])
+					id[j]+1)
 			}
-			err = wr.Flush()
-			util.Check(err)
-
-			f.Close()
+			wr.Flush()
 		}
 	}
 }

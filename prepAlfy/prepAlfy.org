@@ -393,7 +393,7 @@ subjects we update the final matches lengths and write it to a file.
 	  //<<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>
 	  //<<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>
 	  //<<Merge matches results, Ch. \ref{ch:prep}>>
-    	  //<<Write matches to file, Ch. \ref{ch:prep}>>
+    	  //<<Write matches to stdout, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -652,7 +652,6 @@ corresponding subject ID.
 #+begin_src go <<Store match lengths, Ch. \ref{ch:prep}>>=
   for i, lengths := range match.matchLengths {
 	  for j, length := range lengths {
-		  println("range lengths: ",j, length)
 		  if matchLengths[i][j] < length {
 			  matchLengths[i][j] = length
 			  subjectIDs[i][j] = match.subjectID[i][j]
@@ -681,21 +680,16 @@ every position and note down the length of the longest match.
 #+end_src
 #+begin_export latex
 After finishing streaming the subject files and updating the arrays of
-matches lengths and IDs we write them out to file.
+matches lengths and IDs we write them to standard out.
 #+end_export
-#+begin_src go <<Write matches to file, Ch. \ref{ch:prep}>>=
-  for i, querySeq := range querySeqs {
-	  ml := matchLengths[i]
-	  id := subjectIDs[i]
-  f, err = os.Create(querySeq.Header() + ".txt")
-  util.Check(err)
-  wr := bufio.NewWriter(f)
-  //<<Write output file header, Ch. \ref{ch:prep}>>
-  //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
-  err = wr.Flush()
-  util.Check(err)
-
-  f.Close()
+#+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
+   for i := range querySeqs {
+	   ml := matchLengths[i]
+	   id := subjectIDs[i]
+	   wr := bufio.NewWriter(os.Stdout)
+	   //<<Write output header, Ch. \ref{ch:prep}>>
+	   //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
+	   wr.Flush()
   }
 #+end_src
 #+begin_export latex
@@ -714,7 +708,7 @@ We start by constructing the list of existing key/value pairs that are
 contained inside the subjectID array. Then we print it out in a single
 line.
 #+end_export
-#+begin_src go <<Write output file header, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Write output header, Ch. \ref{ch:prep}>>=
   var pair []string
   seen := make(map[string]bool)
   //<<Check if key/value exists, Ch. \ref{ch:prep}>>
@@ -723,18 +717,22 @@ line.
 #+begin_export latex
 For every ID present in the subjectID array, we map it to the map of
 subject IDs previously contructed and if its the first time it appears
-we append it to the list of key-values to print.
+we append it to the list of key-values to print. For more readability
+we convert the subject ID to 1-based list. At the end we sort the
+pairs.
 #+end_export
 #+begin_src go <<Check if key/value exists, Ch. \ref{ch:prep}>>=
   for _, ID := range id {
 	  if seq, exists := sID[ID]; exists {
 		  if !seen[seq] {
 			  pair = append(pair,
-				  fmt.Sprintf("%d=%s",ID,seq))
+				  fmt.Sprintf("%d=%s",ID+1,seq))
 			  seen[seq] = true
 		  }
 	  }
   }
+
+  sort.Strings(pair)
 #+end_src
 #+begin_export latex
 Then we write the header to the file. First we print the hash
@@ -759,13 +757,14 @@ We import strings.
 Then we write the matches and corresponding subject IDs where they
 were found. For this we iterate over the length of the matchesLength,
 and for each position print the corresponding matche length and the
-subject ID.
+subject ID. We also convert the subjectID into a 1-based list to match
+the header.
 #+end_export
 #+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
   for j := 0; j < len(ml); j++ {
 	  fmt.Fprintf(wr, "%d\t%d\n",
 		  ml[j],
-		  id[j])
+		  id[j]+1)
   }
 #+end_src
 #+begin_export latex
