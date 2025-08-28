@@ -513,11 +513,16 @@ We pass the current set of subject names and subject IDs to the
 goroutine. Inside it we defer it closure. We also declare and allocate
 space for holding the matches lengths and subject IDs, stream the
 query against the subjects and pass the matches along the channel.
+The array of matches lengths and subjects IDs is the size of the
+number of query sequences.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
   go func(subjectNames []string, subjectIDs []int){
 	  defer wg.Done()
-  	  var matches Matches
+	  var matches Matches
+	  n :=len(querySeqs)
+	  matches.matchLengths = make([][]int,n)
+	  matches.subjectID = make([][]int,n)
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
   }(subjectNames, subjectIDs)
@@ -525,18 +530,14 @@ query against the subjects and pass the matches along the channel.
 #+begin_export latex
 Then we iterate over the range of existing sequences and allocate
 space for the array of matches lengths and for the array of subject
-IDs.
+IDs for each query, which has a dimension m, the size of the length of
+the query sequences.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
   for i, querySeq := range querySeqs {
-	  n := len(querySeq.Data())
-	  lengths :=make([]int,n)
-	  matches.matchLengths =
-		  append(matches.matchLengths,lengths)
-	  n = len(querySeq.Data())
-	  lengths = make([]int, n)
-	  matches.subjectID =
-		  append(matches.subjectID,lengths)
+	  m := len(querySeq.Data())
+	  matches.matchLengths[i] = make([]int,m)
+	  matches.subjectID[i] = make([]int,m)
 	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
   }
 #+end_src

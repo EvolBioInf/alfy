@@ -178,15 +178,13 @@ func main() {
 			go func(subjectNames []string, subjectIDs []int) {
 				defer wg.Done()
 				var matches Matches
+				n := len(querySeqs)
+				matches.matchLengths = make([][]int, n)
+				matches.subjectID = make([][]int, n)
 				for i, querySeq := range querySeqs {
-					n := len(querySeq.Data())
-					lengths := make([]int, n)
-					matches.matchLengths =
-						append(matches.matchLengths, lengths)
-					n = len(querySeq.Data())
-					lengths = make([]int, n)
-					matches.subjectID =
-						append(matches.subjectID, lengths)
+					m := len(querySeq.Data())
+					matches.matchLengths[i] = make([]int, m)
+					matches.subjectID[i] = make([]int, m)
 					for j, subject := range subjectNames {
 						p := *optS + "/" + subject
 						f, err := os.Open(p)
