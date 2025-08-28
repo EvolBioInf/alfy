@@ -1,0 +1,24 @@
+* Note on prepAlfy
+
+At the moment we have the structure
+
+for query in queries; do
+   for subject in subjects; do
+      calculate esa of subject
+      scan query
+   done
+done
+
+This means that for every query we repeat the calculation of all
+esas. To avoid this, we could pre-calculate the esas to get
+
+for subject in subjects; do
+   calculate esa e of subject
+   append e to esas
+done
+
+for query in queries; do
+   for esa in esas; do
+      scan query
+   done
+done
