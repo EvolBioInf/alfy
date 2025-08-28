@@ -53,7 +53,7 @@ corresponds to the number of logical CPUs available on the system.
   optQ := flag.String("q", "", "query directory")
   optS := flag.String("s", "", "subject directory")
   ncpu := runtime.NumCPU()
-  optT := flag.Int("T", ncpu , "number of threads")
+  optT := flag.Int("t", ncpu , "number of threads")
 #+end_src
 #+begin_export latex
 We import flag and runtime.
@@ -81,14 +81,14 @@ We import clio.
 #+begin_export latex
 We parse the options and respond to the version option, -v, the two
 directory options, \ty{-q} and \ty{-s}, and the number of threads,
-\ty{-T}.
+\ty{-t}.
 #+end_export
 #+begin_src go <<Parse options, Ch. \ref{ch:prep}>>=
   flag.Parse()
   //<<Respond to \ty{-v}, Ch. \ref{ch:prep}>>
   //<<Respond to \ty{-q}, Ch. \ref{ch:prep}>>
   //<<Respond to \ty{-s}, Ch. \ref{ch:prep}>>
-  //<<Respond to \ty{-T}, Ch. \ref{ch:prep}>>
+  //<<Respond to \ty{-t}, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
 If the user requested the version, we call the utility function
@@ -139,7 +139,7 @@ set.
 #+begin_export latex
 If the user set fewer than one thread, we throw a fatal error.
 #+end_export
-#+begin_src go <<Respond to \ty{-T}, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Respond to \ty{-t}, Ch. \ref{ch:prep}>>=
   if *optT <= 0 {
 	  log.Fatalf("Can't set %d threads.", *optT)
   }
@@ -468,7 +468,6 @@ the iterator that belong to the \ty{WaitGroup} concurrency pattern.
   for i, subjectNames := range subjectNameSets{
 	  subjectIDs := subjectIDsets[i]
 	  wg.Add(1)
-	  var matches Matches
 	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
   }
   //<<Streaming closer, Ch. \ref{ch:prep}>>
@@ -518,6 +517,7 @@ query against the subjects and pass the matches along the channel.
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
   go func(subjectNames []string, subjectIDs []int){
 	  defer wg.Done()
+  	  var matches Matches
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
   }(subjectNames, subjectIDs)
@@ -528,7 +528,7 @@ space for the array of matches lengths and for the array of subject
 IDs.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
-  for _, querySeq := range querySeqs {
+  for i, querySeq := range querySeqs {
 	  n := len(querySeq.Data())
 	  lengths :=make([]int,n)
 	  matches.matchLengths =
@@ -539,7 +539,6 @@ IDs.
 		  append(matches.subjectID,lengths)
 	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
   }
-  f.Close()
 #+end_src
 #+begin_export latex
 We then iterate, map the subject files to an ID and read the
@@ -551,7 +550,8 @@ file.
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
-	  //<<Read subject files, Ch. \ref{ch:prep}>>
+	  //<<Read subject file, Ch. \ref{ch:prep}>>
+	  f.Close()
   }
 #+end_src
 #+begin_export latex
@@ -566,7 +566,7 @@ within files and not across.
 After aggregating the sequences we calculate the enhanced suffix array
 of the subject and calculate the matches lengths.
 #+end_export
-#+begin_src go <<Read subject files, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Read subject file, Ch. \ref{ch:prep}>>=
   sc := fasta.NewScanner(f)
   for sc.ScanSequence() {
 	  s := sc.Sequence()
@@ -602,8 +602,8 @@ We update the array of matches lengths and subjects IDs.
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
   mat.UpdateMatchLengths(q, e, subjectIDs[j],
-	  matches.matchLengths[j],
-	  matches.subjectID[j])
+	  matches.matchLengths[i],
+	  matches.subjectID[i])
 #+end_src
 #+begin_export latex
 We import the mat package.
@@ -639,7 +639,8 @@ are stored in a master set of lengths.
     }
     for match := range matchesSets {
 	    for i := 0; i < len(match.matchLengths); i++ {
-		  for j := 0; j < len(match.matchLengths[i]); j++ {
+		  for j := 0;
+		    j < len(match.matchLengths[i]); j++ {
 		  }
 	    }
 	    <<Store match lengths, Ch. \ref{ch:prep}>>
@@ -654,7 +655,8 @@ corresponding subject ID.
 	  for j, length := range lengths {
 		  if matchLengths[i][j] < length {
 			  matchLengths[i][j] = length
-			  subjectIDs[i][j] = match.subjectID[i][j]
+			  subjectIDs[i][j] =
+				  match.subjectID[i][j]
 		  }
 	  }
   }
@@ -726,7 +728,8 @@ pairs.
 	  if seq, exists := sID[ID]; exists {
 		  if !seen[seq] {
 			  pair = append(pair,
-				  fmt.Sprintf("%d=%s",ID+1,seq))
+				  fmt.Sprintf("%d=%s",
+					  ID+1,seq))
 			  seen[seq] = true
 		  }
 	  }

@@ -57,7 +57,7 @@ func main() {
 	optQ := flag.String("q", "", "query directory")
 	optS := flag.String("s", "", "subject directory")
 	ncpu := runtime.NumCPU()
-	optT := flag.Int("T", ncpu, "number of threads")
+	optT := flag.Int("t", ncpu, "number of threads")
 	u := "prepAlfy -q <queryDir> -s <subjectDir>"
 	p := "Prepare alfy input"
 	e := "prepAlfy -q queries/ -s subjects/"
@@ -175,10 +175,10 @@ func main() {
 		for i, subjectNames := range subjectNameSets {
 			subjectIDs := subjectIDsets[i]
 			wg.Add(1)
-			var matches Matches
 			go func(subjectNames []string, subjectIDs []int) {
 				defer wg.Done()
-				for _, querySeq := range querySeqs {
+				var matches Matches
+				for i, querySeq := range querySeqs {
 					n := len(querySeq.Data())
 					lengths := make([]int, n)
 					matches.matchLengths =
@@ -206,12 +206,12 @@ func main() {
 							e := esa.MakeEsa(d)
 							q := querySeq.Data()
 							mat.UpdateMatchLengths(q, e, subjectIDs[j],
-								matches.matchLengths[j],
-								matches.subjectID[j])
+								matches.matchLengths[i],
+								matches.subjectID[i])
 						}
+						f.Close()
 					}
 				}
-				f.Close()
 				matchesSets <- matches
 			}(subjectNames, subjectIDs)
 		}
@@ -238,7 +238,8 @@ func main() {
 				for j, length := range lengths {
 					if matchLengths[i][j] < length {
 						matchLengths[i][j] = length
-						subjectIDs[i][j] = match.subjectID[i][j]
+						subjectIDs[i][j] =
+							match.subjectID[i][j]
 					}
 				}
 			}
@@ -266,7 +267,8 @@ func main() {
 				if seq, exists := sID[ID]; exists {
 					if !seen[seq] {
 						pair = append(pair,
-							fmt.Sprintf("%d=%s", ID+1, seq))
+							fmt.Sprintf("%d=%s",
+								ID+1, seq))
 						seen[seq] = true
 					}
 				}
