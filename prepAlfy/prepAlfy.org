@@ -819,11 +819,7 @@ We run the test and compare the result from the first query sequence
 with the one we want stored in the file r1.txt.
 #+end_export
 #+begin_src go <<Run test, Ch. \ref{ch:prep}>>=
-  _, err := test.Output()
-  if err != nil {
-	  t.Error(err)
-  }
-  get, err := os.ReadFile("q1.txt")
+  get, err := test.Output()
   if err != nil{
 	  t.Error(err)
 	  }

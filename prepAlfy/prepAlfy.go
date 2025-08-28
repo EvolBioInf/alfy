@@ -81,7 +81,6 @@ func main() {
 	if *optT <= 0 {
 		log.Fatalf("Can't set %d threads.", *optT)
 	}
-	println(*optT)
 	queries := readDir(*optQ)
 	if len(queries) == 0 {
 		fmt.Fprintf(os.Stderr, "%s is empty\n", *optQ)

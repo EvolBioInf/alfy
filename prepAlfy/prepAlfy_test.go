@@ -15,11 +15,7 @@ func TestPrepAlfy(t *testing.T) {
 	s := "subject"
 	test := exec.Command(p, "-q", q, "-s", s)
 	tests = append(tests, test)
-	_, err := test.Output()
-	if err != nil {
-		t.Error(err)
-	}
-	get, err := os.ReadFile("q1.txt")
+	get, err := test.Output()
 	if err != nil {
 		t.Error(err)
 	}
