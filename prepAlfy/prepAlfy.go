@@ -116,9 +116,7 @@ func main() {
 		}
 	}
 	msl := -1
-	sID := make(map[int]string)
-	for i, subject := range subjectNames {
-		sID[i] = subject
+	for _, subject := range subjectNames {
 		p := *optS + "/" + subject
 		f, err := os.Open(p)
 		util.Check(err)
@@ -130,6 +128,28 @@ func main() {
 			}
 		}
 		f.Close()
+	}
+	sID := make(map[int]string)
+	esas := make([]*esa.Esa, len(subjectNames))
+	for i, subject := range subjectNames {
+		sID[i] = subject
+		p := *optS + "/" + subject
+		f, err := os.Open(p)
+		util.Check(err)
+		sc := fasta.NewScanner(f)
+		for sc.ScanSequence() {
+			s := sc.Sequence()
+			d := s.Data()
+			h := []byte(s.Header())
+			for len(d) < msl && sc.ScanSequence() {
+				s = sc.Sequence()
+				h = append(h, '|')
+				h = append(h, []byte(s.Header())...)
+				d = append(d, s.Data()...)
+			}
+			d = bytes.ToUpper(d)
+			esas[i] = esa.MakeEsa(d)
+		}
 	}
 	for query, _ := range queries {
 		p := *optQ + "/" + query
@@ -153,14 +173,14 @@ func main() {
 			d = bytes.ToUpper(revQuerySeqs[i].Data())
 			revQuerySeqs[i] = fasta.NewSequence(h, d)
 		}
-		subjectNameSets := make([][]string, 0)
+		EsaSets := make([][]string, 0)
 		subjectIDsets := make([][]int, 0)
 		n := len(subjectNames)
 		length := int(math.Ceil(float64(n) / float64(*optT)))
 		start := 0
 		end := length
 		for start < n {
-			subjectNameSets = append(subjectNameSets,
+			EsaSets = append(EsaSets,
 				subjectNames[start:end])
 			subjectIDsets = append(subjectIDsets,
 				subjectIDs[start:end])
@@ -172,10 +192,10 @@ func main() {
 		}
 		matchesSets := make(chan Matches)
 		var wg sync.WaitGroup
-		for i, subjectNames := range subjectNameSets {
+		for i, Esa := range EsaSets {
 			subjectIDs := subjectIDsets[i]
 			wg.Add(1)
-			go func(subjectNames []string, subjectIDs []int) {
+			go func(Esa []string, subjectIDs []int) {
 				defer wg.Done()
 				var matches Matches
 				n := len(querySeqs)
@@ -185,33 +205,16 @@ func main() {
 					m := len(querySeq.Data())
 					matches.matchLengths[i] = make([]int, m)
 					matches.subjectID[i] = make([]int, m)
-					for j, subject := range subjectNames {
-						p := *optS + "/" + subject
-						f, err := os.Open(p)
-						util.Check(err)
-						sc := fasta.NewScanner(f)
-						for sc.ScanSequence() {
-							s := sc.Sequence()
-							d := s.Data()
-							h := []byte(s.Header())
-							for len(d) < msl && sc.ScanSequence() {
-								s = sc.Sequence()
-								h = append(h, '|')
-								h = append(h, []byte(s.Header())...)
-								d = append(d, s.Data()...)
-							}
-							d = bytes.ToUpper(d)
-							e := esa.MakeEsa(d)
-							q := querySeq.Data()
-							mat.UpdateMatchLengths(q, e, subjectIDs[j],
-								matches.matchLengths[i],
-								matches.subjectID[i])
-						}
-						f.Close()
+					for j, esa := range Esa {
+						q := querySeq.Data()
+						println(esa)
+						mat.UpdateMatchLengths(q, esa, subjectIDs[j],
+							matches.matchLengths[i],
+							matches.subjectID[i])
 					}
 				}
 				matchesSets <- matches
-			}(subjectNames, subjectIDs)
+			}(Esa, subjectIDs)
 		}
 		go func() {
 			wg.Wait()

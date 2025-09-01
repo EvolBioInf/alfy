@@ -322,8 +322,8 @@ with a message if we find one.
 \subsection{Write match factors}
 
 We now move on to the calculation of the match factors. This is main
-algorithm of \ty{prepAlfy}. Since subject sequences may be composed
-of several short contigs, it is more efficient to concatenate shorter
+algorithm of \ty{prepAlfy}. Since subject sequences may be composed of
+several short contigs, it is more efficient to concatenate shorter
 contigs into one larger sequence. To do so, we first determine the
 maximum subject length. This value will be later using during the
 streaming step where we stream the queries against the subjects. Since
@@ -336,25 +336,23 @@ calculated.
 
 The subjects will be streamed against each query at a time. After
 streaming the subjects the resulting match lengths are merged while
-taking note of the subject they were found in. At the end the pair
-match length and subject ID is written out to a file.
+taking note of the subject they were found in. We then calculate the
+enhanced suffix array, or esa, for each one of the subject files. At
+the end the pair match length and subject ID is written out to a file.
 #+end_export
 #+begin_src go <<Write match factors, Ch. \ref{ch:prep}>>=
   //<<Find maximum subject length, Ch. \ref{ch:prep}>>
+  //<<Calculate enhanced suffix arrays, Ch. \ref{ch:prep}>>
   //<<Read query sequences, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
-We first create a map between the attributed numerical subject ID and
-the subject filename. Then to find the maximal subject length, we
-iterate over the subject files and for each file iterate over the
-sequences it contains to find the longest subject file. We also fill
-in the subject ID with the corresponding subject filename.
+To find the maximal subject length, we iterate over the subject files
+and for each file iterate over the sequences it contains to find the
+longest subject file. 
 #+end_export
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
-  sID := make(map[int]string)
-  for i, subject := range subjectNames {
-	  sID[i] = subject
+  for _, subject := range subjectNames {
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
 	  util.Check(err)
@@ -381,6 +379,59 @@ We import fasta
 "github.com/evolbioinf/fasta"
 #+end_src
 #+begin_export latex
+We then calculate the enhanced suffix arrays for all subject
+files. First we create a map between the attributed numerical subject
+ID and the subject filename. We also create a variable that will hold
+the calculated esas. Then we calculate the esa. This is done only once
+for all subject files. For this we read the subject files, and map the
+subject file name to a numerical ID.
+#+end_export
+#+begin_src go <<Calculate enhanced suffix arrays, Ch. \ref{ch:prep}>>= 
+  sID := make(map[int]string)
+  esas := make([]*esa.Esa,len(subjectNames))
+  for i, subject := range subjectNames {
+	  sID[i] = subject
+	  p := *optS + "/" + subject
+	  f, err := os.Open(p)
+	  util.Check(err)
+	  //<<Read subject file, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+While reading the subject file we check the length of the contig. If
+it is shorter than the maximum subject length calculated above we
+concatenate it. The esa is calculated on the concatenated sequences.
+#+end_export
+#+begin_src go <<Read subject file, Ch. \ref{ch:prep}>>=
+  sc := fasta.NewScanner(f)
+  for sc.ScanSequence() {
+	  s := sc.Sequence()
+	  d := s.Data()
+	  h := []byte(s.Header())
+	  for len(d) < msl && sc.ScanSequence() {
+		  s = sc.Sequence()
+		  h = append(h, '|')
+		  h = append(h, []byte(s.Header())...)
+		  d = append(d, s.Data()...)
+	  }
+	  //<<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+We calculate the enhanced suffix array or \ty{esa} of the subject
+sequences.
+#+end_export
+#+begin_src go <<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>=
+  d = bytes.ToUpper(d)
+  esas[i] = esa.MakeEsa(d)
+#+end_src
+#+begin_export latex
+We import esa.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "github.com/evolbioinf/esa"
+#+end_src
+#+begin_export latex
 We then start reading the query sequences. For each sequence we
 calculate the forward and the reverse strands, and we remove the
 masking information from the sequence. Then we iterate over their
@@ -393,7 +444,7 @@ subjects we update the final matches lengths and write it to a file.
 	  //<<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>
 	  //<<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>
 	  //<<Merge matches results, Ch. \ref{ch:prep}>>
-    	  //<<Write matches to stdout, Ch. \ref{ch:prep}>>
+	  //<<Write matches to stdout, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -460,12 +511,12 @@ goroutine for streaming. After the loop we construct the closer and
 the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+end_export
 #+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
-  subjectNameSets := make([][]string, 0)
+  EsaSets := make([][]string, 0)
   subjectIDsets := make([][]int, 0)
   //<<Split subject filenames, Ch. \ref{ch:prep}>>
   matchesSets := make(chan Matches)
   var wg sync.WaitGroup
-  for i, subjectNames := range subjectNameSets{
+  for i, Esa := range EsaSets{
 	  subjectIDs := subjectIDsets[i]
 	  wg.Add(1)
 	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
@@ -491,7 +542,7 @@ length of the slice of subject names.
   start := 0
   end := length
   for start < n {
-	  subjectNameSets = append(subjectNameSets,
+	  EsaSets = append(EsaSets,
 		  subjectNames[start:end])
 	  subjectIDsets = append(subjectIDsets,
 		  subjectIDs[start:end])
@@ -517,7 +568,7 @@ The array of matches lengths and subjects IDs is the size of the
 number of query sequences.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
-  go func(subjectNames []string, subjectIDs []int){
+  go func(Esa []string, subjectIDs []int){
 	  defer wg.Done()
 	  var matches Matches
 	  n :=len(querySeqs)
@@ -525,7 +576,7 @@ number of query sequences.
 	  matches.subjectID = make([][]int,n)
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
-  }(subjectNames, subjectIDs)
+  }(Esa, subjectIDs)
 #+end_src
 #+begin_export latex
 Then we iterate over the range of existing sequences and allocate
@@ -547,12 +598,8 @@ sequences. After streaming the files we write the matches lengths to a
 file.
 #+end_export
 #+begin_src go <<Stream against subject files, Ch. \ref{ch:prep}>>=
-  for j, subject := range subjectNames {
-	  p := *optS + "/" + subject
-	  f, err := os.Open(p)
-	  util.Check(err)
-	  //<<Read subject file, Ch. \ref{ch:prep}>>
-	  f.Close()
+  for j, esa := range Esa {
+	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -567,42 +614,13 @@ within files and not across.
 After aggregating the sequences we calculate the enhanced suffix array
 of the subject and calculate the matches lengths.
 #+end_export
-#+begin_src go <<Read subject file, Ch. \ref{ch:prep}>>=
-  sc := fasta.NewScanner(f)
-  for sc.ScanSequence() {
-	  s := sc.Sequence()
-	  d := s.Data()
-	  h := []byte(s.Header())
-	  for len(d) < msl && sc.ScanSequence() {
-		  s = sc.Sequence()
-		  h = append(h, '|')
-	 	  h = append(h, []byte(s.Header())...)
-		  d = append(d, s.Data()...)
-	  }
-	  //<<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>
-	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
-  }
-#+end_src
-#+begin_export latex
-We calculate the enhanced suffix array or \ty{esa} of the subject
-sequences.
-#+end_export
-#+begin_src go <<Calculate enhanced suffix array, Ch. \ref{ch:prep}>>=
-  d = bytes.ToUpper(d)
-  e := esa.MakeEsa(d)
-#+end_src
-#+begin_export latex
-We import esa.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-  "github.com/evolbioinf/esa"
-#+end_src
 #+begin_export latex
 We update the array of matches lengths and subjects IDs.
 #+end_export
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
-  mat.UpdateMatchLengths(q, e, subjectIDs[j],
+  println(esa)
+  mat.UpdateMatchLengths(q, esa, subjectIDs[j],
 	  matches.matchLengths[i],
 	  matches.subjectID[i])
 #+end_src
