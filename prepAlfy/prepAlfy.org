@@ -511,7 +511,7 @@ goroutine for streaming. After the loop we construct the closer and
 the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+end_export
 #+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
-  EsaSets := make([][]string, 0)
+  EsaSets := make([][]*esa.Esa, 0)
   subjectIDsets := make([][]int, 0)
   //<<Split subject filenames, Ch. \ref{ch:prep}>>
   matchesSets := make(chan Matches)
@@ -543,7 +543,7 @@ length of the slice of subject names.
   end := length
   for start < n {
 	  EsaSets = append(EsaSets,
-		  subjectNames[start:end])
+		  esas[start:end])
 	  subjectIDsets = append(subjectIDsets,
 		  subjectIDs[start:end])
 	  start = end
@@ -568,7 +568,7 @@ The array of matches lengths and subjects IDs is the size of the
 number of query sequences.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
-  go func(Esa []string, subjectIDs []int){
+  go func(Esa []*esa.Esa, subjectIDs []int){
 	  defer wg.Done()
 	  var matches Matches
 	  n :=len(querySeqs)
@@ -619,7 +619,7 @@ We update the array of matches lengths and subjects IDs.
 #+end_export
 #+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
   q := querySeq.Data()
-  println(esa)
+//  println(esa)
   mat.UpdateMatchLengths(q, esa, subjectIDs[j],
 	  matches.matchLengths[i],
 	  matches.subjectID[i])

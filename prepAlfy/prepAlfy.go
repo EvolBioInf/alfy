@@ -173,7 +173,7 @@ func main() {
 			d = bytes.ToUpper(revQuerySeqs[i].Data())
 			revQuerySeqs[i] = fasta.NewSequence(h, d)
 		}
-		EsaSets := make([][]string, 0)
+		EsaSets := make([][]*esa.Esa, 0)
 		subjectIDsets := make([][]int, 0)
 		n := len(subjectNames)
 		length := int(math.Ceil(float64(n) / float64(*optT)))
@@ -181,7 +181,7 @@ func main() {
 		end := length
 		for start < n {
 			EsaSets = append(EsaSets,
-				subjectNames[start:end])
+				esas[start:end])
 			subjectIDsets = append(subjectIDsets,
 				subjectIDs[start:end])
 			start = end
@@ -195,7 +195,7 @@ func main() {
 		for i, Esa := range EsaSets {
 			subjectIDs := subjectIDsets[i]
 			wg.Add(1)
-			go func(Esa []string, subjectIDs []int) {
+			go func(Esa []*esa.Esa, subjectIDs []int) {
 				defer wg.Done()
 				var matches Matches
 				n := len(querySeqs)
@@ -207,7 +207,7 @@ func main() {
 					matches.subjectID[i] = make([]int, m)
 					for j, esa := range Esa {
 						q := querySeq.Data()
-						println(esa)
+						//  println(esa)
 						mat.UpdateMatchLengths(q, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i])
