@@ -392,10 +392,29 @@ We print subject identifiers rather than names in column 2, to save
 space---identifiers are usually shorter than file names. Each table is
 understood to cover every position in the respective
 query. Algorithm~\ref{alg:out} summarizes the procedure to generate
-the output of \ty{prepAlfy}.
+the output of \ty{prepAlfy}. We start by iterating over the length of
+the query, and for the range of existing subjects we extract the
+unique key/value pair of subject identifiers (lines 2-5). Then we
+print the header with the query filename and the pairs of subject
+identifiers (line 7). Then for every position of the query we print
+the corresponding match length and subject identifier (line 8).
+
 \begin{algorithm}
   \caption{$\langle\mbox{output}\rangle$ from
     Algorithm~\ref{alg:alf}.}\label{alg:out}
+  \begin{algorithmic}[1]
+  \REQUIRE $name$, query filename
+  \ENSURE $pairs$, key/value pair of subject identifiers
+  \FOR{$i\leftarrow 1$ \TO $m$}
+  \FOR{$j\leftarrow 1$ \TO $n$}
+  \IF{$su[j] !=pairs$}
+  \STATE $pairs\leftarrow\mbox{su}[i],j$
+  \ENDIF
+  \ENDFOR
+  \STATE $\mbox{print \#$name$, $pairs$}$
+  \STATE $\mbox{print ml}[i],\mbox{su}[i]$
+  \ENDFOR
+  \end{algorithmic}
 \end{algorithm}
 
 \subsection{Coding}
