@@ -151,7 +151,7 @@ func main() {
 			esas[i] = esa.MakeEsa(d)
 		}
 	}
-	for query, _ := range queries {
+	for _, query := range queryNames {
 		p := *optQ + "/" + query
 		f, err := os.Open(p)
 		util.Check(err)
@@ -192,10 +192,10 @@ func main() {
 		}
 		matchesSets := make(chan Matches)
 		var wg sync.WaitGroup
-		for i, Esa := range EsaSets {
+		for i, Esas := range EsaSets {
 			subjectIDs := subjectIDsets[i]
 			wg.Add(1)
-			go func(Esa []*esa.Esa, subjectIDs []int) {
+			go func(Esas []*esa.Esa, subjectIDs []int) {
 				defer wg.Done()
 				var matches Matches
 				n := len(querySeqs)
@@ -205,16 +205,15 @@ func main() {
 					m := len(querySeq.Data())
 					matches.matchLengths[i] = make([]int, m)
 					matches.subjectID[i] = make([]int, m)
-					for j, esa := range Esa {
+					for j, esa := range Esas {
 						q := querySeq.Data()
-						//  println(esa)
 						mat.UpdateMatchLengths(q, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i])
 					}
 				}
 				matchesSets <- matches
-			}(Esa, subjectIDs)
+			}(Esas, subjectIDs)
 		}
 		go func() {
 			wg.Wait()
@@ -226,15 +225,10 @@ func main() {
 			n := len(qs.Data())
 			ml := make([]int, n)
 			matchLengths = append(matchLengths, ml)
-			n = len(qs.Data())
 			ml = make([]int, n)
 			subjectIDs = append(subjectIDs, ml)
 		}
 		for match := range matchesSets {
-			for i := 0; i < len(match.matchLengths); i++ {
-				for j := 0; j < len(match.matchLengths[i]); j++ {
-				}
-			}
 			for i, lengths := range match.matchLengths {
 				for j, length := range lengths {
 					if matchLengths[i][j] < length {

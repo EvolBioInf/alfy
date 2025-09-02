@@ -348,7 +348,7 @@ the end the pair match length and subject ID is written out to a file.
 #+begin_export latex
 To find the maximal subject length, we iterate over the subject files
 and for each file iterate over the sequences it contains to find the
-longest subject file. 
+longest subject file.
 #+end_export
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
@@ -432,14 +432,16 @@ We import esa.
   "github.com/evolbioinf/esa"
 #+end_src
 #+begin_export latex
-We then start reading the query sequences. For each sequence we
-calculate the forward and the reverse strands, and we remove the
-masking information from the sequence. Then we iterate over their
-sequences and stream the subjects against it. After streaming all the
-subjects we update the final matches lengths and write it to a file.
+We then start reading the query sequences. Here we iterate over the
+queryNames which have been ordered. This ensures we read the query
+files in the same order everytime. For each sequence we calculate the
+forward and the reverse strands, and we remove the masking information
+from the sequence. Then we iterate over their sequences and stream the
+subjects against it. After streaming all the subjects we update the
+final matches lengths and write it to a file.
 #+end_export
 #+begin_src go <<Read query sequences, Ch. \ref{ch:prep}>>=
-  for query, _ := range queries {
+  for _, query := range queryNames {
 	  //<<Store forward and reverse strand, Ch. \ref{ch:prep}>>
 	  //<<Remove masking and reverse sequence, Ch. \ref{ch:prep}>>
 	  //<<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>
@@ -501,8 +503,8 @@ ensures both values are passed on together.
 #+end_src
 #+begin_export latex
 We distribute the streaming work along sets of neighbors files. Thus,
-we split the list of neighbor files into packages of size n. We then
-concurrently stream the query against the sets of subject files. The
+we split the slice of esas into packages of size n. We then
+concurrently stream the query against the sets of calculated esas. The
 concurrency pattern is based on \ty{sync.WaitGroup}, and is built from
 a channel and a \ty{WaitGroup}, both of which we initialize outside of
 the loop from which the goroutines are started. Inside the loop we
@@ -513,10 +515,10 @@ the iterator that belong to the \ty{WaitGroup} concurrency pattern.
 #+begin_src go <<Distribute streaming across goroutines, Ch. \ref{ch:prep}>>=
   EsaSets := make([][]*esa.Esa, 0)
   subjectIDsets := make([][]int, 0)
-  //<<Split subject filenames, Ch. \ref{ch:prep}>>
+  //<<Split esas across threads, Ch. \ref{ch:prep}>>
   matchesSets := make(chan Matches)
   var wg sync.WaitGroup
-  for i, Esa := range EsaSets{
+  for i, Esas := range EsaSets{
 	  subjectIDs := subjectIDsets[i]
 	  wg.Add(1)
 	  //<<Goroutine for streaming, Ch. \ref{ch:prep}>>
@@ -531,12 +533,12 @@ We import sync.
 "sync"
 #+end_src
 #+begin_export latex
-The subject files are split into several sets such that $\ell=n/T$,
-where $n$ is the number of sets and $T$ is the number of threads. We
-also ensure that the last of the slices does not extend beyond the
-length of the slice of subject names.
+The esas are split into several sets such that $\ell=n/T$, where $n$
+is the number of sets and $T$ is the number of threads. We also ensure
+that the last of the slices does not extend beyond the length of the
+slice of esas.
 #+end_export
-#+begin_src go <<Split subject filenames, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Split esas across threads, Ch. \ref{ch:prep}>>=
   n := len(subjectNames)
   length := int(math.Ceil(float64(n)/float64(*optT)))
   start := 0
@@ -560,15 +562,15 @@ We import math.
 "math"
 #+end_src
 #+begin_export latex
-We pass the current set of subject names and subject IDs to the
-goroutine. Inside it we defer it closure. We also declare and allocate
-space for holding the matches lengths and subject IDs, stream the
-query against the subjects and pass the matches along the channel.
+We pass the current set of esas and subject IDs to the
+goroutine. Inside it we defer its closure. We also declare and
+allocate space for holding the matches lengths and subject IDs, stream
+the query against the esas and pass the matches along the channel.
 The array of matches lengths and subjects IDs is the size of the
 number of query sequences.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
-  go func(Esa []*esa.Esa, subjectIDs []int){
+  go func(Esas []*esa.Esa, subjectIDs []int){
 	  defer wg.Done()
 	  var matches Matches
 	  n :=len(querySeqs)
@@ -576,7 +578,7 @@ number of query sequences.
 	  matches.subjectID = make([][]int,n)
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
-  }(Esa, subjectIDs)
+  }(Esas, subjectIDs)
 #+end_src
 #+begin_export latex
 Then we iterate over the range of existing sequences and allocate
@@ -589,40 +591,20 @@ the query sequences.
 	  m := len(querySeq.Data())
 	  matches.matchLengths[i] = make([]int,m)
 	  matches.subjectID[i] = make([]int,m)
-	  //<<Stream against subject files, Ch. \ref{ch:prep}>>
+	  //<<Stream against esas, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
-We then iterate, map the subject files to an ID and read the
-sequences. After streaming the files we write the matches lengths to a
-file.
+We then iterate over the esas, and calculate the matches lengths
+between the current query and the set of esas in the goroutine.
 #+end_export
-#+begin_src go <<Stream against subject files, Ch. \ref{ch:prep}>>=
-  for j, esa := range Esa {
-	  //<<Update match lengths and IDs, Ch. \ref{ch:prep}>>
+#+begin_src go <<Stream against esas, Ch. \ref{ch:prep}>>=
+  for j, esa := range Esas {
+	  q := querySeq.Data()
+	  mat.UpdateMatchLengths(q, esa, subjectIDs[j],
+		  matches.matchLengths[i],
+		  matches.subjectID[i])
   }
-#+end_src
-#+begin_export latex
-We create a map of the subject files.
-#+end_export
-#+begin_export latex
-We first read the subject files, then we aggregate smaller sequences
-or contigs until they reach the maximum subject length, \ty{msl},
-which was calculated above. Note that the aggregation is done only
-within files and not across.
-
-After aggregating the sequences we calculate the enhanced suffix array
-of the subject and calculate the matches lengths.
-#+end_export
-#+begin_export latex
-We update the array of matches lengths and subjects IDs.
-#+end_export
-#+begin_src go <<Update match lengths and IDs, Ch. \ref{ch:prep}>>=
-  q := querySeq.Data()
-//  println(esa)
-  mat.UpdateMatchLengths(q, esa, subjectIDs[j],
-	  matches.matchLengths[i],
-	  matches.subjectID[i])
 #+end_src
 #+begin_export latex
 We import the mat package.
@@ -643,27 +625,29 @@ working goroutines have finished and then close the channel.
 #+begin_export latex
 In the iterator we pack the matches structure with the results from
 the channel. The results from the matches lengths and the subject IDs
-are stored in a master set of lengths.
+are stored in a two-dimensional master set of lengths.
 #+end_export
 #+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
   matchLengths := make([][]int,0)
-    subjectIDs := make([][]int,0)
-    for _, qs := range querySeqs {
-	    n := len(qs.Data())
-	    ml := make([]int, n)
-	    matchLengths = append(matchLengths, ml)
-	    n = len(qs.Data())
-	    ml = make([]int, n)
-	    subjectIDs = append(subjectIDs,ml)
-    }
-    for match := range matchesSets {
-	    for i := 0; i < len(match.matchLengths); i++ {
-		  for j := 0;
-		    j < len(match.matchLengths[i]); j++ {
-		  }
-	    }
-	    <<Store match lengths, Ch. \ref{ch:prep}>>
-    }
+  subjectIDs := make([][]int,0)
+  for _, qs := range querySeqs {
+	  //<<Construct master sets, Ch. \ref{ch:prep}>>
+  }
+  for match := range matchesSets {
+	  //<<Store match lengths, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+We construct the master sets for the match lengths and the subject
+IDs. The master sets consists of slices of matches lengths over the
+length of the query sequences.
+#+end_export
+#+begin_src go <<Construct master sets, Ch. \ref{ch:prep}>>=
+  n := len(qs.Data())
+  ml := make([]int, n)
+  matchLengths = append(matchLengths, ml)
+  ml = make([]int, n)
+  subjectIDs = append(subjectIDs,ml)
 #+end_src
 #+begin_export latex
 We store the longer of the matches for each position and the
@@ -704,7 +688,7 @@ After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them to standard out.
 #+end_export
 #+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
-   for i := range querySeqs {
+  for i := range querySeqs {
 	   ml := matchLengths[i]
 	   id := subjectIDs[i]
 	   wr := bufio.NewWriter(os.Stdout)
