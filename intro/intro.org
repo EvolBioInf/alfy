@@ -271,29 +271,28 @@ the subjects.
 \subsection{Example}
 We construct two short example queries and subjects each. To get
 matches, we reduce the nucleotide alphabet largely to
-$\{\ty{A},\ty{T}\}$. Our first query is $q_1=\ty{AAATAATATT}$, or
-second is distinguished by one mutation to an extraneous nucleotide,
-\ty{G}, $q_2=\ty{AAATAGTATT}$. Our subjects are $s_1=\ty{AATTTAAATT}$
-and $s_2=\ty{TAATAATATT}$. We concentrate on $q_1$ and start with
-$\mbox{ml}$ initialized to -1 and $\mbox{su}$ initialized to 0 to
-indicate missing values in each case. We match $q_1[1...]$ to $s_1$
-and find \ty{AAAT}, which has length $\ell=4$. So we set
-$\mbox{ml}[1]$ to that value and $\mbox{su}[1]$ to the subject label,
-1. We skip to position $1+4+1=6$ and resume matching at $q_1[6...]$ to
-find \ty{AT}, so we set $\mbox{ml}[6]\leftarrow 2$ and
-$\mbox{su}[6]\leftarrow 1$. One more match gives us $\mbox{ml}$ and
-$\mbox{su}$ at the end of the matching phase shown in lines 1 and 2 of
-Table~\ref{tab:alg}.
+$\{\ty{A},\ty{T}\}$. Our first query is $q_1=\ty{AAATAATAGT}$, our
+second is distinguished by two mutations, $q_2=\ty{AAATAGTATT}$. Our
+subjects are $s_1=\ty{AATTTAAATT}$ and $s_2=\ty{TAATAGTATT}$. We
+concentrate on $q_1$ and start with $\mbox{ml}$ initialized to -1 and
+$\mbox{su}$ initialized to 0 to indicate missing values in each
+case. We match $q_1[1...]$ to $s_1$ and find \ty{AAAT}, which has
+length $\ell=4$. So we set $\mbox{ml}[1]$ to that value and
+$\mbox{su}[1]$ to the subject label, 1. We skip to position $1+4+1=6$
+and resume matching at $q_1[6...]$ to find \ty{AT}, so we set
+$\mbox{ml}[6]\leftarrow 3$ and $\mbox{su}[6]\leftarrow 2$. One more
+match gives us $\mbox{ml}$ and $\mbox{su}$ at the end of the matching
+phase shown in lines 1 and 2 of Table~\ref{tab:alg}.
 
   \begin{table}
-    \caption{Tracing Algorithm~\ref{alg:alf} for $q_1=\ty{AAATAATATT}$.}\label{tab:alg}
+    \caption{Tracing Algorithm~\ref{alg:alf} for $q_1=\ty{AAATAATAGT}$.}\label{tab:alg}
     \begin{center}
     \begin{tabular}{rclccccccccccc}\hline
 &&&&  1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\ \cline{5-14}
-\# & $i$ & phase & array & \ty{A} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{T} & \ty{T}\\\hline
-1 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{ml}$ & 4 & -1 & -1 & -1 & -1 & 2 & -1 & -1 & 2 & -1\\
-2 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{su}$ & 1 &  0 &  0 &  0 &  0 & 1 &  0 &  0 & 1 &  0\\
-3 & 1 & $\langle\mbox{interpolate}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 1 & 0 & 2 & 1 & 0 & 2 & 1\\
+\# & $i$ & phase & array & \ty{A} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{A} & \ty{T} & \ty{A} & \ty{G} & \ty{T}\\\hline
+1 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{ml}$ & 4 & -1 & -1 & -1 & -1 & 2 & -1 & -1 & -1 & 1\\
+2 & 1 & $\langle\mbox{match}\rangle$ & $\mbox{su}$ & 1 &  0 & 0 &  0 & 0 & 1 &  0 &  0 & 0 & 1\\
+3 & 1 & $\langle\mbox{interpolate}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 1 & 0 & 2 & 1 & 0 & 0 & 1\\
 4 & 1 & $\langle\mbox{interpolate}\rangle$ & $\mbox{su}$& 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1\\\hline
 5 & 2 & $\langle\mbox{match}\rangle$ & $\mbox{ml}$ & 4 & 3 & 2 & 7 & 0 & 2 & 1 & 0 & 2 & 1\\
 6 & 2 & $\langle\mbox{match}\rangle$ & $\mbox{su}$ & 1 & 1 & 1 & 2 & 1 & 1 & 1 & 1 & 1 & 1\\
@@ -352,12 +351,12 @@ queries that were compared to two subjects.
 4 1
 3 1
 2 1
-7 2
-6 2
 5 2
 4 2
 3 2
 2 2
+1 2
+0 2
 1 2
 \end{verbatim}
 \end{minipage}
