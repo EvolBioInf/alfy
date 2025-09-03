@@ -29,7 +29,7 @@ interpolate the match lengths.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
   func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
-	  ml, su []int) {
+	  ml, su []int, rev bool) {
 	  j := 0
 	  //<<Calculate match lengths, Pa. \ref{pa:mat}>>
 	  //<<Interpolate match lengths, Pa. \ref{pa:mat}>>
@@ -52,9 +52,14 @@ mismatch.
 #+begin_src go <<Calculate match lengths, Pa. \ref{pa:mat}>>=
   for j < len(q) {
 	  l := s.MatchPref(q[j:]).L
-	  if l > ml[j] {
-		  ml[j] = l
-		  su[j] = i
+	  p := j
+	  if rev {
+		  p = len(q) - j -l
+
+	  }
+	  if l > ml[p] {
+		  ml[p] = l
+		  su[p] = i
 	  }
 	  j += l + 1
   }
@@ -106,13 +111,16 @@ actual testing.
   //<<Construct subjects, Pa. \ref{pa:mat}>>
   //<<Construct wanted results, Pa. \ref{pa:mat}>>
   //<<Iterate over queries and subjects, Pa. \ref{pa:mat}>>
+  //<<Construct reversed queries, Pa. \ref{pa:mat}>>
+  //<<Construct wanted reverse results, Pa. \ref{pa:mat}>>
+  //<<Iterate over reversed queries and subjects, Pa. \ref{pa:mat}>>
 #+end_src
 #+begin_export latex
 We take the queries used in Chapter~\ref{ch:int}.
 #+end_export
 #+begin_src go <<Construct queries, Pa. \ref{pa:mat}>>=
   queries := [][]byte{
-	  []byte("AAATAATATT"),
+	  []byte("AAATAATAGT"),
 	  []byte("AAATAGTATT")}
 #+end_src
 #+begin_export latex
@@ -128,7 +136,7 @@ We construct the match lengths and the subject labels we want.
 #+end_export
 #+begin_src go <<Construct wanted results, Pa. \ref{pa:mat}>>=
   wml := [][]int{
-	  []int{4,3,2,7,6,5,4,3,2,1},
+	  []int{4,3,2,5,4,3,2,1,0,1},
 	  []int{4,3,2,2,1,0,4,3,2,1}}
   wsu := [][]int{
 	  []int{0,0,0,1,1,1,1,1,1,1},
@@ -168,7 +176,8 @@ match lengths accordingly.
 #+begin_src go <<Iterate over subjects, Pa. \ref{pa:mat}>>=
   for j, subject := range subjects {
 	  s := esa.MakeEsa(subject)
-	  UpdateMatchLengths(q, s, j, ml, su)
+	  rev := false
+	  UpdateMatchLengths(q, s, j, ml, su, rev)
   }
 #+end_src
 #+begin_export latex
@@ -184,7 +193,6 @@ We check the updated arrays by calling the function \ty{check}.
   check(t, ml, wml[i])
   check(t, su, wsu[i])
 #+end_src
-#+end_src
 #+begin_export latex
 The function \ty{check} compares the array of integers we get with the
 one we want and reports and error if there's a discrepancy.
@@ -198,6 +206,41 @@ one we want and reports and error if there's a discrepancy.
 				  get, want)
 		  }
 	  }
+  }
+#+end_src
+#+begin_export latex
+Then we test mat again, but this time with the reverse of the
+sequence. We start by reconstructing the wanted results from the
+reversed queries.
+#+end_export
+#+begin_src go <<Construct reversed queries, Pa. \ref{pa:mat}>>=
+  queries = [][]byte{
+	   []byte("ACTATTATTT"),
+	   []byte("AATACTATTT")}
+#+end_src
+#+begin_src go <<Construct wanted reverse results, Pa. \ref{pa:mat}>>=
+  wml = [][]int{
+	  []int{1,0,4,3,2,2,1,2,2,1},
+	  []int{4,3,2,1,0,4,3,2,2,1}}
+  wsu = [][]int{
+	  []int{1,1,1,1,1,0,0,1,0,0},
+	  []int{1,1,1,1,1,1,1,1,0,0}}
+#+end_src
+#+begin_export latex
+Then we iterate over the reversed queries.
+#+end_export
+#+begin_src go <<Iterate over reversed queries and subjects, Pa. \ref{pa:mat}>>= 
+  for i, q := range queries {
+	  //<<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
+	  //<<Iterate over rev subjects, Pa. \ref{pa:mat}>>
+	  //<<Check $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_src go <<Iterate over rev subjects, Pa. \ref{pa:mat}>>=
+  for j, subject := range subjects {
+	  s := esa.MakeEsa(subject)
+	  rev := true
+	  UpdateMatchLengths(q, s, j, ml, su, rev)
   }
 #+end_src
 #+begin_export latex

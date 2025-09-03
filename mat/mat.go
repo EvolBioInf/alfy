@@ -7,13 +7,18 @@ import (
 
 // The function UpdateMatchLengths takes as arguments a query sequence, the enhanced suffix array (ESA) of a subject sequence, the label of that subject sequence, an array of match lengths, and an array of subject labels. It then updates the arrays of match lengths and subject labels.
 func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
-	ml, su []int) {
+	ml, su []int, rev bool) {
 	j := 0
 	for j < len(q) {
 		l := s.MatchPref(q[j:]).L
-		if l > ml[j] {
-			ml[j] = l
-			su[j] = i
+		p := j
+		if rev {
+			p = len(q) - j - l
+
+		}
+		if l > ml[p] {
+			ml[p] = l
+			su[p] = i
 		}
 		j += l + 1
 	}
