@@ -5,16 +5,16 @@ import (
 	"github.com/evolbioinf/esa"
 )
 
-// The function UpdateMatchLengths takes as arguments a query sequence, the enhanced suffix array (ESA) of a subject sequence, the label of that subject sequence, an array of match lengths, and an array of subject labels. It then updates the arrays of match lengths and subject labels.
+// The function UpdateMatchLengths takes as arguments a query sequence, the enhanced suffix array (ESA) of a subject sequence, the label of that subject sequence, an array of match lengths, an array of subject labels, and whether or not the query is a reverse strand. It then updates the arrays of match lengths and subject labels.
 func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
 	ml, su []int, rev bool) {
 	j := 0
-	for j < len(q) {
+	m := len(q)
+	for j < m {
 		l := s.MatchPref(q[j:]).L
 		p := j
 		if rev {
-			p = len(q) - j - l
-
+			p = m - p - l
 		}
 		if l > ml[p] {
 			ml[p] = l

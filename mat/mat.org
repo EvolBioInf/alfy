@@ -17,10 +17,11 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 \epa
 
 !The function \ty{UpdateMatchLengths} takes as arguments a query
-!sequence, the enhanced suffix array (ESA) of a subject
-!sequence, the label of that subject sequence, an array of match
-!lengths, and an array of subject labels. It then updates the arrays of
-!match lengths and subject labels.
+!sequence, the enhanced suffix array (ESA) of a subject sequence, the
+!label of that subject sequence, an array of match lengths, an array
+!of subject labels, and whether or not the query is a reverse
+!strand. It then updates the arrays of match lengths and subject
+!labels.
 
 As described in Algorithm~\ref{alg:alf}, we initialize the query
 position, $j$, to the leftmost position in the query sequence (line
@@ -44,24 +45,38 @@ We import \ty{esa}.
 #+begin_export latex
 In the while loop of Algorithm~\ref{alg:alf}, we first determine the
 length, $\ell$, of the longest match of the prefix of $q[j...]$ in
-$s$. Then we check whether $\ell$ is greater than $\mbox{ml}[j]$, in
-which case we update $\mbox{ml}[j]$ and note the subject label,
-$i$. Then we skip $j$ to the position just beyond the terminal
-mismatch.
+$s$. If we are dealing with a reverse strand, we map the position of
+this match to the forward strand. Then we check whether we need to
+update the match length. Finally, we move the query position, $j$,
+just beyond the terminal mismatch.
 #+end_export
 #+begin_src go <<Calculate match lengths, Pa. \ref{pa:mat}>>=
-  for j < len(q) {
+  m := len(q)
+  for j < m {
 	  l := s.MatchPref(q[j:]).L
 	  p := j
-	  if rev {
-		  p = len(q) - j -l
-
-	  }
-	  if l > ml[p] {
-		  ml[p] = l
-		  su[p] = i
-	  }
+	  //<<Map to forward strand?, Pa. \ref{pa:mat}>>
+	  //<<Update match length?, Pa. \ref{pa:mat}>>
 	  j += l + 1
+  }
+#+end_src
+#+begin_export latex
+If we are analyzing a reverse strand, \ty{p} refers to the position on
+that strand, which we map to the forward strand.
+#+end_export
+#+begin_src go <<Map to forward strand?, Pa. \ref{pa:mat}>>=
+  if rev {
+	  p = m - p -l
+  }
+#+end_src
+#+begin_export latex
+If $\ell$, is greater than $\mbox{ml}[j]$, we update $\mbox{ml}[j]$
+and note the label of the current subject sequence, $i$.
+#+end_export
+#+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
+  if l > ml[p] {
+	  ml[p] = l
+	  su[p] = i
   }
 #+end_src
 #+begin_export latex
@@ -102,31 +117,37 @@ We import \ty{testing}.
   "testing"
 #+end_src
 #+begin_export latex
-For testing we construct queries, subjects, and the results we
-want. Then we iterate over the queries and subjects to carry out the
-actual testing.
+We test the analysis of forward and reverse strands separately.
 #+end_export
 #+begin_src go <<Testing, Pa. \ref{pa:mat}>>=
-  //<<Construct queries, Pa. \ref{pa:mat}>>
-  //<<Construct subjects, Pa. \ref{pa:mat}>>
+  //<<Test analysis of forward strand, Pa. \ref{pa:mat}>>
+  //<<Test analysis of reverse strand, Pa. \ref{pa:mat}>>
+#+end_src
+#+begin_export latex
+We construct the forward queries and subjects and the corresponding
+expected results. The difference between the analysis of forward and
+reverse strands is just a boolean variable, \ty{rev}. We set that to
+false before we compare queries and subjects to do the actual testing.
+#+end_export
+#+begin_src go <<Test analysis of forward strand, Pa. \ref{pa:mat}>>=
+  //<<Construct forward queries, Pa. \ref{pa:mat}>>
+  //<<Construct forward subjects, Pa. \ref{pa:mat}>>
   //<<Construct wanted results, Pa. \ref{pa:mat}>>
-  //<<Iterate over queries and subjects, Pa. \ref{pa:mat}>>
-  //<<Construct reversed queries, Pa. \ref{pa:mat}>>
-  //<<Construct wanted reverse results, Pa. \ref{pa:mat}>>
-  //<<Iterate over reversed queries and subjects, Pa. \ref{pa:mat}>>
+  rev := false
+  //<<Compare queries and subjects, Pa. \ref{pa:mat}>>
 #+end_src
 #+begin_export latex
 We take the queries used in Chapter~\ref{ch:int}.
 #+end_export
-#+begin_src go <<Construct queries, Pa. \ref{pa:mat}>>=
+#+begin_src go <<Construct forward queries, Pa. \ref{pa:mat}>>=
   queries := [][]byte{
 	  []byte("AAATAATAGT"),
 	  []byte("AAATAGTATT")}
 #+end_src
 #+begin_export latex
-Similarly, we take the subjects from Chapter~\ref{ch:int}.
+We also take the subjects from Chapter~\ref{ch:int}.
 #+end_export
-#+begin_src go <<Construct subjects, Pa. \ref{pa:mat}>>=
+#+begin_src go <<Construct forward subjects, Pa. \ref{pa:mat}>>=
   subjects := [][]byte{
 	  []byte("AATTTAAATT"),
 	  []byte("TAATAATATT")}
@@ -139,7 +160,7 @@ We construct the match lengths and the subject labels we want.
 	  []int{4,3,2,5,4,3,2,1,0,1},
 	  []int{4,3,2,2,1,0,4,3,2,1}}
   wsu := [][]int{
-	  []int{0,0,0,1,1,1,1,1,1,1},
+	  []int{0,0,0,1,1,1,1,1,1,0},
 	  []int{0,0,0,1,1,1,1,1,1,1}}
 #+end_src
 #+begin_export latex
@@ -147,7 +168,7 @@ For each query we prepare an array of match lengths and an array of
 subject labels. Then we iterate over the subjects and check the
 match lengths and subject labels we get from that iteration.
 #+end_export
-#+begin_src go <<Iterate over queries and subjects, Pa. \ref{pa:mat}>>=
+#+begin_src go <<Compare queries and subjects, Pa. \ref{pa:mat}>>=
   for i, q := range queries {
 	  //<<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
 	  //<<Iterate over subjects, Pa. \ref{pa:mat}>>
@@ -176,7 +197,6 @@ match lengths accordingly.
 #+begin_src go <<Iterate over subjects, Pa. \ref{pa:mat}>>=
   for j, subject := range subjects {
 	  s := esa.MakeEsa(subject)
-	  rev := false
 	  UpdateMatchLengths(q, s, j, ml, su, rev)
   }
 #+end_src
@@ -199,51 +219,63 @@ one we want and reports and error if there's a discrepancy.
 #+end_export
 #+begin_src go <<Testing functions, Pa. \ref{pa:mat}>>=
   func check(t *testing.T, get, want []int) {
-	  for i, _ := range get {
-		  if get[i] != want[i] {
-			  t.Errorf("\nget:  %v\n" +
-				  "want: %v",
-				  get, want)
-		  }
+	  diff := false
+	  //<<Determine whether get differs from want, Pa. \ref{pa:mat}>>
+	  //<<Respond to difference, Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_export latex
+If we find a difference between the two slices given, we set \ty{diff}
+to true and break from the loop.
+#+end_export
+#+begin_src go <<Determine whether get differs from want, Pa. \ref{pa:mat}>>=
+  for i, _ := range get {
+	  if get[i] != want[i] {
+		  diff = true
+		  break
 	  }
   }
 #+end_src
 #+begin_export latex
-Then we test mat again, but this time with the reverse of the
-sequence. We start by reconstructing the wanted results from the
-reversed queries.
+If the arrays differed, we respond by printing them via the testing
+error function.
 #+end_export
-#+begin_src go <<Construct reversed queries, Pa. \ref{pa:mat}>>=
+#+begin_src go <<Respond to difference, Pa. \ref{pa:mat}>>=
+  if diff {
+	  t.Errorf("\nget:  %v\n" +
+		  "want: %v",
+		  get, want)
+  }
+#+end_src
+#+begin_export latex
+We come to testing the analysis of the queries' reverse strands. We
+construct them, toggle \ty{rev} to true and compare the queries and
+subjects.
+#+end_export
+#+begin_src go <<Test analysis of reverse strand, Pa. \ref{pa:mat}>>=
+  //<<Construct reverse queries, Pa. \ref{pa:mat}>>
+  //<<Construct wanted reverse results, Pa. \ref{pa:mat}>>
+  rev = true
+  //<<Compare queries and subjects, Pa. \ref{pa:mat}>>
+#+end_src
+#+begin_export latex
+We construct the reverse queries from the forward sequences used
+above.
+#+end_export
+#+begin_src go <<Construct reverse queries, Pa. \ref{pa:mat}>>=
   queries = [][]byte{
 	   []byte("ACTATTATTT"),
 	   []byte("AATACTATTT")}
 #+end_src
+#+begin_export latex
+We've already constructed the subjects we want, so we proceed to
+constructing the results we want.
+#+end_export
 #+begin_src go <<Construct wanted reverse results, Pa. \ref{pa:mat}>>=
   wml = [][]int{
-	  []int{1,0,4,3,2,2,1,2,2,1},
-	  []int{4,3,2,1,0,4,3,2,2,1}}
+	  []int{2,2,1,2,4,3,2,1,0,1},
+	  []int{2,4,3,2,1,0,4,3,2,1}}
   wsu = [][]int{
-	  []int{1,1,1,1,1,0,0,1,0,0},
-	  []int{1,1,1,1,1,1,1,1,0,0}}
+	  []int{0,1,1,0,1,1,1,1,1,0},
+	  []int{0,1,1,1,1,1,1,1,1,1}}
 #+end_src
-#+begin_export latex
-Then we iterate over the reversed queries.
-#+end_export
-#+begin_src go <<Iterate over reversed queries and subjects, Pa. \ref{pa:mat}>>= 
-  for i, q := range queries {
-	  //<<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
-	  //<<Iterate over rev subjects, Pa. \ref{pa:mat}>>
-	  //<<Check $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>
-  }
-#+end_src
-#+begin_src go <<Iterate over rev subjects, Pa. \ref{pa:mat}>>=
-  for j, subject := range subjects {
-	  s := esa.MakeEsa(subject)
-	  rev := true
-	  UpdateMatchLengths(q, s, j, ml, su, rev)
-  }
-#+end_src
-#+begin_export latex
-Note that in a production setting we would concatenate the subject
-sequences with their reverse complement before calculating their esa.
-#+end_export
