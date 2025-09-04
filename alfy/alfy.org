@@ -1,5 +1,14 @@
 #+begin_export latex
-Hello \ty{alfy}!
+\section{Introduction}
+The program \ty{alfy} takes as input a table of match lenghts and
+subject IDs which was constructed with \ty{prepAlfy}. It returns a
+four column table consisting of the start and end of the query
+coordinates, the measure of homology, and the subject sequence that
+region is most similar to.
+
+\section{Implementation}
+The outline of \ty{alfy} contains hooks for imports, functions, and
+the logic of the main function.
 #+end_export
 #+begin_src go <<alfy.go>>=
   package main
@@ -9,12 +18,76 @@ Hello \ty{alfy}!
   )
 
   func main() {
-	  util.Version("alfy")
+	  //<<Main function, Ch. \ref{ch:alf}>>
   }
+#+end_src
+#+begin_export latex
+In the main function we prepare the error handling, declare the
+options, set the usage, parse the options and calculate the homology
+between the queries and the subject files.
+#+end_export
+#+begin_src go <<Main function, Ch. \ref{ch:alf}>>=
+  //<<Prepare error handling, Ch. \ref{ch:alf}>>
+  //<<Declare options, Ch. \ref{ch:alf}>>
+  //<<Set usage, Ch. \ref{ch:alf}>>
+  //<<Parse options, Ch. \ref{ch:alf}>>
+  //<<Calculate homology,Ch. \ref{ch:alf}>>
+#+end_src
+#+begin_export latex
+The error handling is handled by the util function
+\ty{PrepareErrorMessages}.
+#+end_export
+#+begin_src go <<Prepare error handling, Ch. \ref{ch:alf}>>=
+  util.PrepareErrorMessages("alfy")
 #+end_src
 #+begin_export latex
 We import \ty{util}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "github.com/evolbioinf/alfy/util"
+#+end_src
+#+begin_export latex
+We declare the options for the version.
+#+end_export
+#+begin_src go <<Declare options, Ch. \ref{ch:alf}>>=
+  optV := flag.Bool("v", false, "version")
+#+end_src
+#+begin_export latex
+We import flag.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+"flag"
+#+end_src
+#+begin_export latex
+The usage is split into three parts. The usage message, and explation
+of \ty{alfy} and an example command
+#+end_export
+#+begin_src go <<Set usage, Ch. \ref{ch:alf}>>=
+  u := "alfy <prepAlfy.out>"
+  p := "Calculate homology between queries and subjects"
+  e := "alfy alfy.in"
+  clio.Usage(u,p,e)
+#+end_src
+#+begin_export latex
+We import clio.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+"github.com/evolbioinf/clio"
+#+end_src
+#+begin_export latex
+We parse the options and respond to the version option, -v, to the
+sliding window size, -w, and the size of the step between windows, -s.
+#+end_export
+#+begin_src go <<Parse options, Ch. \ref{ch:alf}>>=
+  flag.Parse()
+  //<<Respond to -v, Ch. \ref{ch:alf}>>
+#+end_src
+#+begin_export latex
+If the user requested the version, we call the utility function
+\ty{Version} with the program name.
+#+end_export
+#+begin_src go <<Respond to -v, Ch. \ref{ch:alf}>>=
+  if *optV {
+	  util.Version("alfy")
+  }
 #+end_src
