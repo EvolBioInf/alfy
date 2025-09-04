@@ -1,4 +1,5 @@
-#q1.fasta	1=s1.fasta	2=s2.fasta
+#q1.fasta
+>q1 1=s1.fasta 2=s2.fasta
 4	1
 3	1
 2	1
@@ -8,8 +9,9 @@
 2	2
 1	2
 0	2
-1	1
-#q2.fasta	1=s1.fasta	2=s2.fasta
+1	2
+#q2.fasta
+>q2 1=s1.fasta 2=s2.fasta
 4	1
 4	2
 3	2

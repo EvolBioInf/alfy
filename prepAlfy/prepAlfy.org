@@ -10,7 +10,7 @@ followed by pairs of match lengths and sequence identifiers.
 \section{Implementation}
 
 The outline for \ty{preAlfy} contains hooks for imports,
-structures, functions and the logic of the main function.
+types, functions and the logic of the main function.
 #+end_export
 #+begin_src go <<prepAlfy.go>>=
   package main
@@ -26,8 +26,8 @@ structures, functions and the logic of the main function.
 #+end_src
 #+begin_export latex
 In the main function we prepare the error handling, declare the
-options, set the usage, parse the options and construct the index
-tables.
+options, set the usage, parse the options and construct the output
+table.
 #+end_export
 #+begin_src go <<Main function, Ch. \ref{ch:prep}>>=
   //<<Prepare error handling, Ch. \ref{ch:prep}>>
@@ -42,6 +42,12 @@ We take care of error handling by calling the function
 #+end_export
 #+begin_src go <<Prepare error handling, Ch. \ref{ch:prep}>>=
 util.PrepareErrorMessages("prepAlfy")
+#+end_src
+#+begin_export latex
+We import util.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "github.com/evolbioinf/alfy/util"
 #+end_src
 #+begin_export latex
 We declare options for printing the version, picking the query and
@@ -98,12 +104,6 @@ If the user requested the version, we call the utility function
   if *optV {
 	  util.Version("prepAlfy")
   }
-#+end_src
-#+begin_export latex
-We import util.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-  "github.com/evolbioinf/alfy/util"
 #+end_src
 #+begin_export latex
 If the user didn't set a query directory, we exit with a friendly
@@ -710,23 +710,17 @@ every position and note down the length of the longest match.
 #+end_src
 #+begin_export latex
 After finishing streaming the subject files and updating the arrays of
-matches lengths and IDs we write them to standard out.
+matches lengths and IDs we write them to standard out. We start by
+printing out the query filename.
 #+end_export
 #+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
-  for i := range querySeqs {
+  fmt.Printf("#%s\n", query)
+  for i, querySeq := range querySeqs {
 	   ml := matchLengths[i]
-	   id := subjectIDs[i]
-	   wr := bufio.NewWriter(os.Stdout)
+	   ids := subjectIDs[i]
 	   //<<Write output header, Ch. \ref{ch:prep}>>
 	   //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
-	   wr.Flush()
   }
-#+end_src
-#+begin_export latex
-We import the bufio writer.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-"bufio"
 #+end_src
 #+begin_export latex
 The header consists of a single line that starts with a hash followed
@@ -739,10 +733,25 @@ contained inside the subjectID array. Then we print it out in a single
 line.
 #+end_export
 #+begin_src go <<Write output header, Ch. \ref{ch:prep}>>=
-  var pair []string
-  seen := make(map[string]bool)
-  //<<Check if key/value exists, Ch. \ref{ch:prep}>>
-  //<<Write header, Ch. \ref{ch:prep}>>
+  fmt.Printf(">%s",querySeq.Header())
+  //<<Determine subjects seen, Ch. \ref{ch:prep}>>
+  //<<Print subjects seen, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_src go <<Determine subjects seen, Ch. \ref{ch:prep}>>=
+  seen := make(map[int]bool)
+  for _, id := range ids {
+	  if !seen[id] {
+		  seen[id] = true
+	  }
+  }
+#+end_src
+#+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
+  for i, subjectName := range subjectNames {
+	  if seen[i] {
+		  fmt.Printf(" %d=%s", i+1, subjectName)
+	  }
+  }
+  fmt.Printf("\n")
 #+end_src
 #+begin_export latex
 For every ID present in the subjectID array, we map it to the map of
@@ -751,39 +760,6 @@ we append it to the list of key-values to print. For more readability
 we convert the subject ID to 1-based list. At the end we sort the
 pairs.
 #+end_export
-#+begin_src go <<Check if key/value exists, Ch. \ref{ch:prep}>>=
-  for _, ID := range id {
-	  if seq, exists := sID[ID]; exists {
-		  if !seen[seq] {
-			  pair = append(pair,
-				  fmt.Sprintf("%d=%s",
-					  ID+1,seq))
-			  seen[seq] = true
-		  }
-	  }
-  }
-
-  sort.Strings(pair)
-#+end_src
-#+begin_export latex
-Then we write the header to the file. First we print the hash
-character denoting the header and the name of the query file.  Then we
-iterate over the pairs of subject IDs and filenames and print them
-into the same line.
-
-At the end we print a newline.
-#+end_export
-#+begin_src go <<Write header, Ch. \ref{ch:prep}>>=
-  fmt.Fprintf(wr, "#%s\t", query)
-  fmt.Fprintf(wr, "%s", strings.Join(pair, "\t"))
-  fmt.Fprintf(wr,"\n")
-#+end_src
-#+begin_export latex
-We import strings.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-"strings"
-#+end_src
 #+begin_export latex
 Then we write the matches and corresponding subject IDs where they
 were found. For this we iterate over the length of the matchesLength,
@@ -793,9 +769,9 @@ the header.
 #+end_export
 #+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
   for j := 0; j < len(ml); j++ {
-	  fmt.Fprintf(wr, "%d\t%d\n",
+	  fmt.Printf("%d\t%d\n",
 		  ml[j],
-		  id[j]+1)
+		  ids[j]+1)
   }
 #+end_src
 #+begin_export latex

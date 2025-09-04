@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -264,33 +262,28 @@ func main() {
 				l--
 			}
 		}
-		for i := range querySeqs {
+		fmt.Printf("#%s\n", query)
+		for i, querySeq := range querySeqs {
 			ml := matchLengths[i]
-			id := subjectIDs[i]
-			wr := bufio.NewWriter(os.Stdout)
-			var pair []string
-			seen := make(map[string]bool)
-			for _, ID := range id {
-				if seq, exists := sID[ID]; exists {
-					if !seen[seq] {
-						pair = append(pair,
-							fmt.Sprintf("%d=%s",
-								ID+1, seq))
-						seen[seq] = true
-					}
+			ids := subjectIDs[i]
+			fmt.Printf(">%s", querySeq.Header())
+			seen := make(map[int]bool)
+			for _, id := range ids {
+				if !seen[id] {
+					seen[id] = true
 				}
 			}
-
-			sort.Strings(pair)
-			fmt.Fprintf(wr, "#%s\t", query)
-			fmt.Fprintf(wr, "%s", strings.Join(pair, "\t"))
-			fmt.Fprintf(wr, "\n")
-			for j := 0; j < len(ml); j++ {
-				fmt.Fprintf(wr, "%d\t%d\n",
-					ml[j],
-					id[j]+1)
+			for i, subjectName := range subjectNames {
+				if seen[i] {
+					fmt.Printf(" %d=%s", i+1, subjectName)
+				}
 			}
-			wr.Flush()
+			fmt.Printf("\n")
+			for j := 0; j < len(ml); j++ {
+				fmt.Printf("%d\t%d\n",
+					ml[j],
+					ids[j]+1)
+			}
 		}
 	}
 }
