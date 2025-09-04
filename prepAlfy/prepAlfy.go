@@ -205,11 +205,23 @@ func main() {
 					m := len(querySeq.Data())
 					matches.matchLengths[i] = make([]int, m)
 					matches.subjectID[i] = make([]int, m)
+				}
+				for i, querySeq := range querySeqs {
+					f := querySeq.Data()
+					rev := false
 					for j, esa := range Esas {
-						q := querySeq.Data()
-						mat.UpdateMatchLengths(q, esa, subjectIDs[j],
+						mat.UpdateMatchLengths(f, esa, subjectIDs[j],
 							matches.matchLengths[i],
-							matches.subjectID[i])
+							matches.subjectID[i],
+							rev)
+					}
+					r := revQuerySeqs[i].Data()
+					rev = true
+					for j, esa := range Esas {
+						mat.UpdateMatchLengths(r, esa, subjectIDs[j],
+							matches.matchLengths[i],
+							matches.subjectID[i],
+							rev)
 					}
 				}
 				matchesSets <- matches

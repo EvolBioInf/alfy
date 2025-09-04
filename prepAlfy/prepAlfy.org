@@ -564,46 +564,71 @@ We import math.
 #+begin_export latex
 We pass the current set of esas and subject IDs to the
 goroutine. Inside it we defer its closure. We also declare and
-allocate space for holding the matches lengths and subject IDs, stream
-the query against the esas and pass the matches along the channel.
-The array of matches lengths and subjects IDs is the size of the
-number of query sequences.
+allocate space for holding slices of matches lengths and subject
+IDs. Then we stream the query against the esas and pass the matches
+along the channel. 
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
   go func(Esas []*esa.Esa, subjectIDs []int){
 	  defer wg.Done()
 	  var matches Matches
-	  n :=len(querySeqs)
-	  matches.matchLengths = make([][]int,n)
-	  matches.subjectID = make([][]int,n)
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
+	  //<<Stream query against esas, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
   }(Esas, subjectIDs)
 #+end_src
 #+begin_export latex
-Then we iterate over the range of existing sequences and allocate
-space for the array of matches lengths and for the array of subject
-IDs for each query, which has a dimension m, the size of the length of
-the query sequences.
+Let $n$ be the number of sequences that make up the current query. We
+allocate a slice of $n$ slices of match lengths and a separate slice
+of $n$ slices of subject IDs. Then we iterate over the query sequences
+and allocate the individual slices of match lengths and subject IDs,
+each the same length as the respective sequence.
 #+end_export
 #+begin_src go <<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>=
+  n :=len(querySeqs)
+  matches.matchLengths = make([][]int,n)
+  matches.subjectID = make([][]int,n)
   for i, querySeq := range querySeqs {
 	  m := len(querySeq.Data())
 	  matches.matchLengths[i] = make([]int,m)
 	  matches.subjectID[i] = make([]int,m)
-	  //<<Stream against esas, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
-We then iterate over the esas, and calculate the matches lengths
-between the current query and the set of esas in the goroutine.
+To stream the query against the subject, we iterate over the sequences
+that make up the query. For each sequence we stream the forward and
+reverse strand.
 #+end_export
-#+begin_src go <<Stream against esas, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Stream query against esas, Ch. \ref{ch:prep}>>=
+  for i, querySeq := range querySeqs {
+	  //<<Stream forward strand, Ch. \ref{ch:prep}>>
+	  //<<Stream reverse strand, Ch. \ref{ch:prep}>>
+  }
+#+end_src
+#+begin_export latex
+We stream the forward strand against the set of esas in the goroutine.
+#+end_export
+#+begin_src go <<Stream forward strand, Ch. \ref{ch:prep}>>=
+  f := querySeq.Data()
+  rev := false
   for j, esa := range Esas {
-	  q := querySeq.Data()
-	  mat.UpdateMatchLengths(q, esa, subjectIDs[j],
+	  mat.UpdateMatchLengths(f, esa, subjectIDs[j],
 		  matches.matchLengths[i],
-		  matches.subjectID[i])
+		  matches.subjectID[i],
+		  rev)
+  }
+#+end_src
+#+begin_export latex
+We repeat the streaming for the reverse strand.
+#+end_export
+#+begin_src go <<Stream reverse strand, Ch. \ref{ch:prep}>>=
+  r := revQuerySeqs[i].Data()
+  rev = true
+  for j, esa := range Esas {
+          mat.UpdateMatchLengths(r, esa, subjectIDs[j],
+                  matches.matchLengths[i],
+                  matches.subjectID[i],
+                  rev)
   }
 #+end_src
 #+begin_export latex
