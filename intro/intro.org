@@ -404,24 +404,24 @@ position.
   \caption{$\langle\mbox{output}\rangle$ from
     Algorithm~\ref{alg:alf}.}\label{alg:out}
   \begin{algorithmic}[1]
-  \REQUIRE queryName
-  \REQUIRE $m$, query length
-  \REQUIRE $\mbox{ml}$, array of $m$ match lengths
-  \REQUIRE su, array of $m$ subject identifiers
-  \REQUIRE subjectNames, array of subject names
-  \ENSURE subjectsFound, map of subject IDs and names
-  \ENSURE Table of match lengths and subject IDs with header
-  consisting of queryName and ID/name pairs of the subjects found
-  \FOR{$i\leftarrow 1$ \TO $m$}
-  \STATE $s\leftarrow \mbox{su}[i]$
-  \IF{$\mbox{subjectsFound}[i]=\bot$}
-  \STATE $\mbox{subjectsFound}[i]\leftarrow \mbox{subjectNames}[i]$
-  \ENDIF
-  \ENDFOR
-  \STATE $\mbox{print \#queryName, subjectsFound}$
-  \FOR{$i\leftarrow$ \TO $m$}
-  \STATE $\mbox{print}$ $\mbox{ml}[i]$, $\mbox{su}[i]$
-  \ENDFOR
+    \REQUIRE queryName
+    \REQUIRE $m$, query length
+    \REQUIRE $\mbox{ml}$, array of $m$ match lengths
+    \REQUIRE su, array of $m$ subject identifiers
+    \REQUIRE subjectNames, array of subject names
+    \ENSURE subjectsFound, map of subject IDs and names
+    \ENSURE Table of match lengths and subject IDs with header
+    consisting of queryName and ID/name pairs of the subjects found
+    \FOR{$i\leftarrow 1$ \TO $m$}
+       \STATE $s\leftarrow \mbox{su}[i]$
+       \IF{$\mbox{subjectsFound}[s]=\ty{""}$}
+          \STATE $\mbox{subjectsFound}[s]\leftarrow \mbox{subjectNames}[s]$
+       \ENDIF
+    \ENDFOR
+    \STATE $\mbox{print \#queryName, subjectsFound}$
+    \FOR{$i\leftarrow$ \TO $m$}
+       \STATE $\mbox{print}$ $\mbox{ml}[i]$, $\mbox{su}[i]$
+    \ENDFOR
   \end{algorithmic}
 \end{algorithm}
 
