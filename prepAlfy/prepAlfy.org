@@ -728,15 +728,19 @@ by the name of the query file and a key/value map to the subject
 id. The pairs are written in the following manner :
 \ty{subject\_id=subject\_file}.
 
-We start by constructing the list of existing key/value pairs that are
-contained inside the subjectID array. Then we print it out in a single
-line.
+We start by determining the list of subject IDs that are present in
+the results and then print it out.
 #+end_export
 #+begin_src go <<Write output header, Ch. \ref{ch:prep}>>=
   fmt.Printf(">%s",querySeq.Header())
   //<<Determine subjects seen, Ch. \ref{ch:prep}>>
   //<<Print subjects seen, Ch. \ref{ch:prep}>>
 #+end_src
+#+begin_export latex
+We create a map to save the subject IDs that we detect. Then iterate
+over the range of existings ids, and if the id was not previously seen
+we store it in the map.
+#+end_export
 #+begin_src go <<Determine subjects seen, Ch. \ref{ch:prep}>>=
   seen := make(map[int]bool)
   for _, id := range ids {
@@ -745,6 +749,12 @@ line.
 	  }
   }
 #+end_src
+#+begin_export latex
+Then we go over the subject names, and for every subject name present
+in the map of seen subjects we print out the corresponding key,
+numeric id, and string, the filename. For more readability we convert
+the subject ids to 1-based.
+#+end_export
 #+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
   for i, subjectName := range subjectNames {
 	  if seen[i] {
@@ -754,17 +764,10 @@ line.
   fmt.Printf("\n")
 #+end_src
 #+begin_export latex
-For every ID present in the subjectID array, we map it to the map of
-subject IDs previously contructed and if its the first time it appears
-we append it to the list of key-values to print. For more readability
-we convert the subject ID to 1-based list. At the end we sort the
-pairs.
-#+end_export
-#+begin_export latex
 Then we write the matches and corresponding subject IDs where they
 were found. For this we iterate over the length of the matchesLength,
 and for each position print the corresponding matche length and the
-subject ID. We also convert the subjectID into a 1-based list to match
+subject id. We also convert the subjectID into a 1-based list to match
 the header.
 #+end_export
 #+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
