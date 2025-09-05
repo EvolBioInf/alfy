@@ -493,12 +493,14 @@ We import byte.
 Since streaming is the rate limiting step, we distribute the streaming
 of the subjects across goroutines. For this we start by constructing a
 structure to hold both the match lengths and the subjects ID. This
-ensures both values are passed on together.
+ensures both values are passed on together. Additionally we add a
+third variable, id, to hold the order the matches were calculated.
 #+end_export
 #+begin_src go <<Types, Ch. \ref{ch:prep}>>=
   type Matches struct {
 	  matchLengths [][]int
 	  subjectID [][]int
+	  id int
   }
 #+end_src
 #+begin_export latex
@@ -563,15 +565,16 @@ We import math.
 #+end_src
 #+begin_export latex
 We pass the current set of esas and subject IDs to the
-goroutine. Inside it we defer its closure. We also declare and
-allocate space for holding slices of matches lengths and subject
-IDs. Then we stream the query against the esas and pass the matches
-along the channel. 
+goroutine. Inside it we defer its closure. We add a counter for the
+matches id, and we also declare and allocate space for holding slices
+of matches lengths and subject IDs. Then we stream the query against
+the esas and pass the matches along the channel.
 #+end_export
 #+begin_src go <<Goroutine for streaming, Ch. \ref{ch:prep}>>=
   go func(Esas []*esa.Esa, subjectIDs []int){
 	  defer wg.Done()
 	  var matches Matches
+	  matches.id = i
 	  //<<Allocate space for match lengths and subject ID, Ch. \ref{ch:prep}>>
 	  //<<Stream query against esas, Ch. \ref{ch:prep}>>
 	  matchesSets <- matches
@@ -649,8 +652,11 @@ working goroutines have finished and then close the channel.
 #+end_src
 #+begin_export latex
 In the iterator we pack the matches structure with the results from
-the channel. The results from the matches lengths and the subject IDs
-are stored in a two-dimensional master set of lengths.
+the channel. To ensure that we summarize the matches in the same
+order, we sort the matches with the match id counter started inside
+the goroutine. Then we iterate over the sorted matches and the results
+from the matches lengths and the subject IDs are stored in a
+two-dimensional master set of lengths.
 #+end_export
 #+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
   matchLengths := make([][]int,0)
@@ -658,7 +664,8 @@ are stored in a two-dimensional master set of lengths.
   for _, qs := range querySeqs {
 	  //<<Construct master sets, Ch. \ref{ch:prep}>>
   }
-  for match := range matchesSets {
+  //<<Sort matches sets, Ch. \ref{ch:prep}>>
+  for _, match := range msSlice {
 	  //<<Store match lengths, Ch. \ref{ch:prep}>>
   }
 #+end_src
@@ -673,6 +680,44 @@ length of the query sequences.
   matchLengths = append(matchLengths, ml)
   ml = make([]int, n)
   subjectIDs = append(subjectIDs,ml)
+#+end_src
+#+begin_export latex
+We then sort the the machest sets to ensure that the matches are all
+summarized in the same order. This is because in some situations the
+subject IDs can be order dependent. To sort the matches, we first
+contruct a slice of matches and then sort it.
+#+end_export
+#+begin_src go <<Sort matches sets, Ch. \ref{ch:prep}>>=
+  //<<Construct slice of matches, Ch. \ref{ch:prep}>>
+  //<<Sort slice of matches, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+To construct the slice of matches we iterate over the range of the
+sets of matches and construct the slice.
+#+end_export
+#+begin_src go <<Construct slice of matches, Ch. \ref{ch:prep}>>=
+  msSlice := []Matches{}
+  for matchesSet := range matchesSets {
+	  msSlice = append(msSlice, matchesSet)
+  }
+#+end_src
+#+begin_export latex
+Then we sort the slice. Since we are sorting a type Matches we write
+our own sorting function. This will sort the matches id in ascending
+order.
+#+end_export
+#+begin_src go <<Sort slice of matches, Ch. \ref{ch:prep}>>=
+  slices.SortFunc(msSlice, func(a, b Matches) int {
+	  if a.id < b.id {
+		  return -1
+	  } else if a.id == b.id {
+		  return 0
+	  }
+	  return 1
+  })
+#+end_src
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+"slices"
 #+end_src
 #+begin_export latex
 We store the longer of the matches for each position and the

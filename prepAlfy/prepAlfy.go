@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"sync"
 )
@@ -21,6 +22,7 @@ import (
 type Matches struct {
 	matchLengths [][]int
 	subjectID    [][]int
+	id           int
 }
 
 func readDir(dir string) map[string]bool {
@@ -196,6 +198,7 @@ func main() {
 			go func(Esas []*esa.Esa, subjectIDs []int) {
 				defer wg.Done()
 				var matches Matches
+				matches.id = i
 				n := len(querySeqs)
 				matches.matchLengths = make([][]int, n)
 				matches.subjectID = make([][]int, n)
@@ -238,7 +241,19 @@ func main() {
 			ml = make([]int, n)
 			subjectIDs = append(subjectIDs, ml)
 		}
-		for match := range matchesSets {
+		msSlice := []Matches{}
+		for matchesSet := range matchesSets {
+			msSlice = append(msSlice, matchesSet)
+		}
+		slices.SortFunc(msSlice, func(a, b Matches) int {
+			if a.id < b.id {
+				return -1
+			} else if a.id == b.id {
+				return 0
+			}
+			return 1
+		})
+		for _, match := range msSlice {
 			for i, lengths := range match.matchLengths {
 				for j, length := range lengths {
 					if matchLengths[i][j] < length {

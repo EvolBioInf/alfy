@@ -9,7 +9,7 @@
 2	2
 1	2
 0	2
-1	2
+1	1
 #q2.fasta
 >q2 1=s1.fasta 2=s2.fasta
 4	1
