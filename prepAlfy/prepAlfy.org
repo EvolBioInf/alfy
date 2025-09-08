@@ -791,29 +791,31 @@ present in the results and then print it out.
   fmt.Printf("\n")
 #+end_src
 #+begin_export latex
-We create a map to save the subject IDs that we detect. Then iterate
-over the range of existings ids, and if the id was not previously seen
-we store it in the map.
+The subjects seen are the distinct subject IDs annotated for the
+current query. To find these distinct IDs, we create a map to mark
+subject IDs, \ty{marked}, and a slice to store them in,
+\ty{seen}. Then we iterate over the range of ids, and if the id has
+not been marked, do so and store it. To stabilize our output, we sort
+the subject IDs we've seen.
 #+end_export
 #+begin_src go <<Determine subjects seen, Ch. \ref{ch:prep}>>=
-  seen := make(map[int]bool)
+  marked := make(map[int]bool)
+  seen := []int{}
   for _, id := range ids {
-	  if !seen[id] {
-		  seen[id] = true
+	  if !marked[id] {
+		  marked[id] = true
+		  seen = append(seen, id)
 	  }
   }
+  slices.Sort(seen)
 #+end_src
 #+begin_export latex
-Then we go over the subject names, and for every subject name present
-in the map of seen subjects we print out the corresponding key,
-numeric id, and string, the filename. For more readability we delete
-convert the subject ids to 1-based.
+We print the legend of subject IDs and names. IDs are printed in
+1-based notation.
 #+end_export
 #+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
-  for i, subjectName := range subjectNames {
-	  if seen[i] {
-		  fmt.Printf(" %d=%s", i+1, subjectName)
-	  }
+  for _, id := range seen {
+	  fmt.Printf(" %d=%s", id+1, subjectNames[id])
   }
 #+end_src
 #+begin_export latex

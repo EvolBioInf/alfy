@@ -286,16 +286,17 @@ func main() {
 			ids := subjectIDs[i]
 			fmt.Printf(">%s", querySeq.Header())
 			if !*optN {
-				seen := make(map[int]bool)
+				marked := make(map[int]bool)
+				seen := []int{}
 				for _, id := range ids {
-					if !seen[id] {
-						seen[id] = true
+					if !marked[id] {
+						marked[id] = true
+						seen = append(seen, id)
 					}
 				}
-				for i, subjectName := range subjectNames {
-					if seen[i] {
-						fmt.Printf(" %d=%s", i+1, subjectName)
-					}
+				slices.Sort(seen)
+				for _, id := range seen {
+					fmt.Printf(" %d=%s", id+1, subjectNames[id])
 				}
 			}
 			fmt.Printf("\n")
