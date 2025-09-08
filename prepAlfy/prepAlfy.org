@@ -52,7 +52,8 @@ We import util.
 #+begin_export latex
 We declare options for printing the version, picking the query and
 subject directories and the number of threads. By default this
-corresponds to the number of logical CPUs available on the system.
+corresponds to the number of logical CPUs available on the system. We
+also allow the user to print subject names instead of identifiers.
 #+end_export
 #+begin_src go <<Declare options, Ch. \ref{ch:prep}>>=
   optV := flag.Bool("v", false, "version")
@@ -60,6 +61,8 @@ corresponds to the number of logical CPUs available on the system.
   optS := flag.String("s", "", "subject directory")
   ncpu := runtime.NumCPU()
   optT := flag.Int("t", ncpu , "number of threads")
+  optN := flag.Bool("n", false, "print subject names " +
+	  "(default identifiers)")
 #+end_src
 #+begin_export latex
 We import flag and runtime.
@@ -764,22 +767,28 @@ printing out the query filename.
 	   ml := matchLengths[i]
 	   ids := subjectIDs[i]
 	   //<<Write output header, Ch. \ref{ch:prep}>>
-	   //<<Write matches and subject ID, Ch. \ref{ch:prep}>>
+	   //<<Write matches and subjects, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
 The header consists of a single line that starts with a hash followed
 by the name of the query file and a key/value map to the subject
-id. The pairs are written in the following manner :
-\ty{subject\_id=subject\_file}.
-
-We start by determining the list of subject IDs that are present in
-the results and then print it out.
+id. Unless the user requested subject names, the query name is
+followed by a legend consisting of pairs of subject ID and subject
+file linked by ``='', that is,
+\begin{verbatim}
+subject_id=subject_file
+\end{verbatim}
+To construct the legend, we determine the list of subject IDs that are
+present in the results and then print it out.
 #+end_export
 #+begin_src go <<Write output header, Ch. \ref{ch:prep}>>=
   fmt.Printf(">%s",querySeq.Header())
-  //<<Determine subjects seen, Ch. \ref{ch:prep}>>
-  //<<Print subjects seen, Ch. \ref{ch:prep}>>
+  if !*optN {
+	  //<<Determine subjects seen, Ch. \ref{ch:prep}>>
+	  //<<Print subjects seen, Ch. \ref{ch:prep}>>
+  }
+  fmt.Printf("\n")
 #+end_src
 #+begin_export latex
 We create a map to save the subject IDs that we detect. Then iterate
@@ -797,8 +806,8 @@ we store it in the map.
 #+begin_export latex
 Then we go over the subject names, and for every subject name present
 in the map of seen subjects we print out the corresponding key,
-numeric id, and string, the filename. For more readability we convert
-the subject ids to 1-based.
+numeric id, and string, the filename. For more readability we delete
+convert the subject ids to 1-based.
 #+end_export
 #+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
   for i, subjectName := range subjectNames {
@@ -806,21 +815,29 @@ the subject ids to 1-based.
 		  fmt.Printf(" %d=%s", i+1, subjectName)
 	  }
   }
-  fmt.Printf("\n")
 #+end_src
 #+begin_export latex
-Then we write the matches and corresponding subject IDs where they
-were found. For this we iterate over the length of the matchesLength,
-and for each position print the corresponding matche length and the
-subject id. We also convert the subjectID into a 1-based list to match
-the header.
+Then we write the matches and corresponding subjects where they were
+found. For this we iterate over the match lengths, and print each one
+together with the subject name or ID in a two-column table. Subject
+IDs are converted to 1-based values to match the header.
 #+end_export
-#+begin_src go <<Write matches and subject ID, Ch. \ref{ch:prep}>>=
+#+begin_src go <<Write matches and subjects, Ch. \ref{ch:prep}>>=
   for j := 0; j < len(ml); j++ {
-	  fmt.Printf("%d\t%d\n",
+	  name := strconv.Itoa(ids[j]+1)
+	  if *optN {
+		  name = subjectNames[ids[j]]
+	  }
+	  fmt.Printf("%d\t%s\n",
 		  ml[j],
-		  ids[j]+1)
+		  name)
   }
+#+end_src
+#+begin_export latex
+We import \ty{strconv}.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "strconv"
 #+end_src
 #+begin_export latex
 We have now finished \ty{prepAlfy}, which still needs to be tested.
@@ -851,7 +868,7 @@ We construct a set of tests and iterate over them.
 #+begin_src go <<Testing, Ch. \ref{ch:prep}>>=
   var tests []*exec.Cmd
 	  //<<Construct tests, Ch. \ref{ch:prep}>>
-  for _, test := range tests {
+  for i, test := range tests {
 	  //<<Run test, Ch. \ref{ch:prep}>>
   }
 #+end_src
@@ -873,16 +890,23 @@ that we set the queries and the subjects.
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
-In a second test, we evaluate the number of threads by using a single
-thread.
+In a second test, we test setting the number of threads by using a
+single thread.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
   test = exec.Command(p, "-q", q, "-s", s, "-t", "1")
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
-We run a test and compare the results with the one we want stored in
-the file r1.txt.
+In our third and last test, we use subject names instead of IDs.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
+  test = exec.Command(p, "-q", q, "-s", s, "-n")
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+We run a test and compare the results we get with the results we want,
+which are stored in files \ty{r1.txt}, \ty{r2.txt}, and so on.
 #+end_export
 #+begin_src go <<Run test, Ch. \ref{ch:prep}>>=
   //<<Testing read output, Ch. \ref{ch:prep}>>
@@ -890,6 +914,12 @@ the file r1.txt.
   if !bytes.Equal(get,want) {
 	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
   }
+#+end_src
+#+begin_export latex
+We import \ty{bytes}.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
+  "bytes"
 #+end_src
 #+begin_export latex
 We read the output from \ty{prepAlfy}.
@@ -901,19 +931,19 @@ We read the output from \ty{prepAlfy}.
   }
 #+end_src
 #+begin_export latex
-We read the contents of the r1.txt file.
+We read the contents of the appropriate results file, \verb+r*.txt+.
 #+end_export
 #+begin_src go <<Testing read want, Ch. \ref{ch:prep}>>=
-  f := "r1.txt"
+  f := "r" + strconv.Itoa(i+1) + ".txt"
   want, err := os.ReadFile(f)
   if err != nil {
 	  t.Error(err)
   }
 #+end_src
 #+begin_export latex
-We import os and bytes.
+We import \ty{strconv} and \ty{os}.
 #+end_export
 #+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
+  "strconv"
   "os"
-  "bytes"
 #+end_src

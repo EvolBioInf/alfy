@@ -1,0 +1,24 @@
+#q1.fasta
+>q1
+4	s1.fasta
+3	s1.fasta
+2	s1.fasta
+5	s2.fasta
+4	s2.fasta
+3	s2.fasta
+2	s2.fasta
+1	s2.fasta
+0	s2.fasta
+1	s1.fasta
+#q2.fasta
+>q2
+4	s1.fasta
+4	s2.fasta
+3	s2.fasta
+2	s2.fasta
+1	s2.fasta
+0	s2.fasta
+4	s2.fasta
+3	s2.fasta
+2	s2.fasta
+1	s2.fasta

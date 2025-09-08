@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"slices"
 	"sort"
+	"strconv"
 	"sync"
 )
 
@@ -58,6 +59,8 @@ func main() {
 	optS := flag.String("s", "", "subject directory")
 	ncpu := runtime.NumCPU()
 	optT := flag.Int("t", ncpu, "number of threads")
+	optN := flag.Bool("n", false, "print subject names "+
+		"(default identifiers)")
 	u := "prepAlfy -q <queryDir> -s <subjectDir>"
 	p := "Prepare alfy input"
 	e := "prepAlfy -q queries/ -s subjects/"
@@ -282,22 +285,28 @@ func main() {
 			ml := matchLengths[i]
 			ids := subjectIDs[i]
 			fmt.Printf(">%s", querySeq.Header())
-			seen := make(map[int]bool)
-			for _, id := range ids {
-				if !seen[id] {
-					seen[id] = true
+			if !*optN {
+				seen := make(map[int]bool)
+				for _, id := range ids {
+					if !seen[id] {
+						seen[id] = true
+					}
 				}
-			}
-			for i, subjectName := range subjectNames {
-				if seen[i] {
-					fmt.Printf(" %d=%s", i+1, subjectName)
+				for i, subjectName := range subjectNames {
+					if seen[i] {
+						fmt.Printf(" %d=%s", i+1, subjectName)
+					}
 				}
 			}
 			fmt.Printf("\n")
 			for j := 0; j < len(ml); j++ {
-				fmt.Printf("%d\t%d\n",
+				name := strconv.Itoa(ids[j] + 1)
+				if *optN {
+					name = subjectNames[ids[j]]
+				}
+				fmt.Printf("%d\t%s\n",
 					ml[j],
-					ids[j]+1)
+					name)
 			}
 		}
 	}
