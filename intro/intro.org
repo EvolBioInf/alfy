@@ -174,16 +174,16 @@ average match length zero.
 \end{verbatim}
 \section{Reimplementation}
 \subsection{Algorithm}
-Algorithm~\ref{alg:alf} shows a sketch of the method at the heart of
+Algorithm~\ref{alg:prep} shows a sketch of the method at the heart of
 our reimplementation of Alfy reduced to a single query input. This
 procedure is simply iterated to deal with multiple
-queries. Algorithm~\ref{alg:alf} is essentially the algorithm used in
+queries. Algorithm~\ref{alg:prep} is essentially the algorithm used in
 Fur to find unique regions from match lengths~\cite{vie24:mar}. The
 most significant change is that in Alfy we keep track of the subject
 labels in addition to match lengths
 
 \begin{algorithm}
-\caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:alf}
+\caption{Finding the longest matches between a query sequence and a set of subject sequences.}\label{alg:prep}
   \begin{algorithmic}[1]
     \REQUIRE $q$, query sequence length $m$
     \REQUIRE $\mbox{subjects}$, array of $n$ subject sequences
@@ -208,7 +208,7 @@ of the algorithm (line 3), followed by the interpolation phase (line
 
 \begin{algorithm}
   \caption{$\langle\mbox{match}\rangle$ from
-    Algorithm~\ref{alg:alf}.}\label{alg:mat}
+    Algorithm~\ref{alg:prep}.}\label{alg:mat}
   \begin{algorithmic}[1]
     \STATE $j\leftarrow 1$
     \WHILE{$j\le m$}
@@ -247,7 +247,7 @@ matches.
 
 \begin{algorithm}
   \caption{$\langle\mbox{interpolate}\rangle$ from
-    Algorithm~\ref{alg:alf}.}\label{alg:int}
+    Algorithm~\ref{alg:prep}.}\label{alg:int}
   \begin{algorithmic}[1]
     \FOR{$i\leftarrow 2$ \TO $m$}
        \STATE $x\leftarrow \mbox{ml}[i-1]-1$
@@ -285,7 +285,7 @@ match gives us $\mbox{ml}$ and $\mbox{su}$ at the end of the matching
 phase shown in lines 1 and 2 of Table~\ref{tab:alg}.
 
   \begin{table}
-    \caption{Tracing Algorithm~\ref{alg:alf} for $q_1=\ty{AAATAATAGT}$.}\label{tab:alg}
+    \caption{Tracing Algorithm~\ref{alg:prep} for $q_1=\ty{AAATAATAGT}$.}\label{tab:alg}
     \begin{center}
     \begin{tabular}{rclccccccccccc}\hline
 &&&&  1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\ \cline{5-14}
@@ -402,7 +402,7 @@ position.
 
 \begin{algorithm}
   \caption{$\langle\mbox{output}\rangle$ from
-    Algorithm~\ref{alg:alf}.}\label{alg:out}
+    Algorithm~\ref{alg:prep}.}\label{alg:out}
   \begin{algorithmic}[1]
     \REQUIRE queryName
     \REQUIRE $m$, query length
@@ -425,10 +425,50 @@ position.
   \end{algorithmic}
 \end{algorithm}
 
+The \ty{alfy} program then performs a sliding window analysis on the
+matching results to calculate the homology between the query and the
+subject sequences. Regions can have one of the following three
+denominations. They can be unique, in which case no homology is shared
+between the query region and the subjects, they can have a strong
+homology to one subject sequence, or they can have a weak homology to
+one or more subject sequences in this case they are marked as
+non-homologous regions.
+
+By annotating the unique regions in the query, these regions can be
+quickly skipped over during the sliding window analysis, as we know
+\textit{a priori} that no homology is to be found.
+
+Algorithm~\ref{alg:alf} shows the sliding window algorithm.
+\begin{algorithm}
+  \caption{Calculating the homology between from a set of match
+    lengths and subject identifiers.}\label{alg:alf}
+\end{algorithm}
+
+The output from \ty{alfy} is identical to the one from the previous
+version, shown in Table~\ref{tab:alf}. Its comprised by a four column
+table with the start and end coordinates of the homologous region in
+the query, the percentage of the region that is homologous and the
+name of the subject it is homologous to.
+
+\begin{table}
+ \caption{The output of \ty{alfy} for a window of 5 bp.}\label{tab:alf}
+    \begin{center}
+      \begin{tabular}{rrrr}
+        \hline
+        \multicolumn{4}{l}{\textgreater q1.fasta}\\
+        1 & 5 & 60 & s1\\
+        6 & 10 & 80 & s2\\
+ \multicolumn{4}{l}{\textgreater q2.fasta}\\
+ 1 & 10 & 90 & s2\\\hline
+      \end{tabular}
+      \end{center}
+\end{table}
+
 \subsection{Coding}
 The subpackage \ty{mat} contains the function \ty{Match}, which takes
 as argument a query sequence, and the ESA of a subject sequence. It
-then carries out lines 3--10 of Algorithm~\ref{alg:alf} and returns
+then carries out lines 3--10 of Algorithm~\ref{alg:prep} and returns
 two arrays, match lengths, $\mbox{ml}$, and subject identifiers,
 $\mbox{su}$.
+
 #+end_export
