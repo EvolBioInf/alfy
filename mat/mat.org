@@ -55,19 +55,26 @@ just beyond the terminal mismatch.
   for j < m {
 	  l := s.MatchPref(q[j:]).L
 	  p := j
-	  //<<Map to forward strand?, Pa. \ref{pa:mat}>>
+	  if rev {
+		  //<<Map to forward strand, Pa. \ref{pa:mat}>>
+	  }
 	  //<<Update match length?, Pa. \ref{pa:mat}>>
 	  j += l + 1
   }
 #+end_src
 #+begin_export latex
-If we are analyzing a reverse strand, \ty{p} refers to the position on
-that strand, which we map to the forward strand.
+For our query of length $m$, position $r$ on the reverse strand is
+position $f=m-r-1$ on the forward strand. For our match of length
+$\ell$ this position on the forward strand is further offset to the
+left by $\ell-1$ or nothing, whichever is greater,
+$o=\mbox{max}(\ell-1,0)$.
 #+end_export
-#+begin_src go <<Map to forward strand?, Pa. \ref{pa:mat}>>=
-  if rev {
-	  p = m - p -l
+#+begin_src go <<Map to forward strand, Pa. \ref{pa:mat}>>=
+  o := l - 1
+  if o < 0 {
+	  o = 0
   }
+  p = m - p - 1 - o
 #+end_src
 #+begin_export latex
 If $\ell$, is greater than $\mbox{ml}[j]$, we update $\mbox{ml}[j]$

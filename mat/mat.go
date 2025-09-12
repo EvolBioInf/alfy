@@ -14,7 +14,11 @@ func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
 		l := s.MatchPref(q[j:]).L
 		p := j
 		if rev {
-			p = m - p - l
+			o := l - 1
+			if o < 0 {
+				o = 0
+			}
+			p = m - p - 1 - o
 		}
 		if l > ml[p] {
 			ml[p] = l
