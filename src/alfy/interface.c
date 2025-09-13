@@ -13,21 +13,8 @@
 #include "eprintf.h"
 #include "stringUtil.h"
 
-#if defined(_DEBUG) && defined(WIN) 
-#include "leakWatcher.h"
-#endif
-
-#if defined(_DEBUG) && defined(WIN) 
-  #define new DEBUG_NEW
-  #undef THIS_FILE
-  static char THIS_FILE[] = __FILE__;
-#endif
-
 // check multiple definition of an argument
 // if the argument is already defined, then produce warning??
-#if defined(WIN)
-static 
-#endif
 void checkMultipleArgDef(char list[], char c) {
 
   if(!list[(int)c]){
@@ -39,9 +26,6 @@ void checkMultipleArgDef(char list[], char c) {
 }
 
 /* check whether an argument is a null pointer */
-#if defined(WIN)
-static 
-#endif
 void checkNullPointer(char c, char *arg) {	
 
   if (!arg) {
@@ -74,7 +58,6 @@ Args *getArgs(int argc, char *argv[]){
   //	char **r;
   char c;
   int arg;
-  //	int numberOfFiles;
   char list[256] = {0}; // options are not yet set
 
   args = (Args *)emalloc(sizeof(Args));
@@ -96,7 +79,6 @@ Args *getArgs(int argc, char *argv[]){
   args->v = 0;
   arg = 1;
   args->m = DEFAULT_M;
-  args->t = 0;
   args->r = 0;
   args->s = 0;
   args->f = -1;
@@ -112,7 +94,6 @@ Args *getArgs(int argc, char *argv[]){
     switch (c){
     case 'i':                           /* query file; if the option -d is included */ 
       checkNullPointer(c, argv[arg]);
-      //args->i = argv[arg];            /* then search for the query file: (1) in the program's dir (2) in the directory specified with -d*/
       // read one or more query files specified with an option -i
       getFileNames(argc, argv, list, c, &args->i, &args->queryFileNumber, &arg);
       break;
@@ -210,19 +191,12 @@ Args *getArgs(int argc, char *argv[]){
       }
       break;
 
-    case 't':                           /* print run-time information */
-      args->t = 1;
-      break;
-
     case 'r':                           /* print runner(s)-up information */
       args->r = 1;
       break;
 
     case 'f':                            /* minimal length of recombination fragment */
       args->f = atoi(argv[++arg]);
-      //if (args->f < 0) {
-      //	args->f = (int)args->w;
-      //}
       break;
 
     case 'O':                           /* subject set of an annotation is a subset of all windows within annotation */
@@ -249,11 +223,6 @@ Args *getArgs(int argc, char *argv[]){
     arg++;  
   } // end while
 
-  // allowed stdin?
-  // if (!args->i) {
-  //   printf("ERROR[gt]: Query file must be specified using -i option!\n");
-  //   args->e = 1;
-  //}
   if (args->c == 0) {
     args->c = (int)((float)args->w/10. + 0.5);
   }
@@ -303,13 +272,12 @@ void printUsage(char *version){
   printf("\t[-I <FILE> read list of query intervals from FILE; used for windows analysis based on precomputed intervals (testing purpose)]\n");  
   printf("\t[-O subject set of an annotation is a subset of all windows within annotation; default: each annotation has the same subject set over all windows within annotation]\n");			     
   printf("\t[-r print runner-up information (sliding window analysis)]\n");			     
-  printf("\t[-t print run-time]\n");			     
   printf("\t[-h print this help message]\n");
   printf("\t[-v print information about program]\n");			     
 }
 
 void printSplash(char *version){
-  printf("alfy %s\n",version);
+  printf("%s %s\n", progname(), version);
   printf("Written by Mirjana Domazet-Loso\n");
   printf("Distributed under the GNU General Public License\n");
   printf("Please send bug reports to Mirjana.Domazet-Loso@fer.hr\n");
