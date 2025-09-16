@@ -18,8 +18,8 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 
 !The function \ty{UpdateMatchLengths} takes as arguments a query
 !sequence, the enhanced suffix array (ESA) of a subject sequence, the
-!label of that subject sequence, an array of match lengths, an array
-!of subject labels, and whether or not the query is a reverse
+!label of that subject sequence, an array of match lengths, a double
+!array of subject labels, and whether or not the query is a reverse
 !strand. It then updates the arrays of match lengths and subject
 !labels.
 
@@ -30,7 +30,7 @@ interpolate the match lengths.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
   func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
-	  ml, su []int, rev bool) {
+	  ml []int, su [][]int, rev bool) {
 	  j := 0
 	  //<<Calculate match lengths, Pa. \ref{pa:mat}>>
 	  //<<Interpolate match lengths, Pa. \ref{pa:mat}>>
@@ -78,26 +78,65 @@ $o=\mbox{max}(\ell-1,0)$.
 #+end_src
 #+begin_export latex
 If $\ell$, is greater than $\mbox{ml}[j]$, we update $\mbox{ml}[j]$
-and note the label of the current subject sequence, $i$.
+and note the label of the current subject sequence, $i$. If $\ell$ is
+equal to $\mbox{ml}[j]$ we append the label of the current subject
+sequence to the same position.
 #+end_export
 #+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
   if l > ml[p] {
 	  ml[p] = l
-	  su[p] = i
+	  su[p][0] = i
+  } else if l == ml[p] {
+	  su[p] = append(su[p],i)
   }
 #+end_src
 #+begin_export latex
 We interpolate the match lengths and subject labels according to
-Algorithm~\ref{alg:int}.
+Algorithm~\ref{alg:int}. At each position, the match to the left is
+extended unless we are at the start of a new match. When extending the
+match, we update the match length at the current position and the
+subject ID. If, when extending the match, we encounter a new match
+with the same length we merge the subject IDs.
 #+end_export
 #+begin_src go <<Interpolate match lengths, Pa. \ref{pa:mat}>>=
   for i := 1; i < len(q); i++ {
 	  x := ml[i-1] - 1
-	  if x >= ml[i] {
+	  if x < 0 {
+		  x= 0
+	  }
+	  if x > ml[i] {
 		  ml[i] = x
-		  su[i] = su[i-1]
+		  su[i][0] = su[i-1][0]
+	  } else if x == ml[i] {
+		  //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
 	  }
   }
+#+end_src
+#+begin_export latex
+To merge the subjects IDs, we go through the list of all existing
+subject IDs at that position and add to it if the new subject ID is
+not contained in the list of subject IDs.
+
+At the end we ensure that the slice only contains the new subject IDs
+by reslicing the slice, and the append the new subjectIDs to the ones
+that are passed on from the match extension.
+#+end_export
+#+begin_src go <<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>=
+  c := 0
+  for z := 0; z < len(su[i]); z++ {
+	  if !(slices.Contains(su[i-1], su[i][z])) {
+		  su[i][c] = su[i][z]
+		  c++
+	  }
+  }
+  su[i] = su[i][:c]
+  su[i] = append(su[i],su[i-1]...)
+#+end_src
+#+begin_export latex
+We import slices.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:mat}>>=
+"slices"
 #+end_src
 #+begin_export latex
 We've finished writing package \ty{mat}, let's test it.
@@ -166,9 +205,9 @@ We construct the match lengths and the subject labels we want.
   wml := [][]int{
 	  []int{4,3,2,5,4,3,2,1,0,1},
 	  []int{4,3,2,2,1,0,4,3,2,1}}
-  wsu := [][]int{
-	  []int{0,0,0,1,1,1,1,1,1,0},
-	  []int{0,0,0,1,1,1,1,1,1,1}}
+  wsu := [][][]int{
+	  [][]int{{0}, {0}, {0}, {1}, {1}, {1}, {1}, {1}, {0,1}, {0,1}},
+	  [][]int{{0}, {0}, {0}, {1}, {1}, {0,1}, {1}, {1}, {1}, {0,1}}}
 #+end_src
 #+begin_export latex
 For each query we prepare an array of match lengths and an array of
@@ -191,10 +230,10 @@ to -1. This allows us to check for gaps in our analysis.
 #+begin_src go <<Prepare $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>=
   n := len(q)
   ml := make([]int, n)
-  su := make([]int, n)
+  su := make([][]int, n)
   for j := 0; j < n; j++ {
-    ml[j] = -1
-    su[j] = -1
+	  ml[j] = -1
+	  su[j] = append(su[j],-1)
   }
 #+end_src
 #+begin_export latex
@@ -214,18 +253,21 @@ We import \ty{esa}.
   "github.com/evolbioinf/esa"
 #+end_src
 #+begin_export latex
-We check the updated arrays by calling the function \ty{check}.
+We check the updated arrays by calling the function \ty{checkM} to
+check the match lenghts and \ty{checkS} to check the subject IDs.
 #+end_export
 #+begin_src go <<Check $\mbox{ml}$ and $\mbox{su}$, Pa. \ref{pa:mat}>>=
-  check(t, ml, wml[i])
-  check(t, su, wsu[i])
+  checkM(t, ml, wml[i])
+  checkS(t, su, wsu[i])
 #+end_src
 #+begin_export latex
-The function \ty{check} compares the array of integers we get with the
-one we want and reports and error if there's a discrepancy.
+The function \ty{checkM} compares the array of integers of matche
+lengths we get with the one we want and reports and error if there's a
+discrepancy. The function \ty{checkS} checks the slices of slices of
+subject IDs.
 #+end_export
 #+begin_src go <<Testing functions, Pa. \ref{pa:mat}>>=
-  func check(t *testing.T, get, want []int) {
+  func checkM(t *testing.T, get, want []int) {
 	  diff := false
 	  //<<Determine whether get differs from want, Pa. \ref{pa:mat}>>
 	  //<<Respond to difference, Pa. \ref{pa:mat}>>
@@ -255,6 +297,35 @@ error function.
   }
 #+end_src
 #+begin_export latex
+The function to check the subjects is very similar, however now we
+want to compare double slices.
+#+end_export
+#+begin_src go <<Testing functions, Pa. \ref{pa:mat}>>=
+  func checkS(t *testing.T, get, want [][]int) {
+	  diff := false
+	  //<<Determine whether get differs from want IDs, Pa. \ref{pa:mat}>>
+	  //<<Respond to difference, Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_export latex
+If we find a difference between the two slices given, we set \ty{diff}
+to true and break from the loop.
+#+end_export
+#+begin_src go <<Determine whether get differs from want IDs, Pa. \ref{pa:mat}>>=
+  for i, _ := range get {
+	  if slices.Compare(get[i],want[i]) != 0{
+		  diff = true
+		  break
+	  }
+  }
+#+end_src
+#+begin_export latex
+We import slices.
+#+end_export
+#+begin_src go <<Testing imports, Pa. \ref{pa:mat}>>=
+"slices"
+#+end_src
+#+begin_export latex
 We come to testing the analysis of the queries' reverse strands. We
 construct them, toggle \ty{rev} to true and compare the queries and
 subjects.
@@ -270,9 +341,9 @@ We construct the reverse queries from the forward sequences used
 above.
 #+end_export
 #+begin_src go <<Construct reverse queries, Pa. \ref{pa:mat}>>=
-  queries = [][]byte{
-	   []byte("ACTATTATTT"),
-	   []byte("AATACTATTT")}
+      queries = [][]byte{
+	  []byte("ACTATTATTT"),
+	  []byte("AATACTATTT")}
 #+end_src
 #+begin_export latex
 We've already constructed the subjects we want, so we proceed to
@@ -282,7 +353,7 @@ constructing the results we want.
   wml = [][]int{
 	  []int{2,2,1,2,4,3,2,1,0,1},
 	  []int{2,4,3,2,1,0,4,3,2,1}}
-  wsu = [][]int{
-	  []int{0,1,1,0,1,1,1,1,1,0},
-	  []int{0,1,1,1,1,1,1,1,1,1}}
+  wsu = [][][]int{
+	  [][]int{{0},{1},{1},{0},{1},{1},{0,1},{0,1},{0,1},{0,1}},
+	  [][]int{{0},{1},{1},{0,1},{0,1},{0,1},{1},{0,1},{0,1},{0,1}}}
 #+end_src
