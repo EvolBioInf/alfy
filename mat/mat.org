@@ -79,15 +79,25 @@ $o=\mbox{max}(\ell-1,0)$.
 #+begin_export latex
 If $\ell$, is greater than $\mbox{ml}[j]$, we update $\mbox{ml}[j]$
 and note the label of the current subject sequence, $i$. If $\ell$ is
-equal to $\mbox{ml}[j]$ we append the label of the current subject
-sequence to the same position.
+equal to $\mbox{ml}[j]$ we are looking at a new interval with the same
+length. If the subject ID is identical we store the current subject
+and drop other subjects present in the slice. If the subject ID is
+different we append to it.
 #+end_export
 #+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
   if l > ml[p] {
 	  ml[p] = l
-	  su[p] = append(su[p],i)
+	  su[p][0] = i
+	  su[p] = su[p][:1]
   } else if l == ml[p] {
-	  su[p] = append(su[p],i)
+	  //su[p] = append(su[p],i)
+	  if su[p][0] == i {
+		  ml[p] = l
+		  su[p][0] = i
+		  su[p] = su[p][:1]
+	  } else {
+		  su[p] = append(su[p], i)
+	  }
   }
 #+end_src
 #+begin_export latex
@@ -95,18 +105,20 @@ We interpolate the match lengths and subject labels according to
 Algorithm~\ref{alg:int}. At each position, the match to the left is
 extended unless we are at the start of a new match. When extending the
 match, we update the match length at the current position and the
-subject ID. If, when extending the match, we encounter a new match
-with the same length we merge the subject IDs.
+subject ID. We append the new subject ID to the slice of IDs being
+extended. If, when extending the match, we encounter a new match with
+the same length we merge the subject IDs.
 #+end_export
 #+begin_src go <<Interpolate match lengths, Pa. \ref{pa:mat}>>=
   for i := 1; i < len(q); i++ {
 	  x := ml[i-1] - 1
 	  if x < 0 {
-		  x= 0
+		  x = 0
 	  }
 	  if x > ml[i] {
 		  ml[i] = x
-		  su[i] = append(su[i],su[i-1][0])
+		  su[i] = su[i][:0]
+		  su[i] = append(su[i],su[i-1]...)
 	  } else if x == ml[i] {
 		  //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
 	  }

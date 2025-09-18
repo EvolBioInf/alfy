@@ -17,12 +17,13 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 type Matches struct {
 	matchLengths [][]int
-	subjectID    [][]int
+	subjectID    [][][]int
 	id           int
 }
 
@@ -204,11 +205,14 @@ func main() {
 				matches.id = i
 				n := len(querySeqs)
 				matches.matchLengths = make([][]int, n)
-				matches.subjectID = make([][]int, n)
+				matches.subjectID = make([][][]int, n)
 				for i, querySeq := range querySeqs {
 					m := len(querySeq.Data())
 					matches.matchLengths[i] = make([]int, m)
-					matches.subjectID[i] = make([]int, m)
+					matches.subjectID[i] = make([][]int, m)
+					for j := range matches.subjectID[i] {
+						matches.subjectID[i][j] = make([]int, 1)
+					}
 				}
 				for i, querySeq := range querySeqs {
 					f := querySeq.Data()
@@ -236,13 +240,13 @@ func main() {
 			close(matchesSets)
 		}()
 		matchLengths := make([][]int, 0)
-		subjectIDs := make([][]int, 0)
+		subjectIDs := make([][][]int, 0)
 		for _, qs := range querySeqs {
 			n := len(qs.Data())
 			ml := make([]int, n)
 			matchLengths = append(matchLengths, ml)
-			ml = make([]int, n)
-			subjectIDs = append(subjectIDs, ml)
+			mls := make([][]int, n)
+			subjectIDs = append(subjectIDs, mls)
 		}
 		msSlice := []Matches{}
 		for matchesSet := range matchesSets {
@@ -263,21 +267,37 @@ func main() {
 						matchLengths[i][j] = length
 						subjectIDs[i][j] =
 							match.subjectID[i][j]
+					} else if matchLengths[i][j] == 0 {
+						matchLengths[i][j] = length
+						subjectIDs[i][j] =
+							match.subjectID[i][j]
 					}
 				}
 			}
 		}
 		for i, ml := range matchLengths {
 			l := 0
-			id := 0
+			var id []int
+			var previous []int
+			first := true
 			for j := 0; j < len(ml); j++ {
 				if ml[j] > l {
 					l = ml[j]
 					id = subjectIDs[i][j]
+				} else if !first &&
+					slices.Compare(subjectIDs[i][j], previous) != 0 {
+					id = subjectIDs[i][j]
 				}
+
 				ml[j] = l
 				subjectIDs[i][j] = id
 				l--
+				if l < 0 {
+					l = 0
+				}
+				first = false
+				previous = id
+
 			}
 		}
 		fmt.Printf("#%s\n", query)
@@ -289,10 +309,12 @@ func main() {
 				marked := make(map[int]bool)
 				seen := []int{}
 				for _, id := range ids {
-					if !marked[id] {
-						marked[id] = true
-						seen = append(seen, id)
+					for p := range id {
+						marked[p] = true
 					}
+				}
+				for i := range marked {
+					seen = append(seen, i)
 				}
 				slices.Sort(seen)
 				for _, id := range seen {
@@ -301,13 +323,19 @@ func main() {
 			}
 			fmt.Printf("\n")
 			for j := 0; j < len(ml); j++ {
-				name := strconv.Itoa(ids[j] + 1)
+				str := make([]string, len(ids[j]))
 				if *optN {
-					name = subjectNames[ids[j]]
+					for i, val := range ids[j] {
+						name := strconv.Itoa(val + 1)
+						name = subjectNames[val]
+						str[i] = fmt.Sprintf("%v", name)
+					}
+				} else {
+					for i, val := range ids[j] {
+						str[i] = fmt.Sprintf("%d", val+1)
+					}
 				}
-				fmt.Printf("%d\t%s\n",
-					ml[j],
-					name)
+				fmt.Printf("%d\t%s\n", ml[j], strings.Join(str, ","))
 			}
 		}
 	}

@@ -23,9 +23,17 @@ func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
 		}
 		if l > ml[p] {
 			ml[p] = l
-			su[p] = append(su[p], i)
+			su[p][0] = i
+			su[p] = su[p][:1]
 		} else if l == ml[p] {
-			su[p] = append(su[p], i)
+			//su[p] = append(su[p],i)
+			if su[p][0] == i {
+				ml[p] = l
+				su[p][0] = i
+				su[p] = su[p][:1]
+			} else {
+				su[p] = append(su[p], i)
+			}
 		}
 		j += l + 1
 	}
@@ -36,7 +44,8 @@ func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
 		}
 		if x > ml[i] {
 			ml[i] = x
-			su[i] = append(su[i], su[i-1][0])
+			su[i] = su[i][:0]
+			su[i] = append(su[i], su[i-1]...)
 		} else if x == ml[i] {
 			c := 0
 			for z := 0; z < len(su[i]); z++ {
