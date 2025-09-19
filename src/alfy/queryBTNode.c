@@ -368,11 +368,11 @@ qNode *freadIntervals(FILE *f, char **subjectNames, Int64 numOfSubjects) {
 	Word subjectIndex[1];  // simplifying: numOfSubjects < WORDSIZE 
 	char subjects[4096];
 	
-	int numScanned = fscanf(f, "%*s"); // skip title
-	if(numScanned != 1) {
-	  fprintf(stderr, "ERROR[alfy]: failed reading interval file\n");
-	  exit(1);
-	}
+	/* int numScanned = fscanf(f, "%*s"); // skip title */
+	/* if(numScanned != 1) { */
+	/*   fprintf(stderr, "ERROR[alfy]: failed reading interval file: %d\n", numScanned); */
+	/*   exit(1); */
+	/* } */
 	while(fscanf(f, "%d %d %d %[^\n]", (int *)&lb, (int *)&rb, (int *)&sl, subjects) > 3) {
 		subjectIndex[0] = 0;
 		temp = 1LL;
@@ -383,16 +383,16 @@ qNode *freadIntervals(FILE *f, char **subjectNames, Int64 numOfSubjects) {
 			temp = temp << 1;
 		}
 		n = getQNode(sl, 0, lb, rb, numOfSubjects, subjectIndex);
-		//p = insertNode(p, n);
-		if (p == NULL) {
-			p = n;
-			p2 = p;
-		}
-		else {
-			p2->right = n;
-			p2 = p2->right;
-		}
+		p = insertNode(p, n);
+		/* if (p == NULL) { */
+		/* 	p = n; */
+		/* 	p2 = p; */
+		/* } */
+		/* else { */
+		/* 	p2->right = n; */
+		/* 	p2 = p2->right; */
+		/* } */
 	}
-	//inorder(p, subjectNames, numOfSubjects);	
+	inorder(p, subjectNames, numOfSubjects);	
 	return p;
 }
