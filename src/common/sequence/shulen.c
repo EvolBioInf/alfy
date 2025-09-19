@@ -21,6 +21,7 @@
  *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <divsufsort.h>
 #include "commonSC.h"
 #include "eprintf.h"
 #include "sequenceData.h"
@@ -61,23 +62,43 @@ Int64 *getSuffixArray(Sequence *seq){
   sa = (Int64 *)emalloc((size_t)(seq->len + 1) * sizeof(Int64));
   seq->seq = (char *)erealloc(seq->seq, (size_t)(seq->len + overshoot) * sizeof(char));
   textu = (UChar *)seq->seq;
-	ds_ssort(textu, (sa + 1), seq->len);
+  ds_ssort(textu, (sa + 1), seq->len);
+
   return sa;
 }
 
+Int64 *getDivSortSa(Sequence *seq) {
+  sauchar_t *t; // The text
+  saidx_t *sa;  // The sa
+  Int64 n;
+
+  // Get text
+  t = (sauchar_t *)seq->seq;
+  // Get length of text
+  n = seq->len;
+  // Calculate sa. Alfy assumes that the sa starts at sa[1] rather
+  // than sa[0]. This is a hold over from using the deep shallow
+  // library.
+  sa = (saidx_t *)emalloc((size_t)(n+1) * sizeof(saidx_t));
+  if (divsufsort(t, sa+1, (saidx_t)n) != 0) {
+    printf("ERROR[getDivSortSa]: suffix sorting failed.\n");
+    exit(-1);
+  }
+  return (Int64 *)sa;
+}
+
 Int64 *getLcp(Sequence *seq, Int64 *sa){
-//int *getLcp(Sequence *seq, Int64 *sa){
   Int64 occ[ALPHA_SIZE];
   unsigned char *textu;
   Int64 i;
   
   textu = (unsigned char *)seq->seq;
-	for(i = 0; i < ALPHA_SIZE; i++) {
+  for(i = 0; i < ALPHA_SIZE; i++) {
     occ[i] = 0;
-	}
-	for(i = 0; i < seq->len; i++) {
+  }
+  for(i = 0; i < seq->len; i++) {
     occ[textu[i]]++;
-	}
+  }
   return _lcp_sa2lcp_9n(textu,seq->len,sa,occ);
 }
 

@@ -27,6 +27,7 @@
 #define ALPHA_SIZE _BW_ALPHA_SIZE
 
 Int64 *getSuffixArray(Sequence *seq);
+Int64 *getDivSortSa(Sequence *seq);
 Int64 *getLcp(Sequence *seq, Int64 *sa);
 //int *getLcp(Sequence *seq, Int64 *sa);
 

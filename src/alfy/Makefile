@@ -36,12 +36,12 @@ LIB_DIR = ../../lib
 LIB_DIR32 = ../../lib/deepShallow
 LIB_DIR64 = ../../lib/deepShallow64
 
-LIBS32 =  $(LIB_DIR)/libsequence.a $(LIB_DIR32)/ds_ssort.a $(LIB_DIR32)/bwtlcp.a $(LIB_DIR)/libutil.a $(LIB_DIR)/libinterval.a -lm #-lgsl -lgslcblas
-LIBS64 =  $(LIB_DIR)/libsequence64.a $(LIB_DIR64)/ds_ssort.a $(LIB_DIR64)/bwtlcp.a $(LIB_DIR)/libutil64.a $(LIB_DIR)/libinterval64.a -lm #-lgsl -lgslcblas
+LIBS32 =  $(LIB_DIR)/libsequence.a $(LIB_DIR32)/ds_ssort.a $(LIB_DIR32)/bwtlcp.a $(LIB_DIR)/libutil.a $(LIB_DIR)/libinterval.a -lm -ldivsufsort #-lgsl -lgslcblas
+LIBS64 =  $(LIB_DIR)/libsequence64.a $(LIB_DIR64)/ds_ssort.a $(LIB_DIR64)/bwtlcp.a $(LIB_DIR)/libutil64.a $(LIB_DIR)/libinterval64.a -lm -ldivsufsort #-lgsl -lgslcblas
 
 #LIBS = libutil.a libutil64.a libsequence.a libsequence64.a
 # just one library in LIBS; otherwise $(LIBS) would be executed as many numbers as there are libraries
-LIBS = libutil.a -lm
+LIBS = libutil.a -lm -ldivsufsort
 
 ################################################
 #

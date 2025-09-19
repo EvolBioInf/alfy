@@ -100,11 +100,12 @@ void getLcpTreeShulens(FILE *fpout, Args *a, SequenceUnion *seqUnion, FILE *fwou
    */
 
   // compute suffix array
-  sa = getSuffixArray(seqUnion->seqUnion);
+  // sa = getSuffixArray(seqUnion->seqUnion);
+  sa = getDivSortSa(seqUnion->seqUnion);
   if (!sa) {
     eprintf("sa: out of memory!\n");
   }	
-	
+
   // compute lcp array
   lcpTab = getLcp(seqUnion->seqUnion, sa);
   if (!lcpTab) {

@@ -32,8 +32,8 @@ LIB_DIR = ../../../lib
 LIB_DIR32 = ../../../lib/deepShallow/
 LIB_DIR64 = ../../../lib/deepShallow64/
 
-LIBS32 = -lm -L$(LIB_DIR) -lutil
-LIBS64 = -lm -L$(LIB_DIR) -lutil64
+LIBS32 = -lm -L$(LIB_DIR) -lutil   -ldivsufsort
+LIBS64 = -lm -L$(LIB_DIR) -lutil64 -ldivsufsort
 
 ################################################
 #
