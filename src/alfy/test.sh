@@ -1,7 +1,7 @@
 ./alfy -i ../../data/A+DQ083238.fasta -j ../../data/hiv42.fasta > test.txt
 d=$(diff test.txt r.txt)
-if [[ d -ne "" ]]; then
-    echo "alfy: failed"
+if [[ $d != "" ]]; then
+    echo "alfy: failed: $d"
 else
     echo "alfy: passed"
 fi
