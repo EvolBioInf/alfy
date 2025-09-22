@@ -337,62 +337,59 @@ qNode *insertNode(qNode *p, qNode *n) {
 /* inorder tree traversal */
 void inorder(qNode *p, char **subjectNames, int numOfSubjects) {
 	
-	int i;
-	Int64 temp = 1LL;
+  int i;
+  Int64 temp = 1LL;
 	
-	if (p->left) {
-		inorder(p->left, subjectNames, numOfSubjects);
-	}
+  if (p->left) {
+    inorder(p->left, subjectNames, numOfSubjects);
+  }
 	
-	printf("%lld %lld %lld ", (long long)p->lb, (long long)p->rb, (long long)p->sl);
-	for (i = 0; i < numOfSubjects; i++) {
-		if (p->subjectIndex[0] & temp) {
-			printf("%s ", subjectNames[i]);
-		}
-		temp = temp << 1;
-	}
-	printf("\n");
-	if (p->right) {
-		inorder(p->right, subjectNames, numOfSubjects);
-	} 
+  printf("%lld %lld %lld ", (long long)p->lb, (long long)p->rb, (long long)p->sl);
+  for (i = 0; i < numOfSubjects; i++) {
+    if (i % WORDSIZE == 0)
+      temp = 1LL;
+    int j = i / WORDSIZE;
+    if (p->subjectIndex[j] & temp) {
+      printf("%s ", subjectNames[i]);
+    }
+    temp = temp << 1;
+  }
+  printf("\n");
+  if (p->right) {
+    inorder(p->right, subjectNames, numOfSubjects);
+  } 
 }
 
-/* read data from a file that contains all intervals - simplifying: numOfSubjects < WORDSIZE */
+/* read data from a file that contains all intervals */
 qNode *freadIntervals(FILE *f, char **subjectNames, Int64 numOfSubjects) {
 	
-	int i;
-	Int64 temp = 1LL;
-	qNode *n, *p = NULL;
-	qNode *p2 = p;
-	Int64 lb, rb, sl;
-	Word subjectIndex[1];  // simplifying: numOfSubjects < WORDSIZE 
-	char subjects[4096];
-	
-	/* int numScanned = fscanf(f, "%*s"); // skip title */
-	/* if(numScanned != 1) { */
-	/*   fprintf(stderr, "ERROR[alfy]: failed reading interval file: %d\n", numScanned); */
-	/*   exit(1); */
-	/* } */
-	while(fscanf(f, "%d %d %d %[^\n]", (int *)&lb, (int *)&rb, (int *)&sl, subjects) > 3) {
-		subjectIndex[0] = 0;
-		temp = 1LL;
-		for (i = 0; i < numOfSubjects; i++) {
-			if (strstr(subjects, subjectNames[i])) {
-				subjectIndex[0] |= temp;
-			}
-			temp = temp << 1;
-		}
-		n = getQNode(sl, 0, lb, rb, numOfSubjects, subjectIndex);
-		p = insertNode(p, n);
-		/* if (p == NULL) { */
-		/* 	p = n; */
-		/* 	p2 = p; */
-		/* } */
-		/* else { */
-		/* 	p2->right = n; */
-		/* 	p2 = p2->right; */
-		/* } */
-	}
-	inorder(p, subjectNames, numOfSubjects);	
-	return p;
+  int i;
+  Int64 temp = 1LL;
+  qNode *n, *p = NULL;
+  Int64 lb, rb, sl;
+  Word *subjectIndex;
+  char subjects[4096];
+
+  // Skip header line
+  while (fgetc(f) != '\n')
+    ;
+  int ns = numOfSubjects / WORDSIZE + 1; // number of words to be allocated for subjects, each word contains WORDSIZE bits
+  subjectIndex = (Word *)malloc(sizeof(Word) * ns); // bit-vector of subject-winners
+  while(fscanf(f, "%d %d %d %[^\n]", (int *)&lb, (int *)&rb, (int *)&sl, subjects) > 3) {
+    for (i = 0; i < ns; i++)
+      subjectIndex[i] = 0;
+    for (i = 0; i < numOfSubjects; i++) {
+      if (i % WORDSIZE == 0)
+	temp = 1LL;
+      if (strstr(subjects, subjectNames[i])) {
+	int j = i / WORDSIZE;
+	subjectIndex[j] |= temp;
+      }
+      temp = temp << 1;
+    }
+    n = getQNode(sl, 0, lb, rb, numOfSubjects, subjectIndex);
+    p = insertNode(p, n);
+  }
+  /* inorder(p, subjectNames, numOfSubjects); */
+  return p;
 }
