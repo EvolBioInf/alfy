@@ -218,7 +218,7 @@ func main() {
 					f := querySeq.Data()
 					rev := false
 					for j, esa := range Esas {
-						mat.UpdateMatchLengths(f, esa, subjectIDs[j],
+						mat.GetMatchLengths(f, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i],
 							rev)
@@ -226,7 +226,7 @@ func main() {
 					r := revQuerySeqs[i].Data()
 					rev = true
 					for j, esa := range Esas {
-						mat.UpdateMatchLengths(r, esa, subjectIDs[j],
+						mat.GetMatchLengths(r, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i],
 							rev)
@@ -241,12 +241,15 @@ func main() {
 		}()
 		matchLengths := make([][]int, 0)
 		subjectIDs := make([][][]int, 0)
-		for _, qs := range querySeqs {
+		for i, qs := range querySeqs {
 			n := len(qs.Data())
 			ml := make([]int, n)
 			matchLengths = append(matchLengths, ml)
 			mls := make([][]int, n)
 			subjectIDs = append(subjectIDs, mls)
+			for j := range subjectIDs[i] {
+				subjectIDs[i][j] = append(subjectIDs[i][j], 0)
+			}
 		}
 		msSlice := []Matches{}
 		for matchesSet := range matchesSets {
@@ -261,45 +264,18 @@ func main() {
 			return 1
 		})
 		for _, match := range msSlice {
-			for i, lengths := range match.matchLengths {
-				for j, length := range lengths {
-					if matchLengths[i][j] < length {
-						matchLengths[i][j] = length
-						subjectIDs[i][j] =
-							match.subjectID[i][j]
-					} else if matchLengths[i][j] == 0 {
-						matchLengths[i][j] = length
-						subjectIDs[i][j] =
-							match.subjectID[i][j]
-					}
-				}
+			for i := range match.matchLengths {
+				mat.Store(matchLengths[i],
+					match.matchLengths[i],
+					subjectIDs[i], match.subjectID[i])
 			}
 		}
-		for i, ml := range matchLengths {
-			l := 0
-			var id []int
-			var previous []int
-			first := true
-			for j := 0; j < len(ml); j++ {
-				if ml[j] > l {
-					l = ml[j]
-					id = subjectIDs[i][j]
-				} else if !first &&
-					slices.Compare(subjectIDs[i][j], previous) != 0 {
-					id = subjectIDs[i][j]
-				}
-
-				ml[j] = l
-				subjectIDs[i][j] = id
-				l--
-				if l < 0 {
-					l = 0
-				}
-				first = false
-				previous = id
-
-			}
+		for i := range matchLengths {
+			mat.Interpolate(matchLengths[i],
+				subjectIDs[i])
 		}
+		e := strings.LastIndex(query, ".")
+		query = query[:e]
 		fmt.Printf("#%s\n", query)
 		for i, querySeq := range querySeqs {
 			ml := matchLengths[i]
@@ -328,6 +304,8 @@ func main() {
 					for i, val := range ids[j] {
 						name := strconv.Itoa(val + 1)
 						name = subjectNames[val]
+						e = strings.LastIndex(name, ".")
+						name = name[:e]
 						str[i] = fmt.Sprintf("%v", name)
 					}
 				} else {
@@ -335,7 +313,8 @@ func main() {
 						str[i] = fmt.Sprintf("%d", val+1)
 					}
 				}
-				fmt.Printf("%d\t%s\n", ml[j], strings.Join(str, ","))
+				fmt.Printf("%d\t%s\n", ml[j],
+					strings.Join(str, ","))
 			}
 		}
 	}

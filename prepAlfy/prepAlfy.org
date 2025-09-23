@@ -626,7 +626,7 @@ We stream the forward strand against the set of esas in the goroutine.
   f := querySeq.Data()
   rev := false
   for j, esa := range Esas {
-	  mat.UpdateMatchLengths(f, esa, subjectIDs[j],
+	  mat.GetMatchLengths(f, esa, subjectIDs[j],
 		  matches.matchLengths[i],
 		  matches.subjectID[i],
 		  rev)
@@ -639,7 +639,7 @@ We repeat the streaming for the reverse strand.
   r := revQuerySeqs[i].Data()
   rev = true
   for j, esa := range Esas {
-	  mat.UpdateMatchLengths(r, esa, subjectIDs[j],
+	  mat.GetMatchLengths(r, esa, subjectIDs[j],
 		  matches.matchLengths[i],
 		  matches.subjectID[i],
 		  rev)
@@ -672,9 +672,9 @@ slice, while the subject IDs are three dimensional slices.
 #+begin_src go <<Streaming iterator, Ch. \ref{ch:prep}>>=
   matchLengths := make([][]int,0)
   subjectIDs := make([][][]int,0)
-  for _, qs := range querySeqs {
+  for i, qs := range querySeqs {
 	  //<<Construct master sets, Ch. \ref{ch:prep}>>
-  }
+  } 
   //<<Sort matches sets, Ch. \ref{ch:prep}>>
   for _, match := range msSlice {
 	  //<<Store match lengths, Ch. \ref{ch:prep}>>
@@ -689,8 +689,11 @@ length of the query sequences.
   n := len(qs.Data())
   ml := make([]int, n)
   matchLengths = append(matchLengths, ml)
-  mls := make([][]int, n)
-  subjectIDs = append(subjectIDs,mls)
+  mls := make([][]int,n)
+  subjectIDs = append(subjectIDs, mls)
+  for j := range subjectIDs[i] {
+	  subjectIDs[i][j] = append(subjectIDs[i][j],0)
+  }
 #+end_src
 #+begin_export latex
 We then sort the the machest sets to ensure that the matches are all
@@ -734,21 +737,14 @@ order.
 We store the longer of the matches for each position and the
 corresponding slice of subject IDs. If we did not store a new value,
 we check whether the current match has a length of 0. If yes, we also
-store the corresponding subject IDs.
+store the corresponding subject IDs. This is done with the \ty{Store}
+function of the mat package.
 #+end_export
 #+begin_src go <<Store match lengths, Ch. \ref{ch:prep}>>=
-  for i, lengths := range match.matchLengths {
-	  for j, length := range lengths {
-		  if matchLengths[i][j] < length {
-			  matchLengths[i][j] = length
-			  subjectIDs[i][j] =
-				  match.subjectID[i][j]
-		  } else if matchLengths[i][j] == 0 {
-			  matchLengths[i][j] = length
-			  subjectIDs[i][j] =
-				  match.subjectID[i][j]
-		  }
-	  }
+  for i := range match.matchLengths {
+	  mat.Store(matchLengths[i],
+		  match.matchLengths[i], 
+		  subjectIDs[i],match.subjectID[i])	  
   }
 #+end_src
 #+begin_export latex
@@ -758,66 +754,28 @@ initialize a variable for keeping track of the subject ID from the
 previous iteration. In the first iteration this will be nil thus we
 also keep track of whether we are at the first loop iteration. Then we
 check whether we are standing before a new match, and we update the
-loop variables.
+loop variables. This is done with the \ty{Interpolate} function of the
+mat package.
 #+end_export
 #+begin_src go <<Merge matches results, Ch. \ref{ch:prep}>>=
-  for i, ml := range matchLengths {
-	  l := 0
-	  var id []int
-	  var previous []int
-	  first := true
-	  for j := 0; j < len(ml); j++ {
-		  //<<Is it a new match?, Ch. \ref{ch:prep}>>
-		  //<<Update variables, Ch. \ref{ch:prep}>>
-	  }
-  }
-#+end_src
-#+begin_export latex
-New matches occur if the match length is longer than the length of the
-previous match. In that case, we update both the match length and the
-subject ID. It may happen that the match length of the previous and
-the current position are identical but the subject IDs change. This
-means we are also standing before a new match. In this case we also
-update the subject ID.
-#+end_export
-#+begin_src go <<Is it a new match?, Ch. \ref{ch:prep}>>=
-		    if ml[j] > l {
-			    l = ml[j]
-			    id = subjectIDs[i][j]
-		    } else if !first  &&
-			    slices.Compare(subjectIDs[i][j],previous) != 0 {
-			    id = subjectIDs[i][j]
-		    }
-
-#+end_src
-#+begin_export latex
-After checking for new matches we store the current match length and
-subject ID. We decrease the stored length by 1 and ensure that the new
-length is not negative. Finally we store the id of the current
-iteration.
-#+end_export
-#+begin_src go <<Update variables, Ch. \ref{ch:prep}>>=
-		    ml[j] = l
-		    subjectIDs[i][j] = id
-		    l--
-		    if l < 0{
-			    l = 0
-		    }
-		    first = false
-		    previous = id
-
+  for i := range matchLengths {
+	  mat.Interpolate(matchLengths[i],
+		  subjectIDs[i])
+    }
 #+end_src
 #+begin_export latex
 After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them to standard out. We start by
-printing out the query filename.
+printing the query filename without the extension.
 #+end_export
 #+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
+  e := strings.LastIndex(query,".")
+  query = query[:e]
   fmt.Printf("#%s\n", query)
   for i, querySeq := range querySeqs {
 	  ml := matchLengths[i]
 	  ids := subjectIDs[i]
-	   //<<Write output header, Ch. \ref{ch:prep}>>
+	  //<<Write output header, Ch. \ref{ch:prep}>>
 	  //<<Write matches and subjects, Ch. \ref{ch:prep}>>
   }
 #+end_src
@@ -875,23 +833,54 @@ We print the legend of subject IDs and names. IDs are printed in
 Then we write the matches and corresponding subjects where they were
 found. For this we iterate over the match lengths, and print each one
 together with the subject name or ID in a two-column table. Subject
-IDs are converted to 1-based values to match the header.
+IDs are converted to 1-based values to match the header. When printing
+the subject filenames we also remove the extension.
 #+end_export
 #+begin_src go <<Write matches and subjects, Ch. \ref{ch:prep}>>=
   for j := 0; j < len(ml); j++ {
 	  str := make([]string, len(ids[j]))
 	  if *optN {
-		  for i, val := range ids[j] {
-			  name := strconv.Itoa(val+1)
-			  name = subjectNames[val]
-			  str[i] = fmt.Sprintf("%v",name)
-		  }
+		  //<<Print subject filenames, Ch. \ref{ch:prep}>>
 	  } else {
-		  for i, val := range ids[j] {
-			  str[i] = fmt.Sprintf("%d",val+1)
-		  }
+  		  //<<Print subject ids, Ch. \ref{ch:prep}>>
 	  }
-	  fmt.Printf("%d\t%s\n", ml[j], strings.Join(str,","))
+	  fmt.Printf("%d\t%s\n", ml[j],
+		  strings.Join(str,","))
+  }
+#+end_src
+#+begin_export latex
+To print the subject filenames we iterate over the range of existing
+IDs, and convert the numerical id to a string. Since the results are
+on a 1-based scale we add plus one to the numerical id. Then we clean
+the filename to remove the extension, and create a slice of names to
+be printed.
+#+end_export
+#+begin_src go <<Print subject filenames, Ch. \ref{ch:prep}>>=
+  for i, val := range ids[j] {
+	  name := strconv.Itoa(val+1)
+	  name = subjectNames[val]
+	  //<<Clean subject name extension, Ch. \ref{ch:prep}>>
+	  str[i] = fmt.Sprintf("%v",name)
+  }
+#+end_src
+#+begin_export latex
+To trim the extension of the subject filenames we split the name into
+several substrings using the period as a delimiter. Then we drop the
+last substring.
+#+end_export
+#+begin_src go <<Clean subject name extension, Ch. \ref{ch:prep}>>=
+  e = strings.LastIndex(name,".")
+  name = name[:e]
+#+end_src
+#+begin_export latex
+To print the numerical ids we iterate over the range of values present
+in ids and group it into a single slice of numerical ids ready to
+print. We also convert the ids into a 1-based notation by adding plus
+one to every id to be printed.
+#+end_export
+#+begin_src go <<Print subject ids, Ch. \ref{ch:prep}>>=
+  for i, val := range ids[j] {
+	  str[i] = fmt.Sprintf("%d",val+1)
   }
 #+end_src
 #+begin_export latex

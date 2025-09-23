@@ -1,24 +1,24 @@
-#q1.fasta
+#q1
 >q1
-4	s1.fasta
-3	s1.fasta
-2	s1.fasta
-5	s2.fasta
-4	s2.fasta
-3	s2.fasta
-2	s1.fasta,s2.fasta
-1	s1.fasta,s2.fasta
-0	s1.fasta,s2.fasta
-1	s1.fasta,s2.fasta
-#q2.fasta
+4	s1
+3	s1
+2	s1
+5	s2
+4	s2
+3	s2
+2	s1,s2
+1	s1,s2
+0	s1,s2
+1	s1,s2
+#q2
 >q2
-4	s1.fasta
-4	s2.fasta
-3	s2.fasta
-2	s1.fasta,s2.fasta
-1	s1.fasta,s2.fasta
-0	s1.fasta,s2.fasta
-4	s2.fasta
-3	s1.fasta,s2.fasta
-2	s1.fasta,s2.fasta
-1	s1.fasta,s2.fasta
+4	s1
+4	s2
+3	s2
+2	s1,s2
+1	s1,s2
+0	s1,s2
+4	s2
+3	s1,s2
+2	s1,s2
+1	s1,s2
