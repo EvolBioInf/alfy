@@ -16,7 +16,7 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 #+begin_export latex
 \epa
 
-!The function \ty{UpdateMatchLengths} takes as arguments a query
+!The function \ty{GetMatchLengths} takes as arguments a query
 !sequence, the enhanced suffix array (ESA) of a subject sequence, the
 !label of that subject sequence, an array of match lengths, a double
 !array of subject labels, and whether or not the query is a reverse
@@ -25,15 +25,19 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 
 As described in Algorithm~\ref{alg:alf}, we initialize the query
 position, $j$, to the leftmost position in the query sequence (line
-3). Then we calculate the match lengths in the while loop, before we
-interpolate the match lengths.
+3). We then create two arrays to store match lengths and subject
+IDs. Afterwards we calculate the match lengths and rely in two other
+functions, \ty{Update} and \ty{Interpolate} to update the matches and
+interpolate them.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
-  func UpdateMatchLengths(q []byte, s *esa.Esa, i int,
+  func GetMatchLengths(q []byte, s *esa.Esa, i int,
 	  ml []int, su [][]int, rev bool) {
 	  j := 0
+	  //<<Create storing arrays for ml and su, Pa. \ref{pa:mat}>>
 	  //<<Calculate match lengths, Pa. \ref{pa:mat}>>
-	  //<<Interpolate match lengths, Pa. \ref{pa:mat}>>
+	  Update(ml, dml, su, dsu)
+	  Interpolate(ml, su) 
   }
 #+end_src
 #+begin_export latex
@@ -43,12 +47,26 @@ We import \ty{esa}.
   "github.com/evolbioinf/esa"
 #+end_src
 #+begin_export latex
+The storing arrays are two replicas of the matches lenghts and
+subjects IDs arrays that was given as input to
+\ty{GetMatchesLengths}. These two arrays have the same dimensions but
+are initially empty. They will hold the initial match lengths and
+respective subject IDs.
+#+end_export
+#+begin_src go <<Create storing arrays for ml and su, Pa. \ref{pa:mat}>>=
+  dml := make([]int, len(ml))
+  dsu := make([][]int, len(su))
+  for x := range dsu {
+      dsu[x] = make([]int,len(su[x]))
+  }
+#+end_src
+#+begin_export latex
 In the while loop of Algorithm~\ref{alg:alf}, we first determine the
 length, $\ell$, of the longest match of the prefix of $q[j...]$ in
 $s$. If we are dealing with a reverse strand, we map the position of
-this match to the forward strand. Then we check whether we need to
-update the match length. Finally, we move the query position, $j$,
-just beyond the terminal mismatch.
+this match to the forward strand. Finally, we move the query position,
+$j$, just beyond the terminal mismatch. The matches are saved in the
+mirrored arrays.
 #+end_export
 #+begin_src go <<Calculate match lengths, Pa. \ref{pa:mat}>>=
   m := len(q)
@@ -58,7 +76,8 @@ just beyond the terminal mismatch.
 	  if rev {
 		  //<<Map to forward strand, Pa. \ref{pa:mat}>>
 	  }
-	  //<<Update match length?, Pa. \ref{pa:mat}>>
+	  dml[p] = l
+	  dsu[p][0] = i
 	  j += l + 1
   }
 #+end_src
@@ -77,52 +96,91 @@ $o=\mbox{max}(\ell-1,0)$.
   p = m - p - 1 - o
 #+end_src
 #+begin_export latex
-If $\ell$, is greater than $\mbox{ml}[j]$, we update $\mbox{ml}[j]$
-and note the label of the current subject sequence, $i$. If $\ell$ is
-equal to $\mbox{ml}[j]$ we are looking at a new interval with the same
+We then update the length of the matches with the function
+\ty{Update}. The function \ty{Update} takes as input four arrays: two
+arrays for match lengths and two arrays for subject IDs. Two arrays,
+ml and su, will store the results from the function, while the other
+two arrays, dml and dsu, contain the values to be updated. This
+function corresponds to the while loop of Algorithm~\ref{alg:alf}. We
+check if the arrays need to be updated, and at the end skip to the end
+of the match plus one.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
+  func Update(ml, dml []int, su, dsu [][]int){
+	  p := 0
+	  for p < len(ml) {
+		  //<<Update match length?, Pa. \ref{pa:mat}>>
+		  p += dml[p] +1
+	  }
+  }
+#+end_src
+#+begin_export latex
+If the match in the data array, $\mbox{dml}{j}$, is greater than
+$\mbox{ml}[j]$, we update $\mbox{ml}[j]$ and note the label of the
+current subject sequence, $dsu[j][0]$. If $\mbox{dml}{j}$ is equal to
+$\mbox{ml}[j]$ we are looking at a new interval with the same
 length. If the subject ID is identical we store the current subject
 and drop other subjects present in the slice. If the subject ID is
 different we append to it.
 #+end_export
 #+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
-  if l > ml[p] {
-	  ml[p] = l
-	  su[p][0] = i
+  if dml[p] > ml[p] {
+	  ml[p] = dml[p]
+	  su[p][0] = dsu[p][0]
 	  su[p] = su[p][:1]
-  } else if l == ml[p] {
-	  //su[p] = append(su[p],i)
-	  if su[p][0] == i {
-		  ml[p] = l
-		  su[p][0] = i
+  } else if dml[p] == ml[p] {
+	  if su[p][0] == dsu[p][0] {
+		  ml[p] = dml[p]
+		  su[p][0] = dsu[p][0]
 		  su[p] = su[p][:1]
 	  } else {
-		  su[p] = append(su[p], i)
+		  su[p] = append(su[p], dsu[p][0])
 	  }
   }
 #+end_src
 #+begin_export latex
-We interpolate the match lengths and subject labels according to
-Algorithm~\ref{alg:int}. At each position, the match to the left is
-extended unless we are at the start of a new match. When extending the
-match, we update the match length at the current position and the
-subject ID. We append the new subject ID to the slice of IDs being
-extended. If, when extending the match, we encounter a new match with
-the same length we merge the subject IDs.
+Function\ty{Interpolate} interpolates the match lengths and subject
+labels according to Algorithm~\ref{alg:int}. It takes as input an
+updated array of match lengths and subjects IDs. For each position of
+the match lengths arrays, we compare the previous to the current match
+length.
 #+end_export
-#+begin_src go <<Interpolate match lengths, Pa. \ref{pa:mat}>>=
-  for i := 1; i < len(q); i++ {
-	  x := ml[i-1] - 1
-	  if x < 0 {
-		  x = 0
-	  }
-	  if x > ml[i] {
-		  ml[i] = x
-		  su[i] = su[i][:0]
-		  su[i] = append(su[i],su[i-1]...)
-	  } else if x == ml[i] {
-		  //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
+#+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
+  func Interpolate(ml []int, su [][]int) {
+	  for i := 1; i < len(ml); i++ {
+		  prev := ml[i-1] - 1
+		  curr := ml[i]
+		  if prev < 0 {
+			  prev = 0
+		  }
+		  //<<Compare previous and current match, Pa. \ref{pa:mat>> 
 	  }
   }
+#+end_src
+#+begin_export latex
+If the previous match length is larger than the current one, we extend
+the match and store the subject IDs corresponding to the extended
+match. Else, if the current and the previous match length are
+identical we update the subject IDs to include potential new subject
+IDs.
+#+end_export
+#+begin_src go <<Compare previous and current match, Pa. \ref{pa:mat>>=
+  if prev > curr {
+	  //<<Store su[i-1] in su[i], Pa. \ref{pa:mat}>>
+  } else if prev == curr {
+	  //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
+  }
+#+end_src
+#+begin_export latex
+If we are extending the previous match we set the current match length
+to the previous one, and add the subject ID to the first position of
+the subject ID slice. Then we append the current subject ID to the
+slice of existing IDs from the previous position.
+#+end_export 
+#+begin_src go <<Store su[i-1] in su[i], Pa. \ref{pa:mat}>>=
+  ml[i] = prev
+  su[i] = su[i][:0]
+  su[i] = append(su[i],su[i-1]...)
 #+end_src
 #+begin_export latex
 To merge the subjects IDs, we go through the list of all existing
@@ -257,7 +315,7 @@ match lengths accordingly.
 #+begin_src go <<Iterate over subjects, Pa. \ref{pa:mat}>>=
   for j, subject := range subjects {
 	  s := esa.MakeEsa(subject)
-	  UpdateMatchLengths(q, s, j, ml, su, rev)
+	  GetMatchLengths(q, s, j, ml, su, rev)
   }
 #+end_src
 #+begin_export latex

@@ -60,7 +60,7 @@ func TestMat(t *testing.T) {
 		}
 		for j, subject := range subjects {
 			s := esa.MakeEsa(subject)
-			UpdateMatchLengths(q, s, j, ml, su, rev)
+			GetMatchLengths(q, s, j, ml, su, rev)
 		}
 		checkM(t, ml, wml[i])
 		checkS(t, su, wsu[i])
@@ -87,7 +87,7 @@ func TestMat(t *testing.T) {
 		}
 		for j, subject := range subjects {
 			s := esa.MakeEsa(subject)
-			UpdateMatchLengths(q, s, j, ml, su, rev)
+			GetMatchLengths(q, s, j, ml, su, rev)
 		}
 		checkM(t, ml, wml[i])
 		checkS(t, su, wsu[i])
