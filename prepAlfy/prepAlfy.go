@@ -268,6 +268,7 @@ func main() {
 				mat.Store(matchLengths[i],
 					match.matchLengths[i],
 					subjectIDs[i], match.subjectID[i])
+				//       fmt.Println("After store:", subjectIDs[i])
 			}
 		}
 		for i := range matchLengths {

@@ -222,7 +222,7 @@ keeps the entire slice of subject IDs and not just the first one.
 	  for p < len(ml) {
 		  if dml[p] > ml[p] {
 			  ml[p] = dml[p]
-			  su[p] = dsu[p]
+			  su[p] = append(su[p],dsu[p]...)
 		  } else if dml[p] == ml[p] {
 			  if su[p][0] == dsu[p][0] {
 				  ml[p] = dml[p]

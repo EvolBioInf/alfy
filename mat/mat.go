@@ -81,15 +81,15 @@ func Store(ml, dml []int, su, dsu [][]int) {
 	for p < len(ml) {
 		if dml[p] > ml[p] {
 			ml[p] = dml[p]
-			su[p] = dsu[p]
-			//                        su[p] = su[p][:1]
+			su[p] = append(su[p], dsu[p]...)
 		} else if dml[p] == ml[p] {
 			if su[p][0] == dsu[p][0] {
 				ml[p] = dml[p]
 				su[p][0] = dsu[p][0]
 				su[p] = su[p][:1]
 			} else {
-				su[p] = append(su[p], dsu[p]...)
+				su[p] = append(su[p],
+					dsu[p]...)
 			}
 		}
 		p += +1
