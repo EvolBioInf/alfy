@@ -76,3 +76,22 @@ func Interpolate(ml []int, su [][]int) {
 		}
 	}
 }
+func Store(ml, dml []int, su, dsu [][]int) {
+	p := 0
+	for p < len(ml) {
+		if dml[p] > ml[p] {
+			ml[p] = dml[p]
+			su[p] = dsu[p]
+			//                        su[p] = su[p][:1]
+		} else if dml[p] == ml[p] {
+			if su[p][0] == dsu[p][0] {
+				ml[p] = dml[p]
+				su[p][0] = dsu[p][0]
+				su[p] = su[p][:1]
+			} else {
+				su[p] = append(su[p], dsu[p]...)
+			}
+		}
+		p += +1
+	}
+}

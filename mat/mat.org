@@ -153,7 +153,7 @@ length.
 		  if prev < 0 {
 			  prev = 0
 		  }
-		  //<<Compare previous and current match, Pa. \ref{pa:mat>> 
+		  //<<Compare previous and current match, Pa. \ref{pa:mat}>> 
 	  }
   }
 #+end_src
@@ -164,12 +164,12 @@ match. Else, if the current and the previous match length are
 identical we update the subject IDs to include potential new subject
 IDs.
 #+end_export
-#+begin_src go <<Compare previous and current match, Pa. \ref{pa:mat>>=
-  if prev > curr {
-	  //<<Store su[i-1] in su[i], Pa. \ref{pa:mat}>>
-  } else if prev == curr {
-	  //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
-  }
+#+begin_src go <<Compare previous and current match, Pa. \ref{pa:mat}>>=
+   if prev > curr {
+	   //<<Store su[i-1] in su[i], Pa. \ref{pa:mat}>>
+   } else if prev == curr {
+	   //<<Merge su[i] and su[i-1], Pa. \ref{pa:mat}>>
+   }
 #+end_src
 #+begin_export latex
 If we are extending the previous match we set the current match length
@@ -207,6 +207,35 @@ We import slices.
 #+end_export
 #+begin_src go <<Imports, Pa. \ref{pa:mat}>>=
 "slices"
+#+end_src
+#+begin_export latex
+We also contruct the function \ty{Store} to store the arrays of match
+lenghts and subject IDs that are returned after the go routine. The
+\ty{Store} function is extremely similar to the \ty{Update} function
+excepts it run across every nucleotide without skipping the length of
+the match. Additionally, if the two match lengths are identical it
+keeps the entire slice of subject IDs and not just the first one.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
+  func Store(ml, dml []int, su, dsu [][]int){
+	  p := 0
+	  for p < len(ml) {
+		  if dml[p] > ml[p] {
+			  ml[p] = dml[p]
+			  su[p] = dsu[p]
+		  } else if dml[p] == ml[p] {
+			  if su[p][0] == dsu[p][0] {
+				  ml[p] = dml[p]
+				  su[p][0] = dsu[p][0]
+				  su[p] = su[p][:1]
+			  } else {
+				  su[p] = append(su[p],
+					  dsu[p]...)
+			  }
+		  }
+		  p += +1
+	  }
+  }
 #+end_src
 #+begin_export latex
 We've finished writing package \ty{mat}, let's test it.
