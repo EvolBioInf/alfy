@@ -265,10 +265,9 @@ func main() {
 		})
 		for _, match := range msSlice {
 			for i := range match.matchLengths {
-				mat.Store(matchLengths[i],
+				mat.Update(matchLengths[i],
 					match.matchLengths[i],
 					subjectIDs[i], match.subjectID[i])
-				//       fmt.Println("After store:", subjectIDs[i])
 			}
 		}
 		for i := range matchLengths {
@@ -299,10 +298,19 @@ func main() {
 				}
 			}
 			fmt.Printf("\n")
-			for j := 0; j < len(ml); j++ {
-				str := make([]string, len(ids[j]))
+			start := make([]int, len(ml))
+			end := make([]int, len(ml))
+			mat := make([]int, len(ml))
+			start[0] = 0
+			mat[0] = ml[0]
+			row := 0
+			for j := 1; j < len(ml); j++ {
+				prev := ml[j-1]
+				curr := ml[j]
+				pId := ids[j-1]
+				str := make([]string, len(pId))
 				if *optN {
-					for i, val := range ids[j] {
+					for i, val := range pId {
 						name := strconv.Itoa(val + 1)
 						name = subjectNames[val]
 						e = strings.LastIndex(name, ".")
@@ -310,12 +318,25 @@ func main() {
 						str[i] = fmt.Sprintf("%v", name)
 					}
 				} else {
-					for i, val := range ids[j] {
+					for i, val := range pId {
 						str[i] = fmt.Sprintf("%d", val+1)
 					}
 				}
-				fmt.Printf("%d\t%s\n", ml[j],
-					strings.Join(str, ","))
+				if curr >= prev ||
+					!slices.Equal(pId, ids[j]) {
+					end[row] = j - 1
+					fmt.Printf("%d\t%d\t%d\t%v\n",
+						start[row], end[row],
+						mat[row], strings.Join(str, ","))
+					row++
+					start[row] = j
+					mat[row] = ml[j]
+				}
+				if j == len(ml)-1 {
+					fmt.Printf("%d\t%d\t%d\t%v\n",
+						start[row], len(ml)-1,
+						mat[row], strings.Join(str, ","))
+				}
 			}
 		}
 	}

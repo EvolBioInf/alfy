@@ -737,12 +737,12 @@ order.
 We store the longer of the matches for each position and the
 corresponding slice of subject IDs. If we did not store a new value,
 we check whether the current match has a length of 0. If yes, we also
-store the corresponding subject IDs. This is done with the \ty{Store}
+store the corresponding subject IDs. This is done with the \ty{Update}
 function of the mat package.
 #+end_export
 #+begin_src go <<Store match lengths, Ch. \ref{ch:prep}>>=
   for i := range match.matchLengths {
-	  mat.Store(matchLengths[i],
+	  mat.Update(matchLengths[i],
 		  match.matchLengths[i], 
 		  subjectIDs[i],match.subjectID[i])	  
   }
@@ -764,6 +764,7 @@ mat package.
     }
 #+end_src
 #+begin_export latex
+\subsection{Write output table}
 After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them to standard out. We start by
 printing the query filename without the extension.
@@ -776,7 +777,7 @@ printing the query filename without the extension.
 	  ml := matchLengths[i]
 	  ids := subjectIDs[i]
 	  //<<Write output header, Ch. \ref{ch:prep}>>
-	  //<<Write matches and subjects, Ch. \ref{ch:prep}>>
+  	  //<<Write intervals table, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -830,38 +831,78 @@ We print the legend of subject IDs and names. IDs are printed in
   }
 #+end_src
 #+begin_export latex
-Then we write the matches and corresponding subjects where they were
-found. For this we iterate over the match lengths, and print each one
-together with the subject name or ID in a two-column table. Subject
-IDs are converted to 1-based values to match the header. When printing
-the subject filenames we also remove the extension.
+Then we write the summary table containing the interval of matches
+found and their respective subject IDs. The output table consists of
+four columns, start and end of interval, the match length at the start
+of the interval and the corresponding subject IDs. A new interval is
+printed at the start of every match or whenever the slice of subject
+IDs changes.
+
+We start by initializing three arrays to store match coordinates as
+well as match lengths.
 #+end_export
-#+begin_src go <<Write matches and subjects, Ch. \ref{ch:prep}>>=
-  for j := 0; j < len(ml); j++ {
-	  str := make([]string, len(ids[j]))
-	  if *optN {
-		  //<<Print subject filenames, Ch. \ref{ch:prep}>>
-	  } else {
-  		  //<<Print subject ids, Ch. \ref{ch:prep}>>
+#+begin_src go <<Write intervals table, Ch. \ref{ch:prep}>>=
+  start := make([]int,len(ml))
+  end := make([]int,len(ml))
+  mat := make([]int,len(ml))
+  start[0] = 0
+  mat[0] = ml[0]
+  row := 0
+  //<<Get interval coordinates, Ch. \ref{ch:prep}>>
+#+end_src
+#+begin_export latex
+To get the interval coordinates we iterate over the length of the ml
+array and for every position we keep track of the match length of the
+current and previous element. We also want to check if we have been
+requested to print the subject filenames or just the numeric IDs. If
+the match length of the current position is larger than from the
+previous one we have found a new interval. The same applies if the
+slice of subject IDs changes composition. At the end we close the last
+interval to be printed.
+#+end_export
+#+begin_src go <<Get interval coordinates, Ch. \ref{ch:prep}>>=
+  for j := 1; j < len(ml); j++ {
+	  prev := ml[j-1]
+	  curr := ml[j]
+	  pId := ids[j-1]
+	  //<<Check if printing filenames or ids, Ch. \ref{ch:prep}>>
+	  if curr >= prev ||
+		  !slices.Equal(pId, ids[j]) {
+		  //<<Print table intervals, Ch. \ref{ch:prep}>>
 	  }
-	  fmt.Printf("%d\t%s\n", ml[j],
-		  strings.Join(str,","))
+	  if j == len(ml)-1 {
+		  //<<Print last interval, Ch. \ref{ch:prep}>>
+	  }
   }
 #+end_src
 #+begin_export latex
-To print the subject filenames we iterate over the range of existing
-IDs, and convert the numerical id to a string. Since the results are
-on a 1-based scale we add plus one to the numerical id. Then we clean
-the filename to remove the extension, and create a slice of names to
-be printed.
+If the user requested that the subject filenames be printed, then we
+map the numeric IDs to the subject filenames present in the
+subjectNames array. We remove the last extension from the filename and
+then we join the elements together into a single string. Otherwise, we
+just join the numeric IDs together into a single string. We want the
+result to be 1-based hence why we add plus one to the numeric ID.
 #+end_export
-#+begin_src go <<Print subject filenames, Ch. \ref{ch:prep}>>=
-  for i, val := range ids[j] {
-	  name := strconv.Itoa(val+1)
-	  name = subjectNames[val]
-	  //<<Clean subject name extension, Ch. \ref{ch:prep}>>
-	  str[i] = fmt.Sprintf("%v",name)
+#+begin_src go <<Check if printing filenames or ids, Ch. \ref{ch:prep}>>=
+  str:= make([]string, len(pId))
+  if *optN {
+	  for i, val := range pId {
+		  name := strconv.Itoa(val+1)
+		  name = subjectNames[val]
+		  //<<Clean subject name extension, Ch. \ref{ch:prep}>>
+		  str[i] = fmt.Sprintf("%v",name)
+	  }
+  } else{
+	  for i, val := range pId {
+		  str[i] = fmt.Sprintf("%d",val+1)
+	  }
   }
+#+end_src
+#+begin_export latex
+We import \ty{strconv}.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
+  "strconv"
 #+end_src
 #+begin_export latex
 To trim the extension of the subject filenames we split the name into
@@ -873,22 +914,38 @@ last substring.
   name = name[:e]
 #+end_src
 #+begin_export latex
-To print the numerical ids we iterate over the range of values present
-in ids and group it into a single slice of numerical ids ready to
-print. We also convert the ids into a 1-based notation by adding plus
-one to every id to be printed.
-#+end_export
-#+begin_src go <<Print subject ids, Ch. \ref{ch:prep}>>=
-  for i, val := range ids[j] {
-	  str[i] = fmt.Sprintf("%d",val+1)
-  }
-#+end_src
-#+begin_export latex
-We import \ty{strconv} and \ty{strings}.
+We import \ty{strings}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
-  "strconv"
-  "strings"
+"strings"
+#+end_src
+#+begin_export latex
+To print the intervals we set the end of the interval to the previous
+position, then we print the stored coordinates of the start, match and
+the stored slice of previous subjectIDs. Then we increment the row
+counter, and update the current position as the start of the new
+interval with the respective match length.
+#+end_export
+#+begin_src go <<Print table intervals, Ch. \ref{ch:prep}>>=
+  end[row] = j-1
+  fmt.Printf("%d\t%d\t%d\t%v\n",
+	  start[row],end[row],
+	  mat[row],strings.Join(str,","))
+  row++
+  start[row] = j
+  mat[row] = ml[j]
+#+end_src
+#+begin_export latex
+After iterating over the match lengths array we close the last opened
+interval. For this we print the current position as the starting
+element, the length of the array as the (non-inclusive) end of the
+interval, the corresponding match length at the start of the interval
+and the slice of subject IDs.
+#+end_export
+#+begin_src go <<Print last interval, Ch. \ref{ch:prep}>>=
+  fmt.Printf("%d\t%d\t%d\t%v\n",
+	  start[row],len(ml)-1,
+	  mat[row],strings.Join(str,","))
 #+end_src
 #+begin_export latex
 We have now finished \ty{prepAlfy}, which still needs to be tested.
