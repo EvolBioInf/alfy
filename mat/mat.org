@@ -1,3 +1,4 @@
+
 #+begin_export latex
 \section{Implementation}
 !Package \ty{mat} implements the matching procedure of \ty{alfy}.
@@ -110,7 +111,7 @@ of the match plus one.
 	  p := 0
 	  for p < len(ml) {
 		  //<<Update match length?, Pa. \ref{pa:mat}>>
-		  p += dml[p] +1
+		  p++
 	  }
   }
 #+end_src
@@ -126,8 +127,8 @@ different we append to it.
 #+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
   if dml[p] > ml[p] {
 	  ml[p] = dml[p]
-	  su[p][0] = dsu[p][0]
-	  su[p] = su[p][:1]
+	  su[p] = su[p][:0]
+	  su[p] = append(su[p], dsu[p]...)
   } else if dml[p] == ml[p] {
 	  if su[p][0] == dsu[p][0] {
 		  ml[p] = dml[p]
@@ -207,35 +208,6 @@ We import slices.
 #+end_export
 #+begin_src go <<Imports, Pa. \ref{pa:mat}>>=
 "slices"
-#+end_src
-#+begin_export latex
-We also contruct the function \ty{Store} to store the arrays of match
-lenghts and subject IDs that are returned after the go routine. The
-\ty{Store} function is extremely similar to the \ty{Update} function
-excepts it run across every nucleotide without skipping the length of
-the match. Additionally, if the two match lengths are identical it
-keeps the entire slice of subject IDs and not just the first one.
-#+end_export
-#+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
-  func Store(ml, dml []int, su, dsu [][]int){
-	  p := 0
-	  for p < len(ml) {
-		  if dml[p] > ml[p] {
-			  ml[p] = dml[p]
-			  su[p] = append(su[p],dsu[p]...)
-		  } else if dml[p] == ml[p] {
-			  if su[p][0] == dsu[p][0] {
-				  ml[p] = dml[p]
-				  su[p][0] = dsu[p][0]
-				  su[p] = su[p][:1]
-			  } else {
-				  su[p] = append(su[p],
-					  dsu[p]...)
-			  }
-		  }
-		  p += +1
-	  }
-  }
 #+end_src
 #+begin_export latex
 We've finished writing package \ty{mat}, let's test it.

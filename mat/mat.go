@@ -38,8 +38,8 @@ func Update(ml, dml []int, su, dsu [][]int) {
 	for p < len(ml) {
 		if dml[p] > ml[p] {
 			ml[p] = dml[p]
-			su[p][0] = dsu[p][0]
-			su[p] = su[p][:1]
+			su[p] = su[p][:0]
+			su[p] = append(su[p], dsu[p]...)
 		} else if dml[p] == ml[p] {
 			if su[p][0] == dsu[p][0] {
 				ml[p] = dml[p]
@@ -49,7 +49,7 @@ func Update(ml, dml []int, su, dsu [][]int) {
 				su[p] = append(su[p], dsu[p][0])
 			}
 		}
-		p += dml[p] + 1
+		p++
 	}
 }
 func Interpolate(ml []int, su [][]int) {
@@ -74,24 +74,5 @@ func Interpolate(ml []int, su [][]int) {
 			su[i] = su[i][:c]
 			su[i] = append(su[i], su[i-1]...)
 		}
-	}
-}
-func Store(ml, dml []int, su, dsu [][]int) {
-	p := 0
-	for p < len(ml) {
-		if dml[p] > ml[p] {
-			ml[p] = dml[p]
-			su[p] = append(su[p], dsu[p]...)
-		} else if dml[p] == ml[p] {
-			if su[p][0] == dsu[p][0] {
-				ml[p] = dml[p]
-				su[p][0] = dsu[p][0]
-				su[p] = su[p][:1]
-			} else {
-				su[p] = append(su[p],
-					dsu[p]...)
-			}
-		}
-		p += +1
 	}
 }
