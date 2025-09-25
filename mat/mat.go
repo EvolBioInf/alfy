@@ -41,16 +41,22 @@ func Update(ml, dml []int, su, dsu [][]int) {
 			su[p] = su[p][:0]
 			su[p] = append(su[p], dsu[p]...)
 		} else if dml[p] == ml[p] {
-			if su[p][0] == dsu[p][0] {
-				ml[p] = dml[p]
-				su[p][0] = dsu[p][0]
-				su[p] = su[p][:1]
-			} else {
-				su[p] = append(su[p], dsu[p][0])
-			}
+			su[p] = union(su[p], dsu[p])
 		}
 		p++
 	}
+}
+func union(a, b []int) []int {
+	dic := make(map[int]bool)
+	for _, e := range a {
+		dic[e] = true
+	}
+	for _, e := range b {
+		if !dic[e] {
+			a = append(a, e)
+		}
+	}
+	return a
 }
 func Interpolate(ml []int, su [][]int) {
 	for i := 1; i < len(ml); i++ {

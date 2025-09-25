@@ -777,7 +777,7 @@ printing the query filename without the extension.
 	  ml := matchLengths[i]
 	  ids := subjectIDs[i]
 	  //<<Write output header, Ch. \ref{ch:prep}>>
-  	  //<<Write intervals table, Ch. \ref{ch:prep}>>
+	  //<<Write intervals table, Ch. \ref{ch:prep}>>
   }
 #+end_src
 #+begin_export latex
@@ -812,12 +812,14 @@ stabilize our output, we sort the subject IDs we've seen.
   marked := make(map[int]bool)
   seen := []int{}
   for _, id := range ids {
-	  for p := range id {
+	  for _, p := range id {
 		  marked[p] = true
 	  }
   }
-  for i := range marked {
-	  seen = append(seen,i)
+   for i, id := range marked {
+	if id {
+	seen = append(seen,i)
+	}
   }
   slices.Sort(seen)
 #+end_src
@@ -826,7 +828,7 @@ We print the legend of subject IDs and names. IDs are printed in
 1-based notation.
 #+end_export
 #+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
-  for _, id := range seen {
+  for _,id := range seen {
 	  fmt.Printf(" %d=%s", id+1, subjectNames[id])
   }
 #+end_src

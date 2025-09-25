@@ -285,12 +285,14 @@ func main() {
 				marked := make(map[int]bool)
 				seen := []int{}
 				for _, id := range ids {
-					for p := range id {
+					for _, p := range id {
 						marked[p] = true
 					}
 				}
-				for i := range marked {
-					seen = append(seen, i)
+				for i, id := range marked {
+					if id {
+						seen = append(seen, i)
+					}
 				}
 				slices.Sort(seen)
 				for _, id := range seen {
