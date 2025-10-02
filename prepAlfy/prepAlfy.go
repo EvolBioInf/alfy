@@ -310,6 +310,8 @@ func main() {
 				prev := ml[j-1]
 				curr := ml[j]
 				pId := ids[j-1]
+				slices.Sort(pId)
+				slices.Sort(ids[j])
 				str := make([]string, len(pId))
 				if *optN {
 					for i, val := range pId {

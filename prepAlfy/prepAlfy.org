@@ -867,9 +867,11 @@ interval to be printed.
 	  prev := ml[j-1]
 	  curr := ml[j]
 	  pId := ids[j-1]
+	  slices.Sort(pId)
+	  slices.Sort(ids[j])
 	  //<<Check if printing filenames or ids, Ch. \ref{ch:prep}>>
 	  if curr >= prev ||
-		  !slices.Equal(pId, ids[j]) {
+		  !slices.Equal(pId,ids[j]) {
 		  //<<Print table intervals, Ch. \ref{ch:prep}>>
 	  }
 	  if j == len(ml)-1 {
