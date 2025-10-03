@@ -1,42 +1,23 @@
-* Note on prepAlfy
+* Current problem prepAlfy
+Running prepAlfy on the hiv dataset yields the following results for a given interval:
 
-The current output for q1.fasta is:
-#q1.fasta       1=s1.fasta      2=s2.fasta
-4       1
-3       1
-2       1
-7       2
-6       2
-5       2
-4       2
-3       2
-2       2
-1       2
+113 115 41 A1+AF484509
 
-Give its reverse complement we expect to get:
-#rev.fasta      1=s1.fasta      2=s2.fasta
-6       2
-5       2
-4       2
-3       2
-3       1
-2       1
-1       1
-2       2
-2       1
-1       1
+The output from alfy64- o yields:
 
-So the output of q1.fasta forward+reverse should be:
+113 114 42      A1+AF484509 A2+AF286238
 
-6       2
-5       2
-4       2
-7       2
-6       2
-5       2
-4       2
-3       2
-2       2/1
-1       2/1
+To confirm the truth, we blast the interval against the hiv42 subject file.
+This gives 2 perfect hits matching the annotation of alfy64:
 
-This means the entire hit is on subject 2. Another example is needed.
+A+DQ083238      A2+AF286238     100.000 41      0       0       1       41      8560    8600    7.58e-1776.8
+A+DQ083238      A1+AF484509     100.000 41      0       0       1       41      8404    8444    7.58e-1776.8
+
+
+This means that prepAlfy is missing one of the annotations.
+
+
+bonus problem:
+
+If we do not skip the match, then we do not properly identify the
+largest match interval
