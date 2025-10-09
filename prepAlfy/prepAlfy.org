@@ -53,7 +53,12 @@ We import util.
 We declare options for printing the version, picking the query and
 subject directories and the number of threads. By default this
 corresponds to the number of logical CPUs available on the system. We
-also allow the user to print subject names instead of identifiers.
+also allow the user to print subject names instead of identifiers. To
+help debugging the program, the user can chose to print the raw table
+of position annotations instead of the default table of winning
+intervals. Also for debugging purposes, the user can step through all
+possible match start positions instead of skipping just beyond the
+mismatch that terminates the current match.
 #+end_export
 #+begin_src go <<Declare options, Ch. \ref{ch:prep}>>=
   optV := flag.Bool("v", false, "version")
@@ -63,6 +68,9 @@ also allow the user to print subject names instead of identifiers.
   optT := flag.Int("t", ncpu , "number of threads")
   optN := flag.Bool("n", false, "print subject names " +
 	  "(default identifiers)")
+  optR := flag.Bool("r", false, "raw output " +
+	  "(default intervals)")
+  optSS := flag.Bool("S", false, "step (default skip)")
 #+end_src
 #+begin_export latex
 We import flag and runtime.
@@ -629,7 +637,8 @@ We stream the forward strand against the set of esas in the goroutine.
 	  mat.GetMatchLengths(f, esa, subjectIDs[j],
 		  matches.matchLengths[i],
 		  matches.subjectID[i],
-		  rev)
+		  rev,
+		  (*optSS))
   }
 #+end_src
 #+begin_export latex
@@ -642,7 +651,8 @@ We repeat the streaming for the reverse strand.
 	  mat.GetMatchLengths(r, esa, subjectIDs[j],
 		  matches.matchLengths[i],
 		  matches.subjectID[i],
-		  rev)
+		  rev,
+		  (*optSS))
   }
 #+end_src
 #+begin_export latex
@@ -777,7 +787,11 @@ printing the query filename without the extension.
 	  ml := matchLengths[i]
 	  ids := subjectIDs[i]
 	  //<<Write output header, Ch. \ref{ch:prep}>>
-	  //<<Write intervals table, Ch. \ref{ch:prep}>>
+	  if *optR {
+		  //<<Write raw table, Ch. \ref{ch:prep}>>
+	  } else {
+		  //<<Write intervals table, Ch. \ref{ch:prep}>>
+	  }
   }
 #+end_src
 #+begin_export latex
@@ -830,6 +844,14 @@ We print the legend of subject IDs and names. IDs are printed in
 #+begin_src go <<Print subjects seen, Ch. \ref{ch:prep}>>=
   for _,id := range seen {
 	  fmt.Printf(" %d=%s", id+1, subjectNames[id])
+  }
+#+end_src
+#+begin_export latex
+We write the raw table of positions, match lengths, and annotations.
+#+end_export
+#+begin_src go <<Write raw table, Ch. \ref{ch:prep}>>=
+  for j := 0; j < len(ml); j++ {
+	  fmt.Println(j, ml[j], ids[j])
   }
 #+end_src
 #+begin_export latex

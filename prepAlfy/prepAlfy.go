@@ -62,6 +62,9 @@ func main() {
 	optT := flag.Int("t", ncpu, "number of threads")
 	optN := flag.Bool("n", false, "print subject names "+
 		"(default identifiers)")
+	optR := flag.Bool("r", false, "raw output "+
+		"(default intervals)")
+	optSS := flag.Bool("S", false, "step (default skip)")
 	u := "prepAlfy -q <queryDir> -s <subjectDir>"
 	p := "Prepare alfy input"
 	e := "prepAlfy -q queries/ -s subjects/"
@@ -221,7 +224,8 @@ func main() {
 						mat.GetMatchLengths(f, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i],
-							rev)
+							rev,
+							(*optSS))
 					}
 					r := revQuerySeqs[i].Data()
 					rev = true
@@ -229,7 +233,8 @@ func main() {
 						mat.GetMatchLengths(r, esa, subjectIDs[j],
 							matches.matchLengths[i],
 							matches.subjectID[i],
-							rev)
+							rev,
+							(*optSS))
 					}
 				}
 				matchesSets <- matches
@@ -300,46 +305,52 @@ func main() {
 				}
 			}
 			fmt.Printf("\n")
-			start := make([]int, len(ml))
-			end := make([]int, len(ml))
-			mat := make([]int, len(ml))
-			start[0] = 0
-			mat[0] = ml[0]
-			row := 0
-			for j := 1; j < len(ml); j++ {
-				prev := ml[j-1]
-				curr := ml[j]
-				pId := ids[j-1]
-				slices.Sort(pId)
-				slices.Sort(ids[j])
-				str := make([]string, len(pId))
-				if *optN {
-					for i, val := range pId {
-						name := strconv.Itoa(val + 1)
-						name = subjectNames[val]
-						e = strings.LastIndex(name, ".")
-						name = name[:e]
-						str[i] = fmt.Sprintf("%v", name)
-					}
-				} else {
-					for i, val := range pId {
-						str[i] = fmt.Sprintf("%d", val+1)
-					}
+			if *optR {
+				for j := 0; j < len(ml); j++ {
+					fmt.Println(j, ml[j], ids[j])
 				}
-				if curr >= prev ||
-					!slices.Equal(pId, ids[j]) {
-					end[row] = j - 1
-					fmt.Printf("%d\t%d\t%d\t%v\n",
-						start[row], end[row],
-						mat[row], strings.Join(str, ","))
-					row++
-					start[row] = j
-					mat[row] = ml[j]
-				}
-				if j == len(ml)-1 {
-					fmt.Printf("%d\t%d\t%d\t%v\n",
-						start[row], len(ml)-1,
-						mat[row], strings.Join(str, ","))
+			} else {
+				start := make([]int, len(ml))
+				end := make([]int, len(ml))
+				mat := make([]int, len(ml))
+				start[0] = 0
+				mat[0] = ml[0]
+				row := 0
+				for j := 1; j < len(ml); j++ {
+					prev := ml[j-1]
+					curr := ml[j]
+					pId := ids[j-1]
+					slices.Sort(pId)
+					slices.Sort(ids[j])
+					str := make([]string, len(pId))
+					if *optN {
+						for i, val := range pId {
+							name := strconv.Itoa(val + 1)
+							name = subjectNames[val]
+							e = strings.LastIndex(name, ".")
+							name = name[:e]
+							str[i] = fmt.Sprintf("%v", name)
+						}
+					} else {
+						for i, val := range pId {
+							str[i] = fmt.Sprintf("%d", val+1)
+						}
+					}
+					if curr >= prev ||
+						!slices.Equal(pId, ids[j]) {
+						end[row] = j - 1
+						fmt.Printf("%d\t%d\t%d\t%v\n",
+							start[row], end[row],
+							mat[row], strings.Join(str, ","))
+						row++
+						start[row] = j
+						mat[row] = ml[j]
+					}
+					if j == len(ml)-1 {
+						fmt.Printf("%d\t%d\t%d\t%v\n",
+							start[row], len(ml)-1,
+							mat[row], strings.Join(str, ","))
+					}
 				}
 			}
 		}

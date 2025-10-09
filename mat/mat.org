@@ -20,9 +20,10 @@ Our outline of \ty{mat} contains hooks for imports and functions.
 !The function \ty{GetMatchLengths} takes as arguments a query
 !sequence, the enhanced suffix array (ESA) of a subject sequence, the
 !label of that subject sequence, an array of match lengths, a double
-!array of subject labels, and whether or not the query is a reverse
-!strand. It then updates the arrays of match lengths and subject
-!labels.
+!array of subject labels, whether or not the query is a reverse
+!strand, and whether or not the program should step through all
+!possible match start positions. It then updates the arrays of match
+!lengths and subject labels.
 
 As described in Algorithm~\ref{alg:alf}, we initialize the query
 position, $j$, to the leftmost position in the query sequence (line
@@ -33,7 +34,7 @@ interpolate them.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
   func GetMatchLengths(q []byte, s *esa.Esa, i int,
-	  ml []int, su [][]int, rev bool) {
+	  ml []int, su [][]int, rev, step bool) {
 	  j := 0
 	  //<<Create storing arrays for ml and su, Pa. \ref{pa:mat}>>
 	  //<<Calculate match lengths, Pa. \ref{pa:mat}>>
@@ -57,14 +58,18 @@ respective subject IDs.
 #+begin_src go <<Create storing arrays for ml and su, Pa. \ref{pa:mat}>>=
   dml := make([]int, len(ml))
   dsu := make([][]int, len(su))
+  for i := 0; i < len(ml); i++ {
+	  dsu[i] = make([]int, 1)
+  }
 #+end_src
 #+begin_export latex
 In the while loop of Algorithm~\ref{alg:alf}, we first determine the
 length, $\ell$, of the longest match of the prefix of $q[j...]$ in
 $s$. If we are dealing with a reverse strand, we map the position of
 this match to the forward strand. Finally, we move the query position,
-$j$, just beyond the terminal mismatch. The matches are saved in the
-mirrored arrays.
+$j$, by at least one position. If the user requested skipping instead
+of stepping, we skip the start of the next match just beyond the
+terminal mismatch. The matches are saved in the mirrored arrays.
 #+end_export
 #+begin_src go <<Calculate match lengths, Pa. \ref{pa:mat}>>=
   m := len(q)
@@ -75,8 +80,11 @@ mirrored arrays.
 		  //<<Map to forward strand, Pa. \ref{pa:mat}>>
 	  }
 	  dml[p] = l
-	  dsu[p] = append(dsu[p],i)
-	  j += l + 1
+	  dsu[p][0] = i
+	  j++
+	  if !step {
+		  j += l
+	  }
   }
 #+end_src
 #+begin_export latex

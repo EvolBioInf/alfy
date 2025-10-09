@@ -5,12 +5,15 @@ import (
 	"github.com/evolbioinf/esa"
 )
 
-// The function GetMatchLengths takes as arguments a query sequence, the enhanced suffix array (ESA) of a subject sequence, the label of that subject sequence, an array of match lengths, a double array of subject labels, and whether or not the query is a reverse strand. It then updates the arrays of match lengths and subject labels.
+// The function GetMatchLengths takes as arguments a query sequence, the enhanced suffix array (ESA) of a subject sequence, the label of that subject sequence, an array of match lengths, a double array of subject labels, whether or not the query is a reverse strand, and whether or not the program should step through all possible match start positions. It then updates the arrays of match lengths and subject labels.
 func GetMatchLengths(q []byte, s *esa.Esa, i int,
-	ml []int, su [][]int, rev bool) {
+	ml []int, su [][]int, rev, step bool) {
 	j := 0
 	dml := make([]int, len(ml))
 	dsu := make([][]int, len(su))
+	for i := 0; i < len(ml); i++ {
+		dsu[i] = make([]int, 1)
+	}
 	m := len(q)
 	for j < m {
 		l := s.MatchPref(q[j:]).L
@@ -23,8 +26,11 @@ func GetMatchLengths(q []byte, s *esa.Esa, i int,
 			p = m - p - 1 - o
 		}
 		dml[p] = l
-		dsu[p] = append(dsu[p], i)
-		j += l + 1
+		dsu[p][0] = i
+		j++
+		if !step {
+			j += l
+		}
 	}
 	Update(ml, dml, su, dsu)
 	Interpolate(ml, su)

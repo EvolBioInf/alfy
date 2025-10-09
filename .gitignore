@@ -15,11 +15,13 @@ doc/alfyDoc.out
 doc/alfyDoc.pdf
 doc/alfyDoc.ps
 doc/alfyDoc.toc
+doc/code
 doc/date.txt
 doc/intro.tex
 doc/mat.tex
 doc/util.tex
 doc/version.txt
+doc/pab.tex
 doc/prepAlfy.tex
 doc/sir.tex
 
@@ -35,6 +37,9 @@ intro/intro.sh
 
 lib/*.a
 lib/*/*.a
+
+pab/m.fa
+pab/pab.sh
 
 prepAlfy/prepAlfy
 
