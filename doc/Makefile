@@ -24,4 +24,4 @@ publish: alfyDoc.pdf
 	fi
 clean:
 	rm -f alfyDoc.aux alfyDoc.bbl alfyDoc.bib alfyDoc.blg alfyDoc.d alfyDoc.dvi \
-	alfyDoc.log alfyDoc.pdf alfyDoc.ps alfyDoc.toc $(src2)
+	alfyDoc.log alfyDoc.pdf alfyDoc.ps alfyDoc.toc alfyDoc.out $(src2)
