@@ -336,7 +336,7 @@ func main() {
 							str[i] = fmt.Sprintf("%d", val+1)
 						}
 					}
-					if curr >= prev ||
+					if curr > prev ||
 						!slices.Equal(pId, ids[j]) {
 						end[row] = j - 1
 						fmt.Printf("%d\t%d\t%d\t%v\n",

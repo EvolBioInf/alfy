@@ -120,9 +120,7 @@ the skipping is the culprit.
 #+end_export
 #+begin_export latex
 In stepping mode we also get the correct annotation of the interval
-starting at position 8. However, now we see that we should have an
-interval 3--7, where we get five separate intervals. So the interval
-computation needs to be looked into next.
+starting at position 8.
 #+end_export
 #+begin_src sh  <<pab.sh>>=
   ../bin/prepAlfy -n \
@@ -136,16 +134,21 @@ computation needs to be looked into next.
 >q
 0	0	9	b
 1	2	9	a
-3	3	7	a,b
-4	4	7	a,b
-5	5	7	a,b
-6	6	7	a,b
-7	7	7	a,b
+3	7	7	a,b
 8	42	41	a,b
 43	43	7	b
-44	45	7	a,b
-46	46	6	a,b
-47	47	6	a,b
-...
+44	47	7	a,b
+48	50	9	b
+51	51	8	b
+52	53	7	a,b
+54	54	8	a
+55	55	8	b
+56	56	8	a,b
+57	57	8	b
+58	58	7	a,b
+59	59	8	b
+60	61	7	a,b
+62	62	8	a
+63	69	7	a,b
 \end{verbatim}
 #+end_export
