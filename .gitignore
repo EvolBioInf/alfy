@@ -1,18 +1,27 @@
 /alfy
 /alfy64
 
-src/alfy/alfy*
+bin/
 
 data
-
+doc/alfy.tex
 doc/alfyDoc.aux
 doc/alfyDoc.bbl
 doc/alfyDoc.blg
 doc/alfyDoc.dvi
 doc/alfyDoc.log
+doc/alfyDoc.out
 doc/alfyDoc.pdf
 doc/alfyDoc.ps
+doc/alfyDoc.toc
+doc/code/
 doc/date.txt
+doc/intro.tex
+doc/mat.tex
+doc/pab.tex
+doc/prepAlfy.tex
+doc/sir.tex
+doc/util.tex
 doc/version.txt
 
 externSrc/*/src/*.o
@@ -21,14 +30,26 @@ externSrc/*/src/bwt
 externSrc/*/src/ds
 externSrc/*/src/unbwt
 
+intro/
+
 lib/*.a
 lib/*/*.a
 
-scripts/*~
+pab/
+palfy/
+prepAlfy/
 
+scripts/*~
+sir/
 src/alfy/*.o
 src/alfy/*~
+src/alfy/alfy*
 src/common/*/*.o
 src/common/*/*~
 
+test/
 tut
+
+
+
+
