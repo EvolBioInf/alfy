@@ -3,7 +3,8 @@ alfy/alfy
 bin
 src/alfy/alfy*
 
-data
+data/*
+!data/bug*
 
 doc/alfy.tex
 doc/alfyDoc.aux

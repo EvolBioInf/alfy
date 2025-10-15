@@ -88,7 +88,7 @@ problem is prior to interval construction.
 #+end_export
 #+begin_export latex
 Next, we check whether the match at position 8 is missed as a result
-of skipping beyond the previous match. So we switch to the default
+of skipping beyond the previous match. So we switch from the default
 skipping mode to stepping through all possible match starts using
 \ty{-S}. Now we position 8 is annotated with subjects $a$ and $b$, so
 the skipping is the culprit.
