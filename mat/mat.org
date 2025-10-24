@@ -120,17 +120,17 @@ check if the arrays need to be updated. Then advance by one position.
   }
 #+end_src
 #+begin_export latex
-If the match in the data array, $\mbox{dml}[j]$, is greater than
-$\mbox{ml}[j]$, we update $\mbox{ml}[j]$ and note the label of the
-current subject sequence, $dsu[j][0]$. If $\mbox{dml}[j]$ is equal to
-$\mbox{ml}[j]$ we are looking at a new interval with the same
+If the match in the data array, $\mbox{dml}[p]$, is greater than
+$\mbox{ml}[p]$, we update $\mbox{ml}[p]$ and note the label of the
+current subject sequence, $dsu[p][0]$. If $\mbox{dml}[p]$ is equal to
+$\mbox{ml}[p]$ we are looking at a new interval with the same
 length. In this case, we perform the union between the subject IDs
 carried by the previous match and the current one.
 #+end_export
 #+begin_src go <<Update match length?, Pa. \ref{pa:mat}>>=
   if dml[p] > ml[p] {
 	  ml[p] = dml[p]
-	  su[p] = su[p][:0]
+	  su[p] = dsu[p][:0]
 	  su[p] = append(su[p], dsu[p]...)
   } else if dml[p] == ml[p] {
 	  su[p] = union(su[p],dsu[p])
@@ -145,7 +145,7 @@ and b. At the end we return a.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
   func union(a, b []int) []int {
-	  //<<Ensure |a| < |b|, Pa. \ref{pa:mat}>>
+	  //<<Ensure a less than b, Pa. \ref{pa:mat}>>
 	  dic := make(map[int]bool)
 	  for _, e := range a {
 		  dic[e] = true
@@ -158,7 +158,7 @@ and b. At the end we return a.
 If the slice a is longer than slice b, we swap the names. This ensures
 that slice a is always the smallest one.
 #+end_export
-#+begin_src go <<Ensure |a| < |b|, Pa. \ref{pa:mat}>>=
+#+begin_src go <<Ensure a less than b, Pa. \ref{pa:mat}>>=
   if len(a) > len(b) {
 	  tmp := a
 	  a = b
