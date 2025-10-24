@@ -40,7 +40,7 @@ func Update(ml, dml []int, su, dsu [][]int) {
 	for p < len(ml) {
 		if dml[p] > ml[p] {
 			ml[p] = dml[p]
-			su[p] = dsu[p][:0]
+			su[p] = su[p][:0]
 			su[p] = append(su[p], dsu[p]...)
 		} else if dml[p] == ml[p] {
 			su[p] = union(su[p], dsu[p])

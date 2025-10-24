@@ -42,9 +42,9 @@ func readDir(dir string) map[string]bool {
 		if ext != ".fasta" && ext != ".fna" &&
 			ext != ".ffn" && ext != ".fnr" &&
 			ext != ".fa" {
-			m := "%s doesnt have the extension of a " +
-				"nucleotide FASTA file." +
-				"Skipping it \n"
+			m := "%s doesn't have the extension of a " +
+				"nucleotide FASTA file; " +
+				"skipping it.\n"
 			p := dir + "/" + dirEntry.Name()
 			fmt.Fprintf(os.Stderr, m, p)
 			continue

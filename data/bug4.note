@@ -1,0 +1,92 @@
+The current bug of prepAlfy has been proven hard to track down.
+
+At the moment I have managed to track its occurrence to the removal of
+certain sequences from the subject directory.
+
+bugQuery4 contains a short fasta file that should start with a 96
+match length, followed by a 62 match length that gets broken up around
+47 bp.
+
+We are interested in the match length that is 62 bp long. When running
+prepAlfy with the -r option, this corresponds to position 55..
+
+Running prepAlfy will yield:
+
+prepAlfy -q bugQuery4 -s bugSbjct4 -t 1 -r | awk '$1 >= 53 && $1 <= 57'
+
+53 43 [5]
+54 42 [5]
+55 62 [5]
+56 61 [5 4]
+57 60 [4 5]
+
+
+Notice that in position 55, we have a match of 62 bp that is annotated
+with the sequence 5(+1)=C+AY772699, which is identical to the
+annotation in the previous match. This is also followed by a new
+interval on position 56 which is annotated by two distinct subjects: 5
++ 4. This annotation gets extended to the following positions.
+
+We can now reproduce the bug by removing a sequence such as
+A2+AF286237 from the subject directory.
+
+mv bugSbjct4/A2+AF286237.fa .
+
+Rerunning now the same prepAlfy command will yield something different:
+prepAlfy -q bugQuery4 -s bugSbjct4 -t 1 -r | awk '$1 >= 53 && $1 <= 57'
+
+53 43 [4]
+54 42 [4]
+55 62 [3]
+56 61 [3]
+57 60 [3]
+
+Notice that now at position 55, the match of length 62 is of a
+different annotation than the previous match, and gets extended to the
+following positions without appending any extra annotations. The
+annotation at position 55 also matches to another strain, 3(+1)=
+C+AF067155.fa
+
+This bug is not exclusive to the removal of that specific fasta
+file. If we add back, and remove another file, such as the other A2
+strain. We will obtain the same results of a single annotation at
+position 56.
+
+mv A2+AF286237.fa bugSbjct4/
+mv bugSbjct4/A2+AF286238.fa .
+prepAlfy -q bugQuery4 -s bugSbjct4 -t 1 -r | awk '$1 >= 53 && $1 <= 57'
+
+53 43 [4]
+54 42 [4]
+55 62 [3]
+56 61 [3]
+57 60 [3]
+
+
+To check the ground truth we extract the 62 bp long match from the
+query file.
+
+cutSeq -r 56-117 bugQuery4/t.fasta > query2.fasta
+
+We construct a fasta file for all subject sequences:
+
+cat bugSbjct4/* > sub.fasta
+
+And we compare both with either keyMat or blastn. Finding a single
+unique exact match that is 62 matches long.
+
+keyMat -r -p query2.fasta sub.fasta
+
+or
+
+blastn -query query2.fasta -subject sub.fasta -outfmt 6
+
+Shortening the query sequence by 1 bp, to reproduce the double
+annotation previously found starting at position 56, yields exactly
+the same results. Meaning the double annotation is potentially wrong,
+and a leftover from not updating the annotation at the start of the
+interval (position [55]).
+
+Both keyMat and blastn map the query to the same strain: C+AF067155.fa
+This is the same annotation found when we removed the A strains from
+the dataset.
