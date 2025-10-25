@@ -137,26 +137,27 @@ carried by the previous match and the current one.
   }
 #+end_src
 #+begin_export latex
-To perform the union of the two slices we construct the function
-\ty{union}. First we ensure that slice a is the smallest. Then we
-index the smallest slice, a, and construct a dictionary of all values
-it contains. Then we calculate the elemements of the union between a
-and b. At the end we return a.
+To perform the union of the two slices $a$ and $b$, we construct the
+function \ty{union}. First we declare a slice for the union, $u$. Then
+we ensure that slice $a$ is the smaller of the two and construct a
+dictionary of its values. Then we calculate the union between $a$ and
+$b$ and return it.
 #+end_export
 #+begin_src go <<Functions, Pa. \ref{pa:mat}>>=
   func union(a, b []int) []int {
+	  u := []int{}
 	  //<<Ensure $|a| < |b|$, Pa. \ref{pa:mat}>>
 	  dic := make(map[int]bool)
 	  for _, e := range a {
 		  dic[e] = true
 	  }
 	  //<<Calculate union of a and b, Pa. \ref{pa:mat}>>
-	  return a
+	  return u
   }
 #+end_src
 #+begin_export latex
-If the slice a is longer than slice b, we swap the names. This ensures
-that slice a is always the smallest one.
+If slice $a$ is longer than slice $b$, we swap the names. This
+ensures that slice $a$ is always the smallest one.
 #+end_export
 #+begin_src go <<Ensure $|a| < |b|$, Pa. \ref{pa:mat}>>=
   if len(a) > len(b) {
@@ -166,19 +167,23 @@ that slice a is always the smallest one.
   }
 #+end_src
 #+begin_export latex
-To calculate the union of a and b, we iterate over the elements of b,
-and if a given element is not present in the dictionary previously
-constructed we append to it.
+To calculate the union of $a$ and $b$, we copy the elements of $a$
+into $u$, iterate over the elements of $b$, and if a given element is
+not present in the dictionary previously constructed from $a$, we
+append it to $u$.
 #+end_export
 #+begin_src go <<Calculate union of a and b, Pa. \ref{pa:mat}>>=
-  for _,e := range b {
+  for _, e := range a {
+	  u = append(u, e)
+  }
+  for _, e := range b {
 	  if !dic[e] {
-		  a= append(a,e)
+		  u = append(u, e)
 	  }
   }
 #+end_src
 #+begin_export latex
-Function\ty{Interpolate} interpolates the match lengths and subject
+Function \ty{Interpolate} interpolates the match lengths and subject
 labels according to Algorithm~\ref{alg:int}. It takes as input an
 updated array of match lengths and subjects IDs. For each position of
 the match lengths arrays, we compare the previous to the current match

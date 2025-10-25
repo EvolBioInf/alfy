@@ -49,6 +49,7 @@ func Update(ml, dml []int, su, dsu [][]int) {
 	}
 }
 func union(a, b []int) []int {
+	u := []int{}
 	if len(a) > len(b) {
 		tmp := a
 		a = b
@@ -58,12 +59,15 @@ func union(a, b []int) []int {
 	for _, e := range a {
 		dic[e] = true
 	}
+	for _, e := range a {
+		u = append(u, e)
+	}
 	for _, e := range b {
 		if !dic[e] {
-			a = append(a, e)
+			u = append(u, e)
 		}
 	}
-	return a
+	return u
 }
 func Interpolate(ml []int, su [][]int) {
 	for i := 1; i < len(ml); i++ {
