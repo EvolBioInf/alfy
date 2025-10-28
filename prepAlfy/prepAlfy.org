@@ -1032,10 +1032,17 @@ single thread.
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
-In our third and last test, we use subject names instead of IDs.
+In our third, we use subject names instead of IDs.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
   test = exec.Command(p, "-q", q, "-s", s, "-n")
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+In our final test, we check the stepping flag.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:prep}>>=
+  test = exec.Command(p, "-q", q, "-s", s, "-S")
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
@@ -1081,3 +1088,4 @@ We import \ty{strconv} and \ty{os}.
   "strconv"
   "os"
 #+end_src
+ 

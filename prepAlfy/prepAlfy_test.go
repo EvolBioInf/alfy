@@ -19,6 +19,8 @@ func TestPrepAlfy(t *testing.T) {
 	tests = append(tests, test)
 	test = exec.Command(p, "-q", q, "-s", s, "-n")
 	tests = append(tests, test)
+	test = exec.Command(p, "-q", q, "-s", s, "-S")
+	tests = append(tests, test)
 	for i, test := range tests {
 		get, err := test.Output()
 		if err != nil {
