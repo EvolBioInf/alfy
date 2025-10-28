@@ -50,6 +50,7 @@ func TestMat(t *testing.T) {
 		[][]int{{0}, {0}, {0}, {1}, {1},
 			{0, 1}, {1}, {1}, {1}, {0, 1}}}
 	rev := false
+	step := false
 	for i, q := range queries {
 		n := len(q)
 		ml := make([]int, n)
@@ -60,7 +61,31 @@ func TestMat(t *testing.T) {
 		}
 		for j, subject := range subjects {
 			s := esa.MakeEsa(subject)
-			GetMatchLengths(q, s, j, ml, su, rev)
+			GetMatchLengths(q, s, j, ml, su, rev, step)
+		}
+		checkM(t, ml, wml[i])
+		checkS(t, su, wsu[i])
+	}
+	step = true
+	wml = [][]int{
+		[]int{4, 7, 6, 5, 4, 3, 2, 1, 0, 1},
+		[]int{4, 4, 3, 2, 1, 0, 4, 3, 2, 1}}
+	wsu = [][][]int{
+		[][]int{{0}, {1}, {1}, {1}, {1},
+			{1}, {1, 0}, {0, 1}, {0, 1}, {0, 1}},
+		[][]int{{0}, {1}, {1}, {1, 0}, {0, 1},
+			{0, 1}, {1}, {1, 0}, {0, 1}, {0, 1}}}
+	for i, q := range queries {
+		n := len(q)
+		ml := make([]int, n)
+		su := make([][]int, n)
+		for j := 0; j < n; j++ {
+			ml[j] = -1
+			su[j] = append(su[j], -1)
+		}
+		for j, subject := range subjects {
+			s := esa.MakeEsa(subject)
+			GetMatchLengths(q, s, j, ml, su, rev, step)
 		}
 		checkM(t, ml, wml[i])
 		checkS(t, su, wsu[i])
@@ -77,6 +102,7 @@ func TestMat(t *testing.T) {
 		[][]int{{0}, {1}, {1}, {0, 1}, {0, 1},
 			{0, 1}, {1}, {0, 1}, {0, 1}, {0, 1}}}
 	rev = true
+	step = false
 	for i, q := range queries {
 		n := len(q)
 		ml := make([]int, n)
@@ -87,7 +113,7 @@ func TestMat(t *testing.T) {
 		}
 		for j, subject := range subjects {
 			s := esa.MakeEsa(subject)
-			GetMatchLengths(q, s, j, ml, su, rev)
+			GetMatchLengths(q, s, j, ml, su, rev, step)
 		}
 		checkM(t, ml, wml[i])
 		checkS(t, su, wsu[i])

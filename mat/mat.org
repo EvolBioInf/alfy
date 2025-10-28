@@ -1,4 +1,3 @@
-
 #+begin_export latex
 \section{Implementation}
 !Package \ty{mat} implements the matching procedure of \ty{alfy}.
@@ -261,13 +260,21 @@ We test the analysis of forward and reverse strands separately.
 We construct the forward queries and subjects and the corresponding
 expected results. The difference between the analysis of forward and
 reverse strands is just a boolean variable, \ty{rev}. We set that to
-false before we compare queries and subjects to do the actual testing.
+false before we compare queries and subjects to do the actual
+testing. The bolean \ty{step} indicates whether the program should
+step through all possible match start positions or skip the match. We
+start by setting it to false, meaning we skip the match. Afterwards we
+set it to positive to evaluate the stepping on the forward strand.
 #+end_export
 #+begin_src go <<Test analysis of forward strand, Pa. \ref{pa:mat}>>=
   //<<Construct forward queries, Pa. \ref{pa:mat}>>
   //<<Construct forward subjects, Pa. \ref{pa:mat}>>
   //<<Construct wanted results, Pa. \ref{pa:mat}>>
   rev := false
+  step := false
+  //<<Compare queries and subjects, Pa. \ref{pa:mat}>>
+  step = true
+  //<<Construct wanted step results, Pa. \ref{pa:mat}>>
   //<<Compare queries and subjects, Pa. \ref{pa:mat}>>
 #+end_src
 #+begin_export latex
@@ -298,6 +305,20 @@ We construct the match lengths and the subject labels we want.
 		  {1}, {1}, {1}, {0,1}, {0,1}},
 	  [][]int{{0}, {0}, {0}, {1}, {1},
 		  {0,1}, {1}, {1}, {1}, {0,1}}}
+#+end_src
+#+begin_export latex
+We also construct the match lengths and the subject labels we want
+when using the stepping model.
+#+end_export
+#+begin_src go <<Construct wanted step results, Pa. \ref{pa:mat}>>=
+  wml = [][]int{
+	  []int{4,7,6,5,4,3,2,1,0,1},
+	  []int{4,4,3,2,1,0,4,3,2,1}}
+  wsu = [][][]int{
+	  [][]int{{0}, {1}, {1}, {1}, {1},
+		  {1}, {1,0}, {0,1}, {0,1}, {0,1}},
+	  [][]int{{0}, {1}, {1}, {1,0}, {0,1},
+		  {0,1}, {1}, {1,0}, {0,1}, {0,1}}}
 #+end_src
 #+begin_export latex
 For each query we prepare an array of match lengths and an array of
@@ -333,7 +354,7 @@ match lengths accordingly.
 #+begin_src go <<Iterate over subjects, Pa. \ref{pa:mat}>>=
   for j, subject := range subjects {
 	  s := esa.MakeEsa(subject)
-	  GetMatchLengths(q, s, j, ml, su, rev)
+	  GetMatchLengths(q, s, j, ml, su, rev, step)
   }
 #+end_src
 #+begin_export latex
@@ -417,13 +438,14 @@ We import slices.
 #+end_src
 #+begin_export latex
 We come to testing the analysis of the queries' reverse strands. We
-construct them, toggle \ty{rev} to true and compare the queries and
-subjects.
+construct them, toggle \ty{rev} to true and \ty{step} to false and
+compare the queries and subjects.
 #+end_export
 #+begin_src go <<Test analysis of reverse strand, Pa. \ref{pa:mat}>>=
   //<<Construct reverse queries, Pa. \ref{pa:mat}>>
   //<<Construct wanted reverse results, Pa. \ref{pa:mat}>>
   rev = true
+  step = false
   //<<Compare queries and subjects, Pa. \ref{pa:mat}>>
 #+end_src
 #+begin_export latex
