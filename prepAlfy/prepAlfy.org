@@ -777,13 +777,15 @@ mat package.
 \subsection{Write output table}
 After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them to standard out. We start by
-printing the query filename without the extension.
+printing the query filename without the extension. Then we iterate
+over the query sequences within the file.
 #+end_export
 #+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
   e := strings.LastIndex(query,".")
   query = query[:e]
   fmt.Printf("#%s\n", query)
   for i, querySeq := range querySeqs {
+	  dim := len(querySeq.Data())
 	  ml := matchLengths[i]
 	  ids := subjectIDs[i]
 	  //<<Write output header, Ch. \ref{ch:prep}>>
@@ -796,10 +798,10 @@ printing the query filename without the extension.
 #+end_src
 #+begin_export latex
 The header consists of a single line that starts with a hash followed
-by the name of the query file and a key/value map to the subject
-id. Unless the user requested subject names, the query name is
-followed by a legend consisting of pairs of subject ID and subject
-file linked by ``='', that is,
+by the name of the query file and its length, followed by a key/value
+map to the subject id. Unless the user requested subject names, the
+header will contain a legend consisting of pairs of subject ID and
+subject file linked by ``='', that is,
 \begin{verbatim}
 subject_id=subject_file
 \end{verbatim}
@@ -807,7 +809,7 @@ To construct the legend, we determine the list of subject IDs that are
 present in the results and then print it out.
 #+end_export
 #+begin_src go <<Write output header, Ch. \ref{ch:prep}>>=
-  fmt.Printf(">%s",querySeq.Header())
+  fmt.Printf(">%s %d",querySeq.Header(),dim)
   if !*optN {
 	  //<<Determine subjects seen, Ch. \ref{ch:prep}>>
 	  //<<Print subjects seen, Ch. \ref{ch:prep}>>

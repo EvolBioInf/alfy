@@ -283,9 +283,10 @@ func main() {
 		query = query[:e]
 		fmt.Printf("#%s\n", query)
 		for i, querySeq := range querySeqs {
+			dim := len(querySeq.Data())
 			ml := matchLengths[i]
 			ids := subjectIDs[i]
-			fmt.Printf(">%s", querySeq.Header())
+			fmt.Printf(">%s %d", querySeq.Header(), dim)
 			if !*optN {
 				marked := make(map[int]bool)
 				seen := []int{}
