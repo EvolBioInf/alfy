@@ -19,13 +19,22 @@
 #include "annotation.h"
 
 void printAnnotation(FILE *fwout, Annotation *an, SequenceUnion *seq, int iQuery, double minAnn_avgSl, double maxAnn_avgSl) {
-
+  /* Find maximum width of numerical column. */
+  Annotation *anp = an;
+  int maxWidth = 0;
+  for (; anp != NULL; anp = anp->next) {
+    double w = (int)log(anp->al);
+    if (w > maxWidth)
+      maxWidth = w;
+  }
+  maxWidth += 2;
+  /* Print the annotations. */
 	SubjectId *s;
 	//double alRel = 0.;
   fprintf(fwout, "%s\n", seq->seqUnion->headers[iQuery]);	
 	for(; an != NULL; an = an->next) {
 		//fprintf(fwout, "%lld %lld %llf %llf  ", an->lb, an->rb, an->sum, an->al);
-		fprintf(fwout, "%lld %lld %lf ", (long long)an->lb+1, (long long)an->rb+1, an->al);
+	  fprintf(fwout, "%lld\t%lld\t%*.1lf\t", (long long)an->lb+1, (long long)an->rb+1, maxWidth, an->al);
 		//alRel = (log(an->al) - log(minAnn_avgSl)) / (log(maxAnn_avgSl) - log(minAnn_avgSl));
 		//fprintf(fwout, "%lf ", alRel);
 		if (minAnn_avgSl > an-> al) { // avg shulen is less than by chance alone; in that case print subject in square brackets to signify uncertainty of the result

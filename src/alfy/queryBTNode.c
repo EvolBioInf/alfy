@@ -370,6 +370,7 @@ qNode *freadIntervals(FILE *f, char **subjectNames, Int64 numOfSubjects) {
   Word *subjectIndex;
   char subjects[4096];
 
+
   // Skip header line
   while (fgetc(f) != '\n')
     ;

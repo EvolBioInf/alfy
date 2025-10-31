@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
 	
   // fpout - intervals output, fwout - windows analysis
   if (args->I) {
-    readIntervals(fpout, args, seqUnion, fwout);	
+    readIntervals(fpout, args, seqUnion, fwout);
   } else {
     getLcpTreeShulens(fpout, args, seqUnion, fwout); 
   }
@@ -331,6 +331,8 @@ void readIntervals(FILE *fpout, Args *a, SequenceUnion *seqUnion, FILE *fwout) {
   char **subjectNames;
   qNode *p = NULL, *r = NULL; // binary tree root
   FILE *f1 = NULL;
+
+  
   f1 = fopen(a->I, "r");
 
   // array of left borders of each sequence
@@ -378,9 +380,8 @@ void readIntervals(FILE *fpout, Args *a, SequenceUnion *seqUnion, FILE *fwout) {
   p = freadIntervals(f1, subjectNames, seqUnion->numOfSubjects);
   root = &p;
 	
-  /* windows analysis */	
+  /* windows analysis */
   l = windowAnalysis(a, seqUnion, fwout, NULL, strandBorders, leftBorders, root, 1, minSumWin, fpout); // binsearch ==> 1
-	
   /* deallocation */
   while (p) {
     r = p->right;
