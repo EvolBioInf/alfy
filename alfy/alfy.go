@@ -8,6 +8,7 @@ import (
 	"github.com/evolbioinf/clio"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -27,6 +28,13 @@ type Interval struct {
 	end        int
 	ml         int
 	subjectIDs []int
+}
+type Window struct {
+	start int
+	end   int
+	score int
+	sbp   float64
+	ID    []int
 }
 
 func main() {
@@ -168,20 +176,62 @@ func main() {
 				}
 			}
 			maxScore := make([]int, 0)
-			maxSbjct := make([]int, 0)
+			maxSbjct := make([][]int, 0)
 			for j := 0; j < len(score[0]); j++ {
 				max := -1
-				ms := -1
+				var ms []int
 				for i := 0; i < m; i++ {
 					if max < score[i][j] {
 						max = score[i][j]
-						ms = i
+						ms = ms[:0]
+						ms = append(ms, i)
+					} else if max == score[i][j] {
+						ms = append(ms, i)
 					}
 				}
 				maxScore = append(maxScore, max)
 				maxSbjct = append(maxSbjct, ms)
+				ms = ms[:0]
 			}
-			fmt.Println("score: ", maxScore, "ids: ", maxSbjct)
+			windows := []*Window{}
+			var window *Window
+			p := 0
+			s := 0
+			for i := 0; i < len(maxSbjct)-1; i++ {
+				window = new(Window)
+				window.end = *optW + i
+				window.ID = maxSbjct[i]
+				curr := window.ID
+				next := maxSbjct[i+1]
+				if slices.Equal(curr, next) {
+					window.end = i + *optW + 1
+					s = s + maxScore[i]
+				} else {
+					window.score = window.score
+					window.end = i + *optW
+					window.start = p
+					window.score = s + maxScore[i]
+					window.sbp = float64(window.score) /
+						(float64(window.end) - float64(window.start))
+					windows = append(windows, window)
+					p = i + 1
+					s = 0
+				}
+				if i == len(maxSbjct)-2 {
+					if window.end == sequence.length {
+						window.start = p
+						window.score = s + maxScore[i+1]
+						window.sbp = float64(window.score) /
+							(float64(window.end) - float64(window.start))
+						windows = append(windows, window)
+						break
+					}
+				}
+			}
+			fmt.Printf("Query %s Sequence: %s\n", query.name, sequence.name)
+			for _, win := range windows {
+				fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n", win.start, win.end, win.score, win.sbp, win.ID)
+			}
 		}
 	}
 }
