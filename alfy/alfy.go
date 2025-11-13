@@ -41,7 +41,7 @@ func main() {
 	util.PrepareErrorMessages("alfy")
 	optV := flag.Bool("v", false, "version")
 	optF := flag.String("f", "", "Interval file")
-	optW := flag.Int("w", 5, "window length")
+	optW := flag.Int("w", 80, "window length")
 	u := "alfy <prepAlfy.out>"
 	p := "Calculate homology between queries and subjects"
 	e := "alfy alfy.in"

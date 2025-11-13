@@ -53,7 +53,7 @@ We declare the options for the version.
 #+begin_src go <<Declare options, Ch. \ref{ch:alf}>>=
   optV := flag.Bool("v", false, "version")
   optF := flag.String("f", "", "Interval file")
-  optW := flag.Int("w",5, "window length")
+  optW := flag.Int("w",80, "window length")
 #+end_src
 #+begin_export latex
 We import \ty{flag}.
