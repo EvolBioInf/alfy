@@ -44,7 +44,7 @@ We take care of error handling by calling the function
 util.PrepareErrorMessages("prepAlfy")
 #+end_src
 #+begin_export latex
-We import util.
+We import \ty{util}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "github.com/evolbioinf/alfy/util"
@@ -73,7 +73,7 @@ mismatch that terminates the current match.
   optSS := flag.Bool("S", false, "step (default skip)")
 #+end_src
 #+begin_export latex
-We import flag and runtime.
+We import \ty{flag} and \ty{runtime}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "flag"
@@ -90,7 +90,7 @@ explanation of the purpose of \ty{prepAlfy}, and an example command.
   clio.Usage(u,p,e)
 #+end_src
 #+begin_export latex
-We import clio.
+We import \ty{clio}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "github.com/evolbioinf/clio"
@@ -129,7 +129,7 @@ message.
   }
 #+end_src
 #+begin_export latex
-We import fmt and os.
+We import \ty{fmt} and \ty{os}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "fmt"
@@ -156,7 +156,7 @@ If the user set fewer than one thread, we throw a fatal error.
   }
 #+end_src
 #+begin_export latex
-We import log.
+We import \ty{log}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "log"
@@ -263,7 +263,7 @@ none, we skip it and warn the user.
   }
 #+end_src
 #+begin_export latex
-We import filepath.
+We import \ty{filepath}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "path/filepath"
@@ -289,7 +289,7 @@ First we sort the queries.
   sort.Strings(queryNames)
 #+end_src
 #+begin_export latex
-We import sort.
+We import \ty{sort}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "sort"
@@ -384,7 +384,7 @@ We use a scanner to iterate over the sequences in the current neighbor file.
   }
 #+end_src
 #+begin_export latex
-We import fasta
+We import \ty{fasta}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "github.com/evolbioinf/fasta"
@@ -437,7 +437,7 @@ sequences.
   esas[i] = esa.MakeEsa(d)
 #+end_src
 #+begin_export latex
-We import esa.
+We import \ty{esa}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "github.com/evolbioinf/esa"
@@ -495,7 +495,7 @@ in the forward and in the reverse strand.
   }
 #+end_src
 #+begin_export latex
-We import byte.
+We import \ty{byte}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "bytes"
@@ -542,7 +542,7 @@ the iterator that belong to the \ty{WaitGroup} concurrency pattern.
   //<<Streaming iterator, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
-We import sync.
+We import \ty{sync}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "sync"
@@ -571,7 +571,7 @@ slice of esas.
   }
 #+end_src
 #+begin_export latex
-We import math.
+We import \ty{math}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "math"
@@ -656,7 +656,7 @@ We repeat the streaming for the reverse strand.
   }
 #+end_src
 #+begin_export latex
-We import the mat package.
+We import the \ty{mat} package.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
   "github.com/evolbioinf/alfy/mat"
@@ -740,6 +740,9 @@ order.
 	  return 1
   })
 #+end_src
+#+begin_export latex
+We import \ty{slices}.
+#+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "slices"
 #+end_src
@@ -993,7 +996,7 @@ testing logic.
   }
 #+end_src
 #+begin_export latex
-We import testing.
+We import \ty{testing}.
 #+end_export
 #+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
   "testing"
@@ -1009,7 +1012,7 @@ We construct a set of tests and iterate over them.
   }
 #+end_src
 #+begin_export latex
-We import exec.
+We import \ty{exec}.
 #+end_export
 #+begin_src go <<Testing imports, Ch. \ref{ch:prep}>>=
 "os/exec"
