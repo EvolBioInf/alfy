@@ -431,7 +431,7 @@ to true and break from the loop.
   }
 #+end_src
 #+begin_export latex
-We import slices.
+We import \ty{slices}.
 #+end_export
 #+begin_src go <<Testing imports, Pa. \ref{pa:mat}>>=
 "slices"
