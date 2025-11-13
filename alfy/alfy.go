@@ -222,15 +222,27 @@ func main() {
 						window.start = p
 						window.score = s + maxScore[i+1]
 						window.sbp = float64(window.score) /
-							(float64(window.end) - float64(window.start))
+							(float64(window.end) -
+								float64(window.start))
 						windows = append(windows, window)
 						break
 					}
 				}
 			}
-			fmt.Printf("Query %s Sequence: %s\n", query.name, sequence.name)
+			fmt.Printf("#Query %s\n>Sequence: %s\n",
+				query.name, sequence.name)
 			for _, win := range windows {
-				fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n", win.start, win.end, win.score, win.sbp, win.ID)
+				str := make([]string, len(win.ID))
+				for i, val := range win.ID {
+					name := strconv.Itoa(val)
+					name = sequence.subjectNames[val]
+					e := strings.LastIndex(name, ".")
+					name = name[:e]
+					str[i] = fmt.Sprintf("%v", name)
+				}
+				fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n",
+					win.start, win.end, win.score, win.sbp,
+					strings.Join(str, ","))
 			}
 		}
 	}

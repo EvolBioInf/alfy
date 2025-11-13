@@ -56,7 +56,7 @@ We declare the options for the version.
   optW := flag.Int("w",5, "window length")
 #+end_src
 #+begin_export latex
-We import flag.
+We import \ty{flag}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
 "flag"
@@ -72,7 +72,7 @@ The usage is split into three parts. The usage message, explanation of
   clio.Usage(u,p,e)
 #+end_src
 #+begin_export latex
-We import clio.
+We import \ty{clio}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
 "github.com/evolbioinf/clio"
@@ -123,7 +123,7 @@ have been read.
   //<<Parse Input file, Ch. \ref{ch:alf}>>
 #+end_src
 #+begin_export latex
-We import os and fmt.
+We import \ty{os} and \ty{fmt}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "os"
@@ -152,7 +152,7 @@ intervals.
   }
 #+end_src
 #+begin_export latex
-We import bufio.
+We import \ty{bufio}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "bufio"
@@ -263,7 +263,7 @@ sequences.
   query.sequences = append(query.sequences, sequence)
 #+end_src
 #+begin_export latex
-We import log, strings and strconv.
+We import \ty{log}, \ty{strings} and \ty{strconv}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "log"
@@ -359,7 +359,7 @@ picked.
 		  //<<Score intervals, Ch. \ref{ch:alf}>>
 		  //<<Get maximum window score, Ch. \ref{ch:alf}>>
 		  //<<Merge adjacent windows, Ch. \ref{ch:alf}>>
-  		  //<<Print scores, Ch. \ref{ch:alf}>>
+  		  //<<Prepare output table, Ch. \ref{ch:alf}>>
 	  }
   }
 #+end_src
@@ -539,10 +539,11 @@ To check for adjacent windows we start by initializing the window type
 variable. Then we iterate over the length of the maxSbjct, which
 corresponds to the total number of sliding windows that were analyzed.
 We initialize all variables required for keeping track of the window
-borders and respective scores. To check whether the windows can be
-merged we check whether the slice of IDs, between the current and the
-next window, are identical. If not we close the window. We also close
-the last window when reaching the end of the sequence.
+borders and respective scores. The left border is to be tracked by
+variable p, and the score by variable s. To check whether the windows
+can be merged we check whether the slice of IDs, between the current
+and the next window, are identical. If not we close the window. We
+also close the last window when reaching the end of the sequence.
 #+end_export
 #+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>=
   windows := []*Window{}
@@ -562,18 +563,17 @@ the last window when reaching the end of the sequence.
   }
 #+end_src
 #+begin_export latex
-We import slices to compare the slices of subject IDs.
+We import \ty{slices} to compare the slices of subject IDs.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "slices"
 #+end_src
 #+begin_export latex
-Each window consists of a left border, the start, a right border, the
-end, a score and a slice of IDs. Since the sliding window analysis is
-done by sliding one step to the right, we know that the left border of
-a given window, window\textsubscript{`$n$}, starts $n$ positions to
-the right of the first nucleotide. Likewise, the right border, ends
-$n$ positions to the right of the size of the window.
+For each window we initialize the right border and the current subject
+ID. Since the sliding window analysis is done by sliding one step to
+the right, we know that the right border of a given window,
+window\textsubscript{`$n$}, starts $n$ positions to the right of the
+window size.
 
 The slice of ID of each window corresponds to the slices stored in the
 maxSbjct variable. We set the current slice of IDs as the current one,
@@ -600,7 +600,10 @@ If the subject IDs are not identical we close the current window. We
 store the right border of the window, the summed up score and the
 score per base pair. Since so far we have been dealing with integers
 we need to convert these to floats. We then append the results to the
-array of previously saved windows and break out of the loop.
+array of previously saved windows and break out of the loop. The left
+border of the window is given by the variable p. After appending the
+current window to the slice of closed windows, we update the left
+border of the new window, and set the current window score to 0.
 #+end_export
 #+begin_src go <<Close window, Ch. \ref{ch:alf}>>=
   window.score = window.score
@@ -615,21 +618,171 @@ array of previously saved windows and break out of the loop.
 #+end_src
 #+begin_export latex
 If the right border corresponds to the length of the sequence we have
-reached the end. We append the last window and break out of the loop.
+reached the end. We update the left border of the window, and its
+existing score. After calculating the score per base pair we append
+the last window to the slice of closed windows and break out of the loop.
 #+end_export
 #+begin_src go <<Close last window, Ch. \ref{ch:alf}>>=
   if window.end == sequence.length {
 	  window.start = p
 	  window.score = s + maxScore[i+1]
 	  window.sbp = float64(window.score)/
-		  (float64(window.end)-float64(window.start))
+		  (float64(window.end)-
+			  float64(window.start))
 	  windows = append(windows,window)
 	  break
   }
 #+end_src
-#+begin_src go <<Print scores, Ch. \ref{ch:alf}>>=
-  fmt.Printf("Query %s Sequence: %s\n",query.name,sequence.name)
+#+begin_export latex
+After merging adjacent windows, we print the stored windows. We start
+by printing the header. For easier readability, instead of printing
+the subject IDs, we want to directly print the subject
+names. Afterwards we print the summary of the intervals.
+#+end_export
+#+begin_src go <<Prepare output table, Ch. \ref{ch:alf}>>=
+  fmt.Printf("#Query %s\n>Sequence: %s\n",
+	  query.name,sequence.name)
   for _,win := range windows {
-	  fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n", win.start, win.end,win.score,win.sbp,win.ID)
+	  //<<Convert numeric IDs to names, Ch. \ref{ch:alf}>>
+	  //<<Print intervals, Ch. \ref{ch:alf}>>
   }
+#+end_src
+#+begin_export latex
+To convert the numeric IDs to the subject names, we iterate over the
+slice of IDs, and then for each value extract the corresponding
+subject Name saved in the subjectNames map previously
+constructed. Then we remove the extension of the subject file, and
+save the slice of converted names.
+#+end_export
+#+begin_src go <<Convert numeric IDs to names, Ch. \ref{ch:alf}>>=
+  str := make([]string, len(win.ID))
+  for i, val := range win.ID {
+	  name := strconv.Itoa(val)
+	  name = sequence.subjectNames[val]
+	  //<<Clean subject name extension, Ch. \ref{ch:alf}>>
+	  str[i] = fmt.Sprintf("%v",name)
+  }
+#+end_src
+#+begin_export latex
+To remove the extension of the filenames we just obtain the index of
+the last substring, delimited by a dot, and slice the string up until
+that point.
+#+end_export
+#+begin_src go <<Clean subject name extension, Ch. \ref{ch:alf}>>=
+   e := strings.LastIndex(name,".")
+   name = name[:e]
+#+end_src
+#+begin_export latex
+To print the intervals we just iterate through the list of stored
+windows. Then we print the left and right borders, the cumulative
+match length score, the score per base pair and the slice of subject
+IDs separated by a comma.
+#+end_export
+#+begin_src go <<Print intervals, Ch. \ref{ch:alf}>>=
+  fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n",
+	  win.start, win.end,win.score,win.sbp,
+	  strings.Join(str,","))
+#+end_src
+#+begin_export latex
+\section{Testing}
+
+We have now finished writing alfy, and move onwards to the testing.
+
+The program to test alfy has hooks for imports and the testing logic.
+#+end_export
+#+begin_src go <<alfy_test.go>>=
+  package main
+
+  import(
+	  //<<Testing imports, Ch. \ref{ch:alf}>>
+  )
+
+  func TestAlfy(t *testing.T) {
+	  //<<Testing, Ch. \ref{ch:alf}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{testing}.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:alf}>>=
+"testing"
+#+end_src
+#+begin_export latex
+We construct a set of tests, and iterate over them.
+#+end_export
+#+begin_src go <<Testing, Ch. \ref{ch:alf}>>=
+  var tests []*exec.Cmd
+  //<<Construct tests, Ch. \ref{ch:alf}>>
+  for i, test := range tests {
+	  //<<Run test, Ch. \ref{ch:alf}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{exec}.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:alf}>>=
+"os/exec"
+#+end_src
+#+begin_export latex
+In the first test, we test the program with a window size of 5, half
+the lenght of the test sequence..
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
+  p := "./alfy"
+  f := "prep.out"
+  w := "5"
+  test := exec.Command(p, "-f",f,"-w",w)
+  tests = append(tests,test)
+#+end_src
+#+begin_export latex
+In a second test, we test with a window size of 10, the length of the
+testing sequence.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
+  w = "10"
+  test = exec.Command(p, "-f",f,"-w",w)
+  tests = append(tests,test)
+#+end_src
+#+begin_export latex
+We run a test and compare the output with the one we want, which are
+stored in the files r1.txt and r2.txt.
+#+end_export
+#+begin_src go <<Run test, Ch. \ref{ch:alf}>>=
+  //<<Read test output, Ch. \ref{ch:alf}>>
+  //<<Read test input, Ch. \ref{ch:alf}>>
+  if !bytes.Equal(get,want) {
+	  t.Errorf("get:\n%s\nwant:\n%s\n",get,want)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{bytes}.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:alf}>>=
+"bytes"
+#+end_src
+#+begin_export latex
+We read the output from \ty{alfy}.
+#+end_export
+#+begin_src go <<Read test output, Ch. \ref{ch:alf}>>=
+  get, err := test.Output()
+  if err != nil {
+	  t.Error(err)
+  }
+#+end_src
+#+begin_export latex
+We read the content of the results files, r\*.txt.
+#+end_export
+#+begin_src go <<Read test input, Ch. \ref{ch:alf}>>=
+  r := "r" + strconv.Itoa(i+1) +".txt"
+  want, err := os.ReadFile(r)
+  if err != nil {
+	  t.Error(err)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{strconv} and \ty{os}.
+#+end_export
+#+begin_src go <<Testing imports, Ch. \ref{ch:alf}>>=
+"strconv"
+"os"
 #+end_src
