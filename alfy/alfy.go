@@ -197,35 +197,34 @@ func main() {
 			var window *Window
 			p := 0
 			s := 0
-			for i := 0; i < len(maxSbjct)-1; i++ {
+			for i := 0; i <= len(maxSbjct)-1; i++ {
 				window = new(Window)
 				window.end = *optW + i
 				window.ID = maxSbjct[i]
 				curr := window.ID
-				next := maxSbjct[i+1]
-				if slices.Equal(curr, next) {
-					window.end = i + *optW + 1
-					s = s + maxScore[i]
-				} else {
-					window.score = window.score
-					window.end = i + *optW
+				if i+1 >= len(maxSbjct) {
 					window.start = p
 					window.score = s + maxScore[i]
 					window.sbp = float64(window.score) /
-						(float64(window.end) - float64(window.start))
+						(float64(window.end) -
+							float64(window.start))
 					windows = append(windows, window)
-					p = i + 1
-					s = 0
-				}
-				if i == len(maxSbjct)-2 {
-					if window.end == sequence.length {
+					break
+				} else {
+					next := maxSbjct[i+1]
+					if slices.Equal(curr, next) {
+						window.end = i + *optW + 1
+						s = s + maxScore[i]
+					} else {
+						window.score = window.score
+						window.end = i + *optW
 						window.start = p
-						window.score = s + maxScore[i+1]
+						window.score = s + maxScore[i]
 						window.sbp = float64(window.score) /
-							(float64(window.end) -
-								float64(window.start))
+							(float64(window.end) - float64(window.start))
 						windows = append(windows, window)
-						break
+						p = i + 1
+						s = 0
 					}
 				}
 			}

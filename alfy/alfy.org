@@ -540,33 +540,24 @@ variable. Then we iterate over the length of the maxSbjct, which
 corresponds to the total number of sliding windows that were analyzed.
 We initialize all variables required for keeping track of the window
 borders and respective scores. The left border is to be tracked by
-variable p, and the score by variable s. To check whether the windows
-can be merged we check whether the slice of IDs, between the current
-and the next window, are identical. If not we close the window. We
-also close the last window when reaching the end of the sequence.
+variable p, and the score by variables. First we check if we have
+reached the end of the sequence, if yes we store the last
+window. Otherwise we compare the annotation of the current window with
+the next one.
 #+end_export
 #+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>=
   windows := []*Window{}
   var window *Window
   p := 0
   s :=0 
-  for i := 0; i < len(maxSbjct) -1 ; i++{
+  for i := 0; i <= len(maxSbjct) -1 ; i++{
 	  //<<Initialize window variables, Ch. \ref{ch:alf}>>
-	  if slices.Equal(curr,next) {
-		  //<<Extend window, Ch. \ref{ch:alf}>>
-	  } else {
-		  //<<Close window, Ch. \ref{ch:alf}>>
-	  }
-	  if i == len(maxSbjct) -2 {
+	  if i+1 >= len(maxSbjct) {
 		  //<<Close last window, Ch. \ref{ch:alf}>>
+	  } else {
+		  //<<Check annotation of next window, Ch. \ref{ch:alf}>>
 	  }
   }
-#+end_src
-#+begin_export latex
-We import \ty{slices} to compare the slices of subject IDs.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
-  "slices"
 #+end_src
 #+begin_export latex
 For each window we initialize the right border and the current subject
@@ -576,20 +567,52 @@ window\textsubscript{`$n$}, starts $n$ positions to the right of the
 window size.
 
 The slice of ID of each window corresponds to the slices stored in the
-maxSbjct variable. We set the current slice of IDs as the current one,
-and the next set of subject IDs as the next one.
+maxSbjct variable. We also set the current slice of IDs as the current one.
 #+end_export
 #+begin_src go <<Initialize window variables, Ch. \ref{ch:alf}>>=
   window = new(Window)
   window.end = *optW + i
   window.ID = maxSbjct[i]
   curr := window.ID
-  next := maxSbjct[i+1]
 #+end_src
 #+begin_export latex
-If the two slices of subject IDs are identical, we extend the right
-border by one position, and update the score to also include the new
-window score.
+If the right border corresponds to the length of the sequence we have
+reached the end. We update the left border of the window, and its
+existing score. After calculating the score per base pair we append
+the last window to the slice of closed windows and break out of the loop.
+#+end_export
+#+begin_src go <<Close last window, Ch. \ref{ch:alf}>>=
+  window.start = p
+  window.score = s + maxScore[i]
+  window.sbp = float64(window.score)/
+	  (float64(window.end)-
+		  float64(window.start))
+  windows = append(windows,window)
+  break
+#+end_src
+#+begin_export latex
+If we have yet to reach the end, we set variable set to store the
+slice of subjectIDs of the next window. If the slices of the current
+and the following window are identical the window can be extended,
+otherwise we close it.
+#+end_export
+#+begin_src go <<Check annotation of next window, Ch. \ref{ch:alf}>>=
+  next :=maxSbjct[i+1]
+  if slices.Equal(curr,next) {
+	  //<<Extend window, Ch. \ref{ch:alf}>>
+  } else {
+	  //<<Close window, Ch. \ref{ch:alf}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{slices} to compare the slices of subject IDs.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+  "slices"
+#+end_src
+#+begin_export latex
+To extend the window, we extend the right border by one position, and
+update the sum score of the window.
 #+end_export
 #+begin_src go <<Extend window, Ch. \ref{ch:alf}>>=
   window.end = i + *optW +1
@@ -615,23 +638,6 @@ border of the new window, and set the current window score to 0.
   windows = append(windows,window)
   p = i +1
   s = 0
-#+end_src
-#+begin_export latex
-If the right border corresponds to the length of the sequence we have
-reached the end. We update the left border of the window, and its
-existing score. After calculating the score per base pair we append
-the last window to the slice of closed windows and break out of the loop.
-#+end_export
-#+begin_src go <<Close last window, Ch. \ref{ch:alf}>>=
-  if window.end == sequence.length {
-	  window.start = p
-	  window.score = s + maxScore[i+1]
-	  window.sbp = float64(window.score)/
-		  (float64(window.end)-
-			  float64(window.start))
-	  windows = append(windows,window)
-	  break
-  }
 #+end_src
 #+begin_export latex
 After merging adjacent windows, we print the stored windows. We start
