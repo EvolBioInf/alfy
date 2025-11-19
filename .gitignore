@@ -1,4 +1,3 @@
-
 bin/
 
 data
@@ -30,6 +29,7 @@ prepAlfy/
 
 sir/
 src/*.o
+src/alfy
 
 test/
 tut

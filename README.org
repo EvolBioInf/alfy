@@ -1,29 +1,16 @@
 * [[https://owncloud.gwdg.de/index.php/s/Iog846B7B3E3d8n][alfy]]: ALignment-Free local homologY
 
-- Author: Mirjana Domazet-Loso
+- Authors: Mirjana Domazet-Loso and Bernhard Haubold
 - License: Gnu GPL
-- Contact: Mirjana.Domazet-Loso@fer.hr
+- Contact: Mirjana.Domazet-Loso@fer.hr or haubold@evolbio.mpg.de
 
-** Make and Use program
+** Make Program
 Run
 #+begin_src sh 
 make
 #+end_src
-
-This command builds the libraries and two executables: =alfy= and =alfy64=.
-=alfy= is a 32-bit program and =alfy64= is a 64-bit program. In general, 
-=alfy64= is used for large-scale data sets containing more than 5 x 10^8 bp, 
-and =alfy= for smaller data sets.
-
-If you would like to use =alfy= or =alfy64= from any directory,
-include the path to these executables in you =PATH= variable, e.g:
-
-#+begin_src sh
-PATH=${PATH}:$(HOME)/some-path/Alfy_XXX
-#+end_src
-or copy the executables to your =bin= directory.
-
-To get the example data used in the tutorial, run
+to make the executable =alfy= in the directory =bin=. To get the
+example data used in the tutorial, run
 #+begin_src sh
   make data
 #+end_src
