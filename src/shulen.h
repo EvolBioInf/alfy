@@ -29,6 +29,7 @@
 Int64 *getSuffixArray(Sequence *seq);
 Int64 *getDivSortSa(Sequence *seq);
 Int64 *getLcp(Sequence *seq, Int64 *sa);
+Int64 *getLcpK(Sequence *seq, Int64 *sa);
 //int *getLcp(Sequence *seq, Int64 *sa);
 
 //Int64 *getShulensWithoutSentinel(Args *args, Sequence *seq);

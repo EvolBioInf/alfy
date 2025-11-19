@@ -1,5 +1,3 @@
-/alfy
-/alfy64
 
 bin/
 
@@ -24,28 +22,14 @@ doc/sir.tex
 doc/util.tex
 doc/version.txt
 
-externSrc/*/src/*.o
-externSrc/*/src/*~
-externSrc/*/src/bwt
-externSrc/*/src/ds
-externSrc/*/src/unbwt
-
 intro/
-
-lib/*.a
-lib/*/*.a
 
 pab/
 palfy/
 prepAlfy/
 
-scripts/*~
 sir/
-src/alfy/*.o
-src/alfy/*~
-src/alfy/alfy*
-src/common/*/*.o
-src/common/*/*~
+src/*.o
 
 test/
 tut

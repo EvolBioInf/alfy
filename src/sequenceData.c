@@ -23,27 +23,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-	
-#if WIN
-	#include <io.h>
-#elif UNIX
-	#include <unistd.h>
-#endif
+#include <unistd.h>
 
 #include "commonSC.h"
 #include "sequenceData.h"
 #include "stringUtil.h"
 #include "eprintf.h"
-
-#if defined(_DEBUG) && defined(WIN) 
-	#include "leakWatcher.h"
-#endif
-
-#if defined(_DEBUG) && defined(WIN)  
-  #define new DEBUG_NEW
-  #undef THIS_FILE
-  static char THIS_FILE[] = __FILE__;
-#endif
 
 /* reverse and complement a sequence */
 Sequence *revcomp(Sequence *seq){
@@ -85,13 +70,9 @@ Sequence *revcomp(Sequence *seq){
   return newSeq; 
 }
 
-#if UNIX
 Sequence *initializeSequence() {
-#elif WIN
-static Sequence *initializeSequence() {
-#endif
   Sequence *s;
-	s = (Sequence *)emalloc(sizeof(Sequence));
+  s = (Sequence *)emalloc(sizeof(Sequence));
  // s->freqTab = (Int64 *)emalloc(DICSIZE * sizeof(Int64));
 	//for(i = 0; i < DICSIZE; i++) {
  //   s->freqTab[i] = 0;
@@ -215,11 +196,7 @@ Sequence *readFasta(int fd) {
 /* Allocate and return a sequence element of an array of sequence subjects. 
  * Structure elements are copied from the i-th strain of the sequence s.
 */
-#if UNIX
 Sequence *getArraySElement(Sequence *s, Int64 i, Int64 min) {
-#elif WIN
-static Sequence *getArraySElement(Sequence *s, Int64 i, Int64 min) {
-#endif 
 	Sequence *elem = NULL;
 	Int64 len, k;
 

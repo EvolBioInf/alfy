@@ -12,6 +12,8 @@
 #define DEFAULT_P 0.4
 //#define NAMELENGTH 50 // already defined in stringUtil.h
 
+#include "commonSC.h"
+
 /* define argument container */
 typedef struct args{
 	//char *i;               /* name of query file */

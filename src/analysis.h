@@ -66,5 +66,8 @@ void formIntervalList(qNode *p, Int64 leftBorder, sNode **list, Int64 *numOfElem
 // debug - test1 ///////////////
 void formIntervalListI(qNode *p, Int64 leftBorder, sNode **list, Int64 *numOfElem, SequenceUnion *seq, Int64 iQuery, Int64 *subjectIndex, double **m_pvalue
 											, Int64 *maxNumOfElem);
+void checkScore(Annotation *an, sNode *list);
 
+void convertSubjectIDs(Annotation *an, int ns, sNode *list);
+unsigned getbits(unsigned x, int p, int n);
 #endif // ANALYSIS_H

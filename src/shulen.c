@@ -27,50 +27,10 @@
 #include "sequenceData.h"
 #include "shulen.h"
 
-#if VER32
-	#include "ds_ssort.h"
-	#include "bwt_aux.h"
-	#include "lcp_aux.h"
-#else // VER64
-	#include "common.h"
-	#include "ds_ssort.h"
-	#include "bwt_aux.h"
-	#include "lcp_aux.h"
-#endif
-
-#if defined(_DEBUG) && defined(WIN) 
-	#include "leakWatcher.h"
-#endif
-
-#if defined(_DEBUG) && defined(WIN)  
-  #define new DEBUG_NEW
-  #undef THIS_FILE
-  static char THIS_FILE[] = __FILE__;
-#endif
-
-
-Int64 *getSuffixArray(Sequence *seq){
-  Int64 overshoot;
-  Int64 *sa;
-  UChar *textu;
-
-  /* init ds suffix sort routine (cf. DeepShallow/testlcp.c) */
-  overshoot = init_ds_ssort(500, 2000);
-	if (overshoot == 0) {
-    eprintf("ERROR: ds initialization failed.\n");
-	}
-  sa = (Int64 *)emalloc((size_t)(seq->len + 1) * sizeof(Int64));
-  seq->seq = (char *)erealloc(seq->seq, (size_t)(seq->len + overshoot) * sizeof(char));
-  textu = (UChar *)seq->seq;
-  ds_ssort(textu, (sa + 1), seq->len);
-
-  return sa;
-}
-
 Int64 *getDivSortSa(Sequence *seq) {
   sauchar_t *t; // The text
   saidx_t *sa;  // The sa
-  Int64 n;
+  Int64 i, n, *sa2;
 
   // Get text
   t = (sauchar_t *)seq->seq;
@@ -84,21 +44,38 @@ Int64 *getDivSortSa(Sequence *seq) {
     printf("ERROR[getDivSortSa]: suffix sorting failed.\n");
     exit(-1);
   }
-  return (Int64 *)sa;
+  sa2 = (Int64 *)malloc((n+1) * sizeof(Int64));
+  for (i = 0; i <= n; i++)
+    sa2[i] = sa[i];
+  free(sa);
+
+  return sa2;
 }
 
+/* getLcp calculates the lcp array using Kasais' algorithm. */
 Int64 *getLcp(Sequence *seq, Int64 *sa){
-  Int64 occ[ALPHA_SIZE];
-  unsigned char *textu;
-  Int64 i;
+  char *t = seq->seq;
+  Int64 n = seq->len;
+  Int64 i, j, k, l;
+  Int64 *isa = (Int64 *)malloc((n+1) * sizeof(Int64));
+  Int64 *lcp = (Int64 *)malloc((n+1) * sizeof(Int64));
   
-  textu = (unsigned char *)seq->seq;
-  for(i = 0; i < ALPHA_SIZE; i++) {
-    occ[i] = 0;
+  for (i = 0; i < n+1; i++)
+    isa[sa[i]] = i;
+  lcp[0] = -1;
+  l = 0;
+  for (i = 0; i < n+1; i++) {
+    j = isa[i];
+    if (j == 0)
+      continue;
+    k = sa[j-1];
+    while (t[i+l] == t[k+l])
+      l++;
+    lcp[j] = l;
+    l--;
+    if (l < 0)
+      l = 0;
   }
-  for(i = 0; i < seq->len; i++) {
-    occ[textu[i]]++;
-  }
-  return _lcp_sa2lcp_9n(textu,seq->len,sa,occ);
+  
+  return lcp;
 }
-

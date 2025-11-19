@@ -15,7 +15,7 @@ typedef struct snode {
 
 	Word *subjectIndex;               /* array of indices of subjects; each subject is represented by one bit: 1/0; 
 																		 * the most closely related subjects on the interval have flag 1, otherwise 0 */
-
+  short *sids; /* array of subject IDs */
 } sNode;
 
 sNode getSNode(Int64 sl, Int64 lb, Int64 rb, Word *subjectIndex, Int64 numOfSubjects);

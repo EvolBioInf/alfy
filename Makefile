@@ -1,38 +1,19 @@
-EXECFILE = alfy
-EXECFILE64 = alfy64
+all: alfy
 
-DIRECTORY = alfy
-################################################
-
-VERSION = 1.5
-.PHONY : all
-all : $(EXECFILE) $(EXECFILE64)
-
-# 32 bit version
-$(EXECFILE):
-	cd src/alfy; make; cp alfy ../../
-# 64 bit version
-$(EXECFILE64):
-	cd src/alfy; make; cp alfy64 ../../
-
-###############################################
-
+alfy: bin/alfy
+bin/alfy:
+	if [ ! -d bin ]; then \
+		mkdir bin; \
+	fi
+	make -C src
+	cp src/alfy bin
 data:
 	curl https://owncloud.gwdg.de/index.php/s/ch7WkkXD5GLEjJ7/download -o alfyData.tgz
 	tar -xvzf alfyData.tgz
 	rm alfyData.tgz
-
+.PHONY: test
 test:
-	make test -C src/alfy
-
-#
-# Other Standard make rules
-#
+	make test -C src/
 clean:
-	rm $(EXECFILE) $(EXECFILE64)
-	cd externSrc/deepShallow/src/; make clean;
-	cd externSrc/deepShallow64/src; make clean;
-	cd src/common/interval; make clean;
-	cd src/common/sequence/; make clean;
-	cd src/common/util/; make clean;
-	cd src/alfy; make clean;
+	make clean -C src
+	rm bin/*

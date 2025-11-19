@@ -23,6 +23,8 @@
 #ifndef EPRINTF_H
 #define EPRINTF_H
 
+#include <stdio.h>
+
 FILE *efopen(char *fname, char *mode); 
 void eprintf(char *, ...);
 char *estrdup (char *);
