@@ -12,7 +12,7 @@ data:
 	tar -xvzf alfyData.tgz
 	rm alfyData.tgz
 .PHONY: test
-test:
+test: data
 	make test -C src/
 clean:
 	make clean -C src
