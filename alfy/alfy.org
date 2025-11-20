@@ -4,8 +4,8 @@ The program \ty{alfy} takes as input a table of match lengths and
 subject IDs which was constructed with \ty{prepAlfy}. It returns a
 four column table consisting of the start and end of the query
 coordinates, the measure of homology, and the subject sequence that
-region is most similar to.
-
+region is most similar to. Figure~\ref{fig:alf} shows an output
+example of \ty{alfy}.
 
 \section{Implementation}
 The outline of \ty{alfy} contains hooks for imports, functions, and
