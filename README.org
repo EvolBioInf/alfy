@@ -3,6 +3,7 @@
 - Authors: Mirjana Domazet-Loso and Bernhard Haubold
 - License: Gnu GPL
 - Contact: Mirjana.Domazet-Loso@fer.hr or haubold@evolbio.mpg.de
+- [[https://doi.org/10.1093/bioinformatics/btr176][Publication]]
 
 ** Make Program
 Run
