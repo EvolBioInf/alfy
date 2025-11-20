@@ -333,57 +333,53 @@ $ alfy alfy.in
 The program \ty{prepAlfy} takes as mandatory options \ty{-q} and
 \ty{-s}, which specify the directories of query and subject FASTA
 files, respectively. The structure here is the same as the switches
-for targets and neighbors in \ty{makeNeiDb}. The output of
-\ty{prepAlfy} is a table with two columns for each query consisting of
-the query name, followed by pairs of match lengths and subject
-identifiers. Figure~\ref{fig:out} shows an example for two short
-queries that were compared to two subjects.
+for targets and neighbors in \ty{makeNeiDb}. The output file of
+\ty{prepAlfy} contains two types of headers followed by four numerical
+columns. The first header, marked by \#, denotes the name of the
+query, the filename, the second header marked by \textgreater, denotes
+the name of the sequence, its length and a map between the subject IDs
+and their names. After the header we describe the intervals of match
+lengths. Each row describes the left and right border of the interval,
+the match length at the first position of the interval and the slice
+of subjectIDs that describe where the match length was
+found. Figure~\ref{fig:out} shows an example for two short queries
+that were compared to two subjects.
 
-\begin{figure}
-  \caption{The output of \ty{prepAlfy}.}\label{fig:out}
-  \begin{center}
-    \footnotesize
+\begin{figure}[h]
+\caption{The output of \ty{prepAlfy}.}\label{fig:out}
+\begin{center}
+  \footnotesize
 \begin{tabular}{|c|c|}
 \hline
-      \begin{minipage}{5.2cm}
+    \begin{minipage}{5.2cm}
 \begin{verbatim}
-#q1.fasta 1=s1.fasta 2=s2.fasta
-4 1
-3 1
-2 1
-5 2
-4 2
-3 2
-2 2
-1 2
-0 2
-1 2
+#q1
+>q1 10 1=s1.fasta 2=s2.fasta
+0       2       4       1
+3       5       5       2
+6       8       2       1,2
+9       9       1       1,2
 \end{verbatim}
 \end{minipage}
-      &
+    &
 \begin{minipage}{5.2cm}
 \begin{verbatim}
-#q2.fasta 1=s1.fasta 2=s2.fasta
-4 1
-3 1
-2 1
-2 2
-1 2
-0 2
-4 2
-3 2
-2 2
-1 2
+#q2
+>q2 10 1=s1.fasta 2=s2.fasta
+0       0       4       1
+1       2       4       2
+3       5       2       1,2
+6       6       4       2
+7       9       3       1,2
 \end{verbatim}
 \end{minipage}\\
 \hline
 \end{tabular}
 %% }
-  \end{center}
+\end{center}
 \end{figure}
-The table header starts with a hash, followed by the name of the file
-containing the query, followed by a legend to the subject names. This
-legend consists of key/value pairs
+
+The map of subject IDs is a legend of key/value pairs
 \begin{verbatim}
 subject_id=subject_file
 \end{verbatim}
@@ -392,13 +388,18 @@ space---identifiers are usually shorter than file names. As shown in
 Figure~\ref{fig:out}, each table is understood to cover every position
 in the respective query.
 
-Algorithm~\ref{alg:out} summarizes the procedure to generate the
-output of \ty{prepAlfy}. This consists of two for-loops. In the first
-(lines 1--6), we construct a map of the subject IDs and names of the
-subjects found in the query. Then we print that map as part of the
-table header (line 7). In the second for-loop (lines 8--10) we print
-the pairs of match lengths and subject identifiers, one for each query
-position.
+To avoid printing the match length and subject identifiers at every
+position of the sequence, \ty{prepAlfy} summarizes them into a set of
+intervals. Each row denotes an interval where the subject IDs remained
+identical. The third column of the output file keeps track of the
+match length at the first position of the
+interval. Algorithm~\ref{alg:out} summarizes the procedure to generate
+the output of \ty{prepAlfy}. This consists of two for-loops. In the
+first (lines 1--6), we construct a map of the subject IDs and names of
+the subjects found in the query. Then we print that map as part of the
+table header (line 7). In the second for-loop (lines 8--10) we iterate
+over the array of match lengths, and if the subject ID is the same we
+extend the interval. If it differs we close the interval.
 
 \begin{algorithm}
   \caption{$\langle\mbox{output}\rangle$ from
@@ -412,16 +413,23 @@ position.
     \ENSURE subjectsFound, map of subject IDs and names
     \ENSURE Table of match lengths and subject IDs with header
     consisting of queryName and ID/name pairs of the subjects found
+    \ENSURE left, array of positions describing the left border of the intervals
+    \ENSURE right, array of positions describing the right border of the intervals
     \FOR{$i\leftarrow 1$ \TO $m$}
-       \STATE $s\leftarrow \mbox{su}[i]$
-       \IF{$\mbox{subjectsFound}[s]=\ty{""}$}
-          \STATE $\mbox{subjectsFound}[s]\leftarrow \mbox{subjectNames}[s]$
-       \ENDIF
+    \STATE $s\leftarrow \mbox{su}[i]$
+    \IF{$\mbox{subjectsFound}[s]=\ty{""}$}
+    \STATE $\mbox{subjectsFound}[s]\leftarrow \mbox{subjectNames}[s]$
+    \ENDIF
     \ENDFOR
     \STATE $\mbox{print \#queryName, subjectsFound}$
     \FOR{$i\leftarrow$ \TO $m$}
-       \STATE $\mbox{print}$ $\mbox{ml}[i]$, $\mbox{su}[i]$
-    \ENDFOR
+    \STATE $\mbox{left}\leftarrow i$ 
+    \IF{$\mbox{su[i]}$ == $\mbox{su[i-1]} || \mbox{ml[i]} > \mbox{ml[i-1]-1}$}
+    \STATE $\mbox{right}\leftarrow i$ 
+    \STATE $\mbox{ml}\leftarrow \mbox{ml}-1$ 
+    \ENDIF
+    \STATE $\mbox{print}$ $\mbox{start}[i]$, $\mbox{end}[i]$, $\mbox{ml}[i]$, $\mbox{su}[i]$
+    \ENDFOR     
   \end{algorithmic}
 \end{algorithm}
 
@@ -444,25 +452,41 @@ Algorithm~\ref{alg:alf} shows the sliding window algorithm.
     lengths and subject identifiers.}\label{alg:alf}
 \end{algorithm}
 
-The output from \ty{alfy} is identical to the one from the previous
-version, shown in Table~\ref{tab:alf}. Its comprised by a four column
+The output from \ty{alfy} is similar to the one from the previous
+version, shown in Table~\ref{fig:alf}. Its comprised by a four column
 table with the start and end coordinates of the homologous region in
 the query, the percentage of the region that is homologous and the
 name of the subject it is homologous to.
 
-\begin{table}
- \caption{The output of \ty{alfy} for a window of 5 bp.}\label{tab:alf}
-    \begin{center}
-      \begin{tabular}{rrrr}
-        \hline
-        \multicolumn{4}{l}{\textgreater q1.fasta}\\
-        1 & 5 & 60 & s1\\
-        6 & 10 & 80 & s2\\
- \multicolumn{4}{l}{\textgreater q2.fasta}\\
- 1 & 10 & 90 & s2\\\hline
-      \end{tabular}
-      \end{center}
-\end{table}
+\begin{figure}[h]
+\caption{The output of \ty{alfy} for a window of 5bp.}
+\label{fig:alf}
+\begin{center}
+  \footnotesize
+\begin{tabular}{|c|c|}
+\hline
+    \begin{minipage}{5.2cm}
+\begin{verbatim}
+#Query q1
+>Sequence: q1
+0  5    10   2.000   s1
+1  10   58   6.444   s2
+\end{verbatim}
+\end{minipage}
+    &
+\begin{minipage}{5.2cm}
+\begin{verbatim}
+#Query q2
+>Sequence: q2
+0    5    12   2.400   s1
+1    10   50   5.556   s2
+\end{verbatim}
+\end{minipage}\\
+\hline
+\end{tabular}
+%% }
+\end{center}
+\end{figure}
 
 \subsection{Coding}
 The subpackage \ty{mat} contains the function \ty{Match}, which takes

@@ -4,7 +4,9 @@ The program \ty{prepAlfy} takes as input a directory of query fasta
 files and a directory of subject fasta files. \ty{prepAlfy} will then
 calculate the match lengths between the queries and subjects. The
 output file is a two column table consisting of the query name,
-followed by pairs of match lengths and sequence identifiers.
+followed by pairs of match lengths and sequence
+identifiers. Figure~\ref{fig:out} shows an example of the
+\ty{prepAlfy} output.
 #+end_export
 #+begin_export latex
 \section{Implementation}

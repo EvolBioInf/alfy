@@ -40,10 +40,10 @@ type Window struct {
 func main() {
 	util.PrepareErrorMessages("alfy")
 	optV := flag.Bool("v", false, "version")
-	optF := flag.String("f", "", "Interval file")
+	optF := flag.String("f", "", "interval file")
 	optW := flag.Int("w", 80, "window length")
-	u := "alfy <prepAlfy.out>"
-	p := "Calculate homology between queries and subjects"
+	u := "alfy [prepAlfy.out]"
+	p := "Calculate homology between queries and subjects."
 	e := "alfy alfy.in"
 	clio.Usage(u, p, e)
 	flag.Parse()
@@ -58,9 +58,7 @@ func main() {
 	}
 	file, err := os.Open(*optF)
 	util.Check(err)
-
 	defer file.Close()
-
 	queries := []*Query{}
 	var query *Query
 	var sequence *Sequence
@@ -92,10 +90,9 @@ func main() {
 				k, err := strconv.Atoi(arr[0])
 				if err != nil {
 					log.Fatalf("%q is not a number",
-						fields[1])
+						arr[0])
 				}
-				v := arr[1]
-				sequence.subjectNames[k-1] = v
+				sequence.subjectNames[k-1] = arr[1]
 			}
 			query.sequences = append(query.sequences, sequence)
 		} else {
@@ -123,8 +120,8 @@ func main() {
 				if err != nil {
 					log.Fatalf("%q is not a number ", arr[i])
 				}
-				interval.subjectIDs = append(interval.subjectIDs,
-					x-1)
+				interval.subjectIDs =
+					append(interval.subjectIDs, x-1)
 			}
 			sequence.intervals = append(sequence.intervals,
 				interval)
@@ -197,7 +194,7 @@ func main() {
 			var window *Window
 			p := 0
 			s := 0
-			for i := 0; i <= len(maxSbjct)-1; i++ {
+			for i := 0; i < len(maxSbjct); i++ {
 				window = new(Window)
 				window.end = *optW + i
 				window.ID = maxSbjct[i]
@@ -240,8 +237,8 @@ func main() {
 					str[i] = fmt.Sprintf("%v", name)
 				}
 				fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n",
-					win.start, win.end, win.score, win.sbp,
-					strings.Join(str, ","))
+					win.start, win.end, win.score,
+					win.sbp, strings.Join(str, ","))
 			}
 		}
 	}

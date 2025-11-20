@@ -6,6 +6,7 @@ four column table consisting of the start and end of the query
 coordinates, the measure of homology, and the subject sequence that
 region is most similar to.
 
+
 \section{Implementation}
 The outline of \ty{alfy} contains hooks for imports, functions, and
 the logic of the main function.
@@ -52,8 +53,8 @@ We declare the options for the version.
 #+end_export
 #+begin_src go <<Declare options, Ch. \ref{ch:alf}>>=
   optV := flag.Bool("v", false, "version")
-  optF := flag.String("f", "", "Interval file")
-  optW := flag.Int("w",80, "window length")
+  optF := flag.String("f", "", "interval file")
+  optW := flag.Int("w", 80, "window length")
 #+end_src
 #+begin_export latex
 We import \ty{flag}.
@@ -62,14 +63,14 @@ We import \ty{flag}.
 "flag"
 #+end_src
 #+begin_export latex
-The usage is split into three parts. The usage message, explanation of
-\ty{alfy} and an example command.
+The usage is split into three parts. The usage message, an explanation
+of \ty{alfy} and an example command.
 #+end_export
 #+begin_src go <<Set usage, Ch. \ref{ch:alf}>>=
-  u := "alfy <prepAlfy.out>"
-  p := "Calculate homology between queries and subjects"
+  u := "alfy [prepAlfy.out]"
+  p := "Calculate homology between queries and subjects."
   e := "alfy alfy.in"
-  clio.Usage(u,p,e)
+  clio.Usage(u, p, e)
 #+end_src
 #+begin_export latex
 We import \ty{clio}.
@@ -116,9 +117,7 @@ have been read.
 #+begin_src go <<Read intervals file, Ch. \ref{ch:alf}>>=
   file, err := os.Open(*optF)
   util.Check(err)
-
   defer file.Close()
-
   queries := []*Query{}
   //<<Parse Input file, Ch. \ref{ch:alf}>>
 #+end_src
@@ -130,11 +129,15 @@ We import \ty{os} and \ty{fmt}.
   "fmt"
 #+end_src
 #+begin_export latex
-To parse the input file we start by initializing the variable queries
-of the type Query. Then we construct the bufio reader, initialize the
-remaining variables and start to parse the document. We check if the
-file contains empty lines, and parse the two types of headers and the
-intervals.
+To parse the input file, we start by initializing the variable queries
+of the type Query. We construct the bufio reader, initialize the
+remaining variables and start to parse the document. We skip empty
+lines, and parse the two types of headers and the intervals. The
+interval files contains two type of headers. The main header, which
+starts with a \#, and denotes the start of a query, a secondary
+header, starting with $>$, denoting the start of a sequence and the
+intervals describing the location of the exact matches and the
+annotation of the subject IDs.
 #+end_export
 #+begin_src go <<Parse Input file, Ch. \ref{ch:alf}>>=
   //<<New Query, Sequence and Interval, Ch.\ref{ch:alf}>>
@@ -158,12 +161,8 @@ We import \ty{bufio}.
   "bufio"
 #+end_src
 #+begin_export latex
-The interval files contains two type of headers. The main header,
-which starts with a \#, and denotes the start of a query, a secondary
-header, starting with $>$, denoting the start of a sequence and the
-intervals describing the location of the exact matches and the
-annotation of the subject IDs. To better track this file structure we
-create three structure types: query, sequence and intervals.
+To conveniently handle the input we create three structure types:
+query, sequence and intervals.
 #+end_export
 #+begin_src go<<Types, Ch. \ref{ch:alf}>>=
   //<<Query file structure, Ch. \ref{ch:alf}>>
@@ -171,9 +170,7 @@ create three structure types: query, sequence and intervals.
   //<<Interval structure, Ch. \ref{ch:alf}>>
 #+end_src
 #+begin_export latex
-First, we deal with the different query files and their overall
-structure. They are composed by a query filename, and all their fasta
-entries.
+A query has a name and is made up of one or more sequences.
 #+end_export
 #+begin_src go <<Query file structure, Ch. \ref{ch:alf}>>=
   type Query struct {
@@ -182,9 +179,9 @@ entries.
   }
 #+end_src
 #+begin_export latex
-The sequences in turn, also contain a header with the name of the
-sequence, its length, and the legend between the subject ID and the
-subject sequence name. It is followed by the table of intervals.
+A sequence in turn, contains a header with the name of the sequence,
+its length, and the map between the subject IDs and the subject
+sequence names. It is followed by the table of intervals.
 #+end_export
 #+begin_src go <<Sequence structure, Ch. \ref{ch:alf}>>=
   type Sequence struct {
@@ -199,8 +196,7 @@ The table of intervals describing the exact matches between the
 various subject IDs and each given query sequence are contained in the
 Intervals structure type. This contains the start and end of each
 interval, the match length at the first position of the interval, and
-the annotation of the corresponding subject ID where the exact match
-was found.
+one or more subject IDs where the exact match was found.
 #+end_export
 #+begin_src go <<Interval structure, Ch. \ref{ch:alf}>>=
   type Interval struct {
@@ -221,7 +217,7 @@ variables.
   var interval *Interval
 #+end_src
 #+begin_export latex
-We start parsing the file by skipping over empty lines.
+We start parsing the file by skipping empty lines.
 #+end_export
 #+begin_src go <<Skip empty lines, Ch. \ref{ch:alf}>>=
   if len(line) == 0 {
@@ -230,10 +226,10 @@ We start parsing the file by skipping over empty lines.
 #+end_src
 #+begin_export latex
 Then we deal with the query headers which start with a \# followed by
-the query name with no blanks inbetween. We create a new Query and set
-its name as the entire string except the first character which marks
-the start of the header. We then append the new query to the array of
-all queries.
+the query name with no blanks in between. We create a new Query and
+set its name as the entire string except the first character which
+marks the start of the header. We then append the new query to the
+array of all queries.
 #+end_export
 #+begin_src go <<Deal with query header, Ch. \ref{ch:alf}>>=
   query = new(Query)
@@ -241,13 +237,13 @@ all queries.
   queries = append(queries, query)
 #+end_src
 #+begin_export latex
-Inside the query, we can deal with one or more sequences. If the line
-starts with a $>$, we create a new sequence and split the line into
-several fields. The first two fields corresponds to the sequence name
-and its length. The sequence name is a string so it can be extracted
-directly, however to extract the sequence length we need to convert it
-to a integer and check for errors. We map the numberical IDs and names
-to each other. At the end we append the sequence to the list of query
+Inside the query, there are one or more sequences. If the line starts
+with a $>$, we create a new sequence and split the line into its
+fields. The first two fields corresponds to the sequence name and its
+length. The sequence name is a string, so it can be extracted
+directly. However to extract the sequence length we need to convert it
+to an integer and check for errors. We map the numerical IDs and names
+to each other. At the end, we append the sequence to the list of query
 sequences.
 #+end_export
 #+begin_src go <<Deal with sequence header, Ch. \ref{ch:alf}>>=
@@ -273,32 +269,31 @@ We import \ty{log}, \ty{strings} and \ty{strconv}.
 #+begin_export latex
 To map the subject names and subject IDs we start by checking if the
 map is nill. If yes, we construct one. Then we iterate over all
-remaining fields and split them into keys, subject IDs, and values,
-subject names. We add the new pair to the set of subject names in the
-sequence.
+remaining fields and split them into keys, the subject IDs, and
+values, the subject names. We add the new pair to the set of subject
+names in the sequence.
 #+end_export
 #+begin_src go <<Map subject names to IDs, Ch. \ref{ch:alf}>>=
   if sequence.subjectNames == nil {
 	  sequence.subjectNames = make(map[int]string)
   }
-  for i :=2 ; i <len(fields); i++{
+  for i := 2 ; i < len(fields); i++ {
 	  arr := strings.Split(fields[i],"=")
 	  k, err := strconv.Atoi(arr[0])
 	  if err != nil {
 		  log.Fatalf("%q is not a number",
-			  fields[1])
+			  arr[0])
 	  }
-	  v := arr[1]
-	  sequence.subjectNames[k-1] = v
+	  sequence.subjectNames[k-1] = arr[1]
   }
 #+end_src
 #+begin_export latex
 After parsing the headers, we parse the table of intervals. We start
 by creating a new interval. Each row of intervals consists of four
-numeric columns. We extract the start, end and match length of each
-interval. We convert the string into a integer and check for
+numerical columns. We extract the start, end and match length of each
+interval. We convert the string into an integer and check for
 errors. After parsing the slice of annotated subject IDs, we append
-the interval to the list of sequence intervals.
+the new interval to the list of sequence intervals.
 #+end_export
 #+begin_src go <<Deal with intervals, Ch. \ref{ch:alf}>>=
   var err error
@@ -331,26 +326,26 @@ ID, we convert it into an integer, check for errors and append it to
 the subject IDs of the interval.
 #+end_export
 #+begin_src go <<Parse annotated subjects, Ch. \ref{ch:alf}>>=
-    arr := strings.Split(fields[3],",")
-    for i := 0; i< len(arr); i++ {
-	    x, err := strconv.Atoi(arr[i])
-	    if err != nil {
-		    log.Fatalf("%q is not a number ", arr[i])
-	    }
-	  interval.subjectIDs = append(interval.subjectIDs,
-		  x-1)
-    }
+  arr := strings.Split(fields[3],",")
+  for i := 0; i< len(arr); i++ {
+	  x, err := strconv.Atoi(arr[i])
+	  if err != nil {
+		  log.Fatalf("%q is not a number ", arr[i])
+	  }
+	  interval.subjectIDs =
+		  append(interval.subjectIDs, x-1)
+  }
 #+end_src
 #+begin_export latex
 \subsection{Score the intervals}
-The scoring of the intervals is done independently for each query and
+We score the intervals for each query and sequence independently. The
+scoring of the intervals is done independently for each query and
 sequence. The subject IDs intervals are scored by summing up the match
-lengths at every position inside a given window w. The subject ID, or
-IDs, with the highest scores is considered to be the window winner and
-writen down. Before the sliding window analysis it is necessary to
+lengths at every position inside a given window of length $w$. The one
+or more subjects IDs with the highest scores are considered to be the
+window winner and writen down. Before the sliding window analysis we
 unfold the list of parsed intervals into a matrix of match
-lengths. Then the matrix can be scored and the maximum score can be
-picked.
+lengths. Then the matrix can be scored and the maximum score picked.
 #+end_export
 #+begin_src go <<Iterate over Query and Sequence, Ch. \ref{ch:alf}>>=
   for _, query := range queries {
@@ -364,16 +359,16 @@ picked.
   }
 #+end_src
 #+begin_export latex
-To unfold the list of intervals, it is necessary to first initialize
-our matrix, matches, which will contain all matches and to fill it.
+To unfold the list of intervals, we first initialize our matrix,
+matches, which will contain all matches and then fill it.
 #+end_export
 #+begin_src go <<Unfold match length intervals, Ch. \ref{ch:alf}>>=
   //<<Create match length matrix, Ch. \ref{ch:alf}>>
   //<<Fill match length matrix, Ch. \ref{ch:alf}>>
 #+end_src
 #+begin_export latex
-The matches matrix, is a two-dimensional array of length $n$, length
-of the query sequence, by $m$, number of annotated subject IDs.
+The matches matrix is an $m$ by $n$ matrix, where $m$ is the number of
+annotated subject IDs and $n$ the length of the query.
 #+end_export
 #+begin_src go <<Create match length matrix, Ch. \ref{ch:alf}>>=
   m :=  len(sequence.subjectNames)
@@ -384,22 +379,21 @@ of the query sequence, by $m$, number of annotated subject IDs.
   }
 #+end_src
 #+begin_export latex
-After initializing the matrix it is filled with the match lengths
+After initializing the matrix, it is filled with the match lengths
 previously parsed. For every interval, we iterate from the beginning
 of the match, until the end of the match, given by the starting
 position plus the length of the match minus 1. To count the number of
-positions we add a counter p. For every position we move to the right
-we increase the counter by one and decrease the match length by the
-respective number of positions we have walked so far.
+positions we declare a counter $p$. For every position we move to the
+right, we increase the counter by one and decrease the match length by
+the respective number of positions we have walked so far.
 
 Because each interval may contain several annotations, we also iterate
 over all annotated subject IDs for a given interval. This allows us to
-save the right match length in the respective subjectID slice.
+save the correct match length in the respective subjectID slice.
 
-Finally, we only overwrite existing match length, if they are larger
-than the match length described at the existing position. Because we
-are extending matches to the entirety of the match, and not only the
-interval, we only care about the largest one.
+Finally, overwrite existing match lengths, if they are smaller than
+the incoming match length. Because we are extrapolating match lengths
+across the full match, we only care about the greatest one.
 #+end_export
 #+begin_src go <<Fill match length matrix, Ch. \ref{ch:alf}>>=
   for _, interval := range sequence.intervals {
@@ -466,8 +460,8 @@ To slide the window, we iterate over the length of the sequence, and
 move both the left and right border by one, since the first window is
 already done. Then, we sum the match lengths for each subject ID
 between the left and the right border of the new window
-interval. After running across the entire sequence we store the summed
-match lengths.
+interval. After running across the entire sequence, we store the
+summed match lengths.
 #+end_export
 #+begin_src go <<Slide window, Ch. \ref{ch:alf}>>=
   for r < len(matches[i]) {
@@ -481,7 +475,7 @@ match lengths.
 #+end_src
 #+begin_export latex
 After the sliding window analysis is complete, we summarize the
-results by extracting the maximum score found per each window and the
+results by extracting the maximum score found per window and the
 respective subject ID. We initialize two variables, one to store the
 maximum score found per window, the second to store the corresponding
 subject ID.
@@ -489,8 +483,8 @@ subject ID.
 Then, for the length of the number of windows analyzed, we iterate
 over the existing subject IDs and save the maximum summed match length
 found and its respective subject ID. Since this analysis is done
-across the same sequence, we assume that every subject ID has the same
-number of calculated windows.
+across the same sequence, every subject ID has the same number of
+calculated windows.
 #+end_export
 #+begin_src go <<Get maximum window score, Ch. \ref{ch:alf}>>=
   maxScore := make([]int,0)
@@ -520,10 +514,10 @@ annotation.
 
 Adjacent windows that share the same annotation may be merged into a
 larger single window. For this, we need to keep track of the left and
-right borders of each window, the annotation of the subject ID as well
-as two types of scores, the sum of the window score and the score per
-bp. We start by constructing a structure type window, which will
-contain all of these variables.
+right borders of each window, the annotations as well as two types of
+scores, the sum of the window score and the score per bp. We start by
+constructing a structure type window, which will contain all of these
+variables.
 #+end_export
 #+begin_src go <<Types, Ch. \ref{ch:alf}>>=
   type Window struct{
@@ -535,22 +529,22 @@ contain all of these variables.
   }
 #+end_src
 #+begin_export latex
-To check for adjacent windows we start by initializing the window type
-variable. Then we iterate over the length of the maxSbjct, which
+To check for adjacent windows, we start by initializing the window
+type variable. Then we iterate over the length of the maxSbjct, which
 corresponds to the total number of sliding windows that were analyzed.
 We initialize all variables required for keeping track of the window
 borders and respective scores. The left border is to be tracked by
-variable p, and the score by variables. First we check if we have
-reached the end of the sequence, if yes we store the last
-window. Otherwise we compare the annotation of the current window with
-the next one.
+variable $p$, and the score by variables. First, we check if we have
+reached the end of the sequence, if so we store the last
+window. Otherwise, we compare the annotation of the current window
+with the next one.
 #+end_export
 #+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>=
   windows := []*Window{}
   var window *Window
   p := 0
   s :=0 
-  for i := 0; i <= len(maxSbjct) -1 ; i++{
+  for i := 0; i < len(maxSbjct); i++{
 	  //<<Initialize window variables, Ch. \ref{ch:alf}>>
 	  if i+1 >= len(maxSbjct) {
 		  //<<Close last window, Ch. \ref{ch:alf}>>
@@ -561,13 +555,13 @@ the next one.
 #+end_src
 #+begin_export latex
 For each window we initialize the right border and the current subject
-ID. Since the sliding window analysis is done by sliding one step to
-the right, we know that the right border of a given window,
-window\textsubscript{`$n$}, starts $n$ positions to the right of the
-window size.
+IDs. Since the sliding window analysis is done by sliding one step to
+the right, we know that the right border of the nth window, starts $n$
+positions to the right of the window length variable.
 
-The slice of ID of each window corresponds to the slices stored in the
-maxSbjct variable. We also set the current slice of IDs as the current one.
+The slice of IDs of each window corresponds to the slices stored in
+the maxSbjct variable. We also assign the current slice of IDs to the
+variable current.
 #+end_export
 #+begin_src go <<Initialize window variables, Ch. \ref{ch:alf}>>=
   window = new(Window)
@@ -577,9 +571,11 @@ maxSbjct variable. We also set the current slice of IDs as the current one.
 #+end_src
 #+begin_export latex
 If the right border corresponds to the length of the sequence we have
-reached the end. We update the left border of the window, and its
-existing score. After calculating the score per base pair we append
-the last window to the slice of closed windows and break out of the loop.
+reached the end of the sliding window analysis. We update the left
+border of the window, and its existing score. Since so far we have
+been dealing with integers we need to convert these to floats. After
+calculating the score per base pair, we append the last window to the
+slice of closed windows and break out of the loop.
 #+end_export
 #+begin_src go <<Close last window, Ch. \ref{ch:alf}>>=
   window.start = p
@@ -612,7 +608,7 @@ We import \ty{slices} to compare the slices of subject IDs.
 #+end_src
 #+begin_export latex
 To extend the window, we extend the right border by one position, and
-update the sum score of the window.
+update the score of the window.
 #+end_export
 #+begin_src go <<Extend window, Ch. \ref{ch:alf}>>=
   window.end = i + *optW +1
@@ -621,12 +617,11 @@ update the sum score of the window.
 #+begin_export latex
 If the subject IDs are not identical we close the current window. We
 store the right border of the window, the summed up score and the
-score per base pair. Since so far we have been dealing with integers
-we need to convert these to floats. We then append the results to the
-array of previously saved windows and break out of the loop. The left
-border of the window is given by the variable p. After appending the
-current window to the slice of closed windows, we update the left
-border of the new window, and set the current window score to 0.
+score per base pair. We then append the results to the array of
+previously saved windows and break out of the loop. The left border of
+the window is given by the variable $p$. After appending the current
+window to the slice of closed windows, we update the left border of
+the new window, and set the current window score to 0.
 #+end_export
 #+begin_src go <<Close window, Ch. \ref{ch:alf}>>=
   window.score = window.score
@@ -642,8 +637,8 @@ border of the new window, and set the current window score to 0.
 #+begin_export latex
 After merging adjacent windows, we print the stored windows. We start
 by printing the header. For easier readability, instead of printing
-the subject IDs, we want to directly print the subject
-names. Afterwards we print the summary of the intervals.
+the subject IDs, we directly print the subject names. Then, we print
+the summary of the intervals.
 #+end_export
 #+begin_src go <<Prepare output table, Ch. \ref{ch:alf}>>=
   fmt.Printf("#Query %s\n>Sequence: %s\n",
@@ -666,35 +661,34 @@ save the slice of converted names.
 	  name := strconv.Itoa(val)
 	  name = sequence.subjectNames[val]
 	  //<<Clean subject name extension, Ch. \ref{ch:alf}>>
-	  str[i] = fmt.Sprintf("%v",name)
+	  str[i] = fmt.Sprintf("%v", name)
   }
 #+end_src
 #+begin_export latex
-To remove the extension of the filenames we just obtain the index of
-the last substring, delimited by a dot, and slice the string up until
+To remove the extension of the filenames, we just obtain the index of
+the last substring, delimited by a dot, and slice the string up to
 that point.
 #+end_export
 #+begin_src go <<Clean subject name extension, Ch. \ref{ch:alf}>>=
-   e := strings.LastIndex(name,".")
-   name = name[:e]
+  e := strings.LastIndex(name, ".")
+  name = name[:e]
 #+end_src
 #+begin_export latex
 To print the intervals we just iterate through the list of stored
 windows. Then we print the left and right borders, the cumulative
 match length score, the score per base pair and the slice of subject
-IDs separated by a comma.
+IDs separated by comma.
 #+end_export
 #+begin_src go <<Print intervals, Ch. \ref{ch:alf}>>=
   fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n",
-	  win.start, win.end,win.score,win.sbp,
-	  strings.Join(str,","))
+	  win.start, win.end, win.score,
+	  win.sbp, strings.Join(str,","))
 #+end_src
 #+begin_export latex
 \section{Testing}
 
-We have now finished writing alfy, and move onwards to the testing.
-
-The program to test alfy has hooks for imports and the testing logic.
+We have now finished writing alfy, and move on to testing it. The
+program to test alfy has hooks for imports and the testing logic.
 #+end_export
 #+begin_src go <<alfy_test.go>>=
   package main
@@ -730,34 +724,34 @@ We import \ty{exec}.
 "os/exec"
 #+end_src
 #+begin_export latex
-In the first test, we test the program with a window size of 5, half
-the lenght of the test sequence..
+In the first test, we run alfy a window size of 5, half the length of
+the test sequence.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
   p := "./alfy"
   f := "prep.out"
   w := "5"
-  test := exec.Command(p, "-f",f,"-w",w)
-  tests = append(tests,test)
+  test := exec.Command(p, "-f", f, "-w", w)
+  tests = append(tests, test)
 #+end_src
 #+begin_export latex
-In a second test, we test with a window size of 10, the length of the
-testing sequence.
+In the second test, we test with a window size of 10, the length of
+the testing sequence.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
   w = "10"
-  test = exec.Command(p, "-f",f,"-w",w)
-  tests = append(tests,test)
+  test = exec.Command(p, "-f", f, "-w", w)
+  tests = append(tests, test)
 #+end_src
 #+begin_export latex
-We run a test and compare the output with the one we want, which are
-stored in the files r1.txt and r2.txt.
+When running a test, we compare the output we get with the one we
+want, which is stored in the files r1.txt and r2.txt.
 #+end_export
 #+begin_src go <<Run test, Ch. \ref{ch:alf}>>=
   //<<Read test output, Ch. \ref{ch:alf}>>
   //<<Read test input, Ch. \ref{ch:alf}>>
-  if !bytes.Equal(get,want) {
-	  t.Errorf("get:\n%s\nwant:\n%s\n",get,want)
+  if !bytes.Equal(get, want) {
+	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
   }
 #+end_src
 #+begin_export latex
@@ -779,7 +773,7 @@ We read the output from \ty{alfy}.
 We read the content of the results files, r\*.txt.
 #+end_export
 #+begin_src go <<Read test input, Ch. \ref{ch:alf}>>=
-  r := "r" + strconv.Itoa(i+1) +".txt"
+  r := "r" + strconv.Itoa(i+1) + ".txt"
   want, err := os.ReadFile(r)
   if err != nil {
 	  t.Error(err)
