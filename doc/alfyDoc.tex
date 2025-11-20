@@ -1,4 +1,4 @@
-\documentclass[a4paper]{article}
+\documentclass{article}
 \input{header}
 \begin{document}
 
@@ -37,29 +37,22 @@ ls
 \begin{verbatim}
 make
 \end{verbatim}
-This creates two executables inside the working directory, \ty{alfy}
-and \ty{alfy64}. \ty{alfy} is the 32 bit version of the program,
-\ty{alfy64} its 64 bit version. The 32 bit version can analyze up to
-$2^{29}\approx 5\times 10^8$ bp, while the 64 bit version can
-theoretically analyze up to $2^{61}\approx 2\times 10^{18}$ bp. In
-practice, the program is only limited by the available computer
-memory. On the other hand, the 32 bit version is somewhat faster than
-its 64 bit sibling and uses only half as much memory. We therefore
-recommend that you use the 32 bit version for analyzes of up to
-$5\times 10^8$ bp.  \I List options
+This creates the executable \ty{alfy} inside the directory,
+\ty{bin}.
+\I List options
 \begin{verbatim}
-./alfy -h
+./bin/alfy -h
 \end{verbatim}
 \ei
 
 \section{Input Files}
-Input sequences need to be in FASTA format and can contain only characters
+Input sequences need to be in FASTA format and should contain only characters
 from the set $\{\ty{A}, \ty{C}, \ty{G}, \ty{T}\}$. The script
 \ty{cleanSeq.awk} converts sequences to upper case and
 removes all characters $\notin \{\ty{A}, \ty{C}, \ty{G}, \ty{T}\}$
 from the sequences (but not from their headers):
 \begin{verbatim}
-awk -f scripts/cleanSeq.awk foo.fasta > foo2.fasta
+cleanSeq.awk foo.fasta > foo2.fasta
 \end{verbatim}
 
 \section{Tutorial}
@@ -116,7 +109,7 @@ the homology signal across that interval.
 summarize the output:
 \begin{verbatim}
 alfy -i A+DQ083238.fasta -j hiv42.fasta  | 
-awk -f quantifyGenotypes.awk
+quantifyGenotypes.awk
 
 >A+DQ083238
 A1+AF004885  38.0
@@ -157,8 +150,8 @@ along a query;
 find the final annotation of a given query.
 \ee
 The last step is sensitive to the length of the sliding window. By
-default this is set to 300 bp; if we set it to 400 bp, the results
-change somewhat, but not dramatically so:
+default this is 300 bp; if we set it to 400 bp, the results
+change somewhat, but not dramatically:
 \begin{verbatim}
 alfy -w 400 -i A+DQ083238.fasta -j hiv42.fasta  | 
 sed 's/+.*//' | 
@@ -285,14 +278,18 @@ C   22.7
 G   6.3
 D   2.9
 \end{verbatim}
-The false negative rate is now misleadingly high (23.8\%).
-\I Next, we explore the opposite problem of an inflated false positive
-rate. The files \ty{s1.fasta} and \ty{s2.fasta} contain the two
-simulated homologous sequences $S_1$ and $S_2$, respectively. The sequences are
-separated by 100 mismatches per kb and have the homology structure
-shown in Figure~\ref{fig:hom}: $S_2$ contains a gap between positions
-40--60 kb, which is duly detected by \ty{alfy} as a region without homology when
-running it with $S_1$ as query and $S_2$ as subject:
+Now almost a quarter (23.8\,\%) of the query is annotated as
+non-homologous, probably an overestimate. The false negative rate is
+now misleadingly high (23.8\%).
+
+\I Next, we explore the opposite problem of an inflated detection of
+homology. The files \ty{s1.fasta} and \ty{s2.fasta} contain the two
+simulated homologous sequences $S_1$ and $S_2$, respectively. The
+sequences are separated by 100 mismatches per kb and have the homology
+structure shown in Figure~\ref{fig:hom}: $S_2$ contains a gap between
+positions 40--60 kb, which is duly detected by \ty{alfy} as a region
+without homology when running it with $S_1$ as query and $S_2$ as
+subject:
 \begin{verbatim}
 alfy -i s1.fasta -j s2.fasta -M
 
@@ -348,7 +345,7 @@ web site. The program \ty{ms2dna} is available from
 \]
 and the two programs \ty{getSeq} and
 \ty{cutSeq} applied
-in the next steps are part of the \ty{bioBox}
+in the next steps are part of the \ty{biobox}
 collection of bioinformatics tools available from
 \[
 \ty{http://github.com/evolbioinf/biobox}
@@ -404,8 +401,7 @@ and \ty{globals.c} that prevented compilation.
 \ee
 
 \section{Acknowledgement}
-This software is based on the \ty{dss\_sort} library by G. 
-Manzini~\cite{man02:eng}.
+This software is based on the \ty{divsufsort} library by Yuta Mori~\cite{fis17:dis}.
 
 \bibliography{ref}
 %% Generate alfyDoc.bib:
