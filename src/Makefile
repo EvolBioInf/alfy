@@ -2,7 +2,7 @@ CC = gcc
 version = $(shell bash ../scripts/getVersion.sh)
 date = $(shell bash ../scripts/getDate.sh)
 
-CFLAGS = -O3 -Wall -Wshadow -pedantic -DVERSION="\"$(version)\"" -DDATE="\"$(date)\""
+CFLAGS = -O3 -std=c99 -Wall -Wshadow -pedantic -DVERSION="\"$(version)\"" -DDATE="\"$(date)\""
 src = analysis.c annotation.c auxiliaryLcpTree.c eprintf.c expectedShulen.c fileListUnix.c interface.c \
       interval.c intervalStack.c lcpTree.c mainAlfy.c queryBTNode.c queryInterval.c ran.c sequenceData.c \
       sequenceUnion.c shulen.c stringUtil.c subjectNode.c

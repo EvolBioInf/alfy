@@ -16,4 +16,4 @@ test: data
 	make test -C src/
 clean:
 	make clean -C src
-	rm bin/*
+	rm -f bin/*
