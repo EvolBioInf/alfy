@@ -2,24 +2,32 @@
 
 - Description: Fast detection of local homologies between a query
   sequence and a set of subject sequences, as explained further [[https://doi.org/10.1093/bioinformatics/btr176][here]].
-- Dependency: The divsufsort library
 - Authors: Mirjana Domazet-Loso and Bernhard Haubold
 - License: Gnu GPL
 - Contact: Mirjana.Domazet-Loso@fer.hr or haubold@evolbio.mpg.de
 
 ** Make =alfy=
-Assuming the difsufsort library is installed on your system, execute
+The program =alfy= depends on the divsufsort library. On Debian-like
+system we can install it with
+#+begin_src sh 
+sudo apt install libdivsufsort-dev
+#+end_src
+On macOS we can use
+#+begin_src sh 
+brew install libdivsufsort
+#+end_src
+Then we can run
 #+begin_src sh 
 make
 #+end_src
 to make the executable =alfy= in the directory =bin=.
 
 ** Test =alfy=
-Run
+The command
 #+begin_src sh
 make test
 #+end_src
-to download the test data into the directory =data= and test =alfy=.
+downloads the test data into the directory =data= and tests =alfy=.
 
 ** Get Tutorial Data
 The data used in the tutorial is the same as the data used for
