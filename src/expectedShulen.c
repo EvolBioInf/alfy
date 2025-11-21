@@ -86,7 +86,7 @@ double expectedAggregateShulen(Int64 numCharacters, Int64 windowLen, double gc, 
 }
 
 /* alllocate memory for binomialCoeff */
-void initializeExpectedShulen(){
+void initializeExpectedShulen(void){
   Int64 i, j;
 
   binomialCoeff = (double **)emalloc((MAX_N + 1) * sizeof(double *));
@@ -100,7 +100,7 @@ void initializeExpectedShulen(){
 }
 
 /* free memory allocated for binomialCoeff */
-void freeExpectedShulen(){
+void freeExpectedShulen(void){
 
 	Int64 i;
 

@@ -12,8 +12,7 @@ extern        int scandir(const char *restrict dirp,
 			  int (*filter)(const struct dirent *),
 			  int (*compar)(const struct dirent **,
 					const struct dirent **));
-
-extern  int alphasort();
+extern int alphasort(const struct dirent **, const struct dirent **);
 
 struct direct;
 int selectFile(const struct direct *entry); /* pointer to this function is needed for listFilesUnix */

@@ -30,6 +30,7 @@ prepAlfy/
 sir/
 src/*.o
 src/alfy
+src/MakefileMac
 
 test/
 tut

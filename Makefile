@@ -11,6 +11,9 @@ data:
 	curl https://owncloud.gwdg.de/index.php/s/ch7WkkXD5GLEjJ7/download -o alfyData.tgz
 	tar -xvzf alfyData.tgz
 	rm alfyData.tgz
+mac:
+	make mac -C src
+	cp src/alfy bin
 .PHONY: test
 test: data
 	make test -C src/

@@ -50,7 +50,7 @@ Sequence *freeSequence(Sequence *seq);
 void freeSequenceArray(Int64 n, Sequence *seqArray[]);
 
 Sequence *revcomp(Sequence *seq);
-Sequence *initializeSequence();
+Sequence *initializeSequence(void);
 Sequence *readFasta(int fd); 
 void prepareSeq(Sequence *sequence);
 

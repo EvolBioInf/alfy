@@ -1,6 +1,7 @@
 CC = gcc
 version = $(shell bash ../scripts/getVersion.sh)
 date = $(shell bash ../scripts/getDate.sh)
+sys = $(shell uname -s)
 
 CFLAGS = -O3 -std=c99 -Wall -Wshadow -pedantic -DVERSION="\"$(version)\"" -DDATE="\"$(date)\""
 src = analysis.c annotation.c auxiliaryLcpTree.c eprintf.c expectedShulen.c fileListUnix.c interface.c \
@@ -16,6 +17,12 @@ all: $(exe)
 
 $(exe): $(obj)
 	$(CC) $(CFLAGS) -o $(exe) $(obj) $(lib)
+
+mac: MakefileMac
+	rm -f alfy
+	make -f MakefileMac
+MakefileMac: Makefile configMac.awk
+	awk -f configMac.awk Makefile > MakefileMac
 
 clean:
 	rm -f *.o alfy

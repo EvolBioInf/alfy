@@ -35,7 +35,7 @@ void *pop(Stack *stack);
 //void push(Stack *stack, Interval *interval);
 void push(Stack *stack, void *interval);
 
-Stack *createStack();
+Stack *createStack(void);
 int isEmpty(Stack *stack);
 void freeStack(Stack *stack, void ( f )(void *));
 

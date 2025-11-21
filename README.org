@@ -1,18 +1,42 @@
 * [[https://owncloud.gwdg.de/index.php/s/Iog846B7B3E3d8n][alfy]]: ALignment-Free local homologY
 
+- Description: Rapidly find local homologies between a query sequence
+  and a set of subject sequences, as explained further [[https://doi.org/10.1093/bioinformatics/btr176][here]].
 - Authors: Mirjana Domazet-Loso and Bernhard Haubold
 - License: Gnu GPL
 - Contact: Mirjana.Domazet-Loso@fer.hr or haubold@evolbio.mpg.de
-- [[https://doi.org/10.1093/bioinformatics/btr176][Publication]]
 
-** Make Program
+** Make =alfy= on Debian-like Systems
+Install the developer version of the =divsufsort= library
+#+begin_src sh
+  sudo apt install libdivsufsort-dev
+#+end_src
 Run
 #+begin_src sh 
 make
 #+end_src
-to make the executable =alfy= in the directory =bin=. To get the
-example data used in the tutorial, run
+to make the executable =alfy= in the directory =bin=.
+
+** Make =alfy= on macOS
+Install the =divsufsort= library from source as explained in its
+[[https://github.com/y-256/libdivsufsort][repository]]. Then run
+#+begin_src sh 
+make mac
+#+end_src
+to make the executable =alfy= in the directory =bin=.
+
+** Test =alfy=
+Run
+#+begin_src sh
+make test
+#+end_src
+to download the test data into the directory =data= and test =alfy=.
+
+** Get Tutorial Data
+The data used in the tutorial is the same as the data used for
+testing. It can be downloaded separately by running
 #+begin_src sh
   make data
 #+end_src
 which generates the directory =data= containing the data files.
+

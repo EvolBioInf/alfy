@@ -36,8 +36,8 @@ double sumNew(double x, double pQ, double pS, double lS);
 /* calculate max shulens expected only by chance using both subject's and query's gc-content */
 int maxShulenNew(double argsP, Int64 lS, double gcQ, double gcS);
 
-void initializeExpectedShulen();
-void freeExpectedShulen();
+void initializeExpectedShulen(void);
+void freeExpectedShulen(void);
 double sum(double x, double p, double l);
 
 double binomial(Int64 n, Int64 k);

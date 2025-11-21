@@ -248,7 +248,7 @@ qNode *addNode(qNode *p, qNode *n, Stack *reserveQIStack, Int64 numOfSubjects) {
 	// (1) left subtree
 	else if (n->lb < p->lb) { 
 		//if (n->rb >= p->rb && (n->sl == p->sl + (p->lb - n->lb))) { 
-		if ((n->sl == p->sl + (p->lb - n->lb))  /*&& checkSubjectList(p, n, numOfSubjects)*/) { 
+		if (n->sl == p->sl + (p->lb - n->lb)) {   /*&& checkSubjectList(p, n, numOfSubjects)*/
 			// n is a superinterval of p ending at the same rb, but only in theory,
 			// since the originalp->rb could have been changed before n came along): copy information of n to p, but leave p's children nodes as they are
 			// and leave p->rb!!
@@ -277,7 +277,7 @@ qNode *addNode(qNode *p, qNode *n, Stack *reserveQIStack, Int64 numOfSubjects) {
 	
 	// (2) right subtree
 	else if (n->lb > p->lb) { 
-		if ((p->sl == n->sl + (n->lb - p->lb)) /*&& checkSubjectList(p, n, numOfSubjects)*/) {
+	  if (p->sl == n->sl + (n->lb - p->lb)) {  /*&& checkSubjectList(p, n, numOfSubjects)*/
 			// p is a superinterval of n (ending at the same rb only if no other node came along that should overlap with p): delete n
 			// This should be done here, and not later, since then the connection between these two intervals can be lost in the tree
 			// (Otherwise: in some other step p and n would be joined)

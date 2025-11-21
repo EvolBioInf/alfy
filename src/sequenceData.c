@@ -70,7 +70,7 @@ Sequence *revcomp(Sequence *seq){
   return newSeq; 
 }
 
-Sequence *initializeSequence() {
+Sequence *initializeSequence(void) {
   Sequence *s;
   s = (Sequence *)emalloc(sizeof(Sequence));
  // s->freqTab = (Int64 *)emalloc(DICSIZE * sizeof(Int64));

@@ -32,7 +32,7 @@ int selectFile (const struct direct *entry) {
   }
 }
 
-void testScandir() {
+void testScandir(void) {
   struct dirent **namelist;
   int n;
 
