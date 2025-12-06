@@ -67,6 +67,7 @@ logic of the main function.
   import (
 	  //<<Imports, Pr. \ref{pr:m2a}>>
   )
+  //<<Types, Pr. \ref{pr:m2a}>>
   //<<Functions, Pr. \ref{pr:m2a}>>
   func main() {
 	  //<<Main function, Pr. \ref{pr:m2a}>>
@@ -87,15 +88,17 @@ the flags, and parse the input.
 #+begin_export latex
 We import \ty{clio}.
 #+end_export
-#+begin_src go <<Import, Pr. \ref{pr:m2a}>>=
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
   "github.com/evolbioinf/clio"
 #+end_src
 #+begin_export latex
 The usage consists of three parts, the usage proper, an explanation of
-the purpose of \ty{ms2alfy}, and an example command.
+the purpose of \ty{ms2alfy}, and an example command. To design the
+usage, we note that there is no sensible default for the query, so we
+make it a mandatory option.
 #+end_export
 #+begin_src go <<Set usage, Pr. \ref{pr:m2a}>>=
-  u := "ms2alfy [-h] [option]... [foo.ms]..."
+  u := "ms2alfy [-h -v] -q <query> [foo.ms]..."
   p := "Convert the output of Hudson's ms to alfy output."
   e := "ms 5 1 -t 100 -r 100 10000 -T | ms2alfy -q 3"
   clio.Usage(u, p, e)
@@ -109,6 +112,12 @@ query, \ty{-q}.
   flagQ := flag.String("q", "", "query")
 #+end_src
 #+begin_export latex
+We import \ty{flag}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "flag"
+#+end_src
+#+begin_export latex
 We parse the flags and respond first to the version flag, then to the
 query flag.
 #+end_export
@@ -118,22 +127,251 @@ query flag.
   //<<Respond to \ty{-q}, Pr. \ref{pr:m2a}>>
 #+end_src
 #+begin_export latex
-In response to the query we print the program info, which includes the
-version.
+We print the version upon request.
 #+end_export
 #+begin_src go <<Respond to \ty{-v}, Pr. \ref{pr:m2a}>>=
   if *flagV {
-	  util.PrintInfo("ms2alfy")
+	  util.Version("ms2alfy")
   }
 #+end_src
-
-<<Respond to \ty{-q}, Pr. \ref{pr:m2a}>>
-
-
-<<Parse input, Pr. \ref{pr:m2a}>>
-
-
-
-
-	  //<<Imports, Pr. \ref{pr:m2a}>>
-	  //<<Functions, Pr. \ref{pr:m2a}>>
+#+begin_export latex
+We import \ty{util}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "github.com/evolbioinf/alfy/util"
+#+end_src
+#+begin_export latex
+If the user didn't set a query, something is wrong and we abort with a
+friendly message.
+#+end_export
+#+begin_src go <<Respond to \ty{-q}, Pr. \ref{pr:m2a}>>=
+  if *flagQ == "" {
+	  log.Fatal("please use -q to enter a query")
+  }
+#+end_src
+#+begin_export latex
+We import \ty{log}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "log"
+#+end_src
+#+begin_export latex
+The remaining arguents on the command line are interpreted as file
+names. Each file is parsed by the function parse, which in turn takes
+as argument the query.
+#+end_export
+#+begin_src go <<Parse input, Pr. \ref{pr:m2a}>>=
+  files := flag.Args()
+  clio.ParseFiles(files, parse, *flagQ)
+#+end_src
+#+begin_export latex
+Inside the function \ty{parse}, we retrieve the query, print it as the
+header, and iterate over the input to store the trees. Since
+consecutive trees might be identical, we have to keep track of values
+between current and previous lines of input data, for which we set
+aside a hook. From the stored trees we find the query's neighbors and
+print them.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2a}>>=
+  func parse(r io.Reader, args... interface{}) {
+	  query := args[0].(string)
+	  trees := []*Tree{}
+	  //<<Declare tracking variables, Pr. \ref{pr:m2a}>>
+	  sc := bufio.NewScanner(r)
+	  for sc.Scan() {
+		  //<<Store tree, Pr. \ref{pr:m2a}>>
+	  }
+	  //<<Find neighbors, Pr. \ref{pr:m2a}>>
+	  //<<Print neighbors, Pr. \ref{pr:m2a}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{io} and \ty{bufio}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "io"
+  "bufio"
+#+end_src
+#+begin_export latex
+A tree refers to an interval that has a start and an end. It contains
+neighbors with respect to a query. The tree itself is stored as its
+root.
+#+end_export
+#+begin_src go <<Types, Pr. \ref{pr:m2a}>>=
+  type Tree struct {
+	  start, end int
+	  neighbors []string
+	  query string
+	  root *nwk.Node
+  }
+#+end_src
+#+begin_export latex
+We import \ty{nwk}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+"github.com/evolbioinf/nwk"
+#+end_src
+#+begin_export latex
+When storing a tree, we skip any lines that don't contain a
+tree. Given a tree, we extract it together with its extent. This
+extent may or may not have to be revised in the light of the previous
+tree, so we compare the two trees.
+#+end_export
+#+begin_src go <<Store tree, Pr. \ref{pr:m2a}>>=
+  line := sc.Text()
+  if len(line) > 0 && line[0] == '[' {
+	  //<<Extract current tree, Pr. \ref{pr:m2a}>>
+	  //<<Extract extent of current tree, Pr. \ref{pr:m2a}>>
+	  //<<Compare current and previous tree, Pr. \ref{pr:m2a}>>
+    } else {
+	    continue
+    }
+#+end_src
+#+begin_export latex
+In order to extract the current tree, we split the input line at the
+closing square bracket. The second entry in the resulting array is the
+current tree.
+#+end_export
+#+begin_src go <<Extract current tree, Pr. \ref{pr:m2a}>>=
+  arr := strings.Split(line, "]")
+  curr := arr[1]
+#+end_src
+#+begin_export latex
+We import \ty{strings}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "strings"
+#+end_src
+#+begin_export latex
+The extent of the current tree is the first entry in the array after
+removal of the opening square bracket.
+#+end_export
+#+begin_src go <<Extract extent of current tree, Pr. \ref{pr:m2a}>>=
+  ext, e := strconv.Atoi(arr[0][1:])
+  util.Check(e)
+#+end_src
+#+begin_export latex
+We import \ty{strconv}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "strconv"
+#+end_src
+#+begin_export latex
+If the current tree differs from the previous one, we construct a new
+tree and append it to the slice of trees. Otherwise, we extend the
+current tree.
+#+end_export
+#+begin_src go <<Compare current and previous tree, Pr. \ref{pr:m2a}>>=
+  if curr != prev {
+	  //<<Construct new tree, Pr. \ref{pr:m2a}>>
+  } else {
+	  //<<Extend existing tree, Pr. \ref{pr:m2a}>>
+  }
+#+end_src
+#+begin_export latex
+The declare the previous line as one of the tracking variables.
+#+end_export
+#+begin_src go <<Declare tracking variables, Pr. \ref{pr:m2a}>>=
+  prev := ""
+#+end_src
+#+begin_export latex
+We construct a new tree, set its start and end positions and convert
+the tree to its root. Then we append it to the slice of trees. At the
+end we shift the start position of the next tree to a position beyond
+the end of the current tree.
+#+end_export
+#+begin_src go <<Construct new tree, Pr. \ref{pr:m2a}>>=
+  tree = new(Tree)
+  tree.start = start
+  tree.end = tree.start + ext - 1
+  tree.query = query
+  r := strings.NewReader(curr)
+  sc := nwk.NewScanner(r)
+  sc.Scan()
+  tree.root = sc.Tree()
+  trees = append(trees, tree)
+  start = tree.end + 1
+#+end_src
+#+begin_export latex
+We need \ty{tree} and \ty{start} as additional tracking variables.
+#+end_export
+#+begin_src go <<Declare tracking variables, Pr. \ref{pr:m2a}>>=
+  var tree *Tree
+  start := 1
+#+end_src
+#+begin_export latex
+If we extend the tree, we shift its end position and adjust the start
+position of the next tree.
+#+end_export
+#+begin_src go <<Extend existing tree, Pr. \ref{pr:m2a}>>=
+  tree.end += ext
+  start = tree.end + 1
+#+end_src
+#+begin_export latex
+We iterate over the trees, find the query's parent, and from that the
+neighbors.
+#+end_export
+#+begin_src go <<Find neighbors, Pr. \ref{pr:m2a}>>=
+  for _, tree := range trees {
+	  findParent(tree.root, tree)
+  }
+#+end_src
+#+begin_export latex
+The function \ty{findParent} recursively traverses the tree until it
+finds the query. Once the query is found, its parent is used as
+starting point for adding the neighbors.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2a}>>=
+  func findParent(v *nwk.Node, tree *Tree) {
+	  if v != nil {
+		  if v.Label == tree.query {
+			  addNeighbors(v.Parent, tree)
+		  } else {
+		 	  findParent(v.Child, tree)
+			  findParent(v.Sib, tree)
+		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+Like \ty{getParent}, the function \ty{addNeighbors} is a recursive
+function that traverses the tree rooted on the query's parent and adds
+all leaves that aren't the query.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2a}>>=
+  func addNeighbors(v *nwk.Node, tree *Tree) {
+	  if v != nil {
+		  if v.Child == nil && v.Label != tree.query {
+			  tree.neighbors = append(tree.neighbors, v.Label)
+		  }
+		  addNeighbors(v.Child, tree)
+		  addNeighbors(v.Sib, tree)
+	  }
+  }
+#+end_src
+#+begin_export latex
+For each tree we print the start, the end, a dummy score of -1, and
+the neighbors.
+#+end_export
+#+begin_src go <<Print neighbors, Pr. \ref{pr:m2a}>>=
+  for _, tree := range trees {
+	  if len(tree.neighbors) == 0 {
+		  fmt.Println(tree)
+	  }
+	  fmt.Printf("%d\t%d\t-1\t%s",
+		  tree.start, tree.end, tree.neighbors[0])
+	  for _, neighbor := range tree.neighbors[1:] {
+		  fmt.Printf(" %s", neighbor)
+	  }
+	  fmt.Printf("\n")
+  }
+#+end_src
+#+begin_export latex
+We import \ty{fmt}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "fmt"
+#+end_src
+#+begin_export latex
+We've finished \ty{ms2alfy}, let's test it.
+#+end_export
