@@ -1,0 +1,121 @@
+#+begin_export latex
+!Package \ty{util} collects utility functions for \ty{alfy}.
+
+\section{Implementation}
+
+Our outline of \ty{util} has hooks for imports, variables, and
+functions.
+\bpa{util}{pa:uti}
+#+end_export
+#+begin_src go <<util.go>>=
+  package util
+
+  import (
+	  //<<Imports, Pa. \ref{pa:uti}>>
+  )
+
+  //<<Variables, Pa. \ref{pa:uti}>>
+  //<<Functions, Pa. \ref{pa:uti}>>
+#+end_src
+#+begin_export latex
+\epa
+
+\subsection{Version}
+!The function \ty{Version} prints the program version and other
+!information.
+
+We set the authors, their email addresses, and the program license,
+before we print this information together with the program version and
+date, and then exit with a no-error status.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:uti}>>=
+  func Version(name string) {
+	  var authors, emails, license string
+	  //<<Set authors, Pa. \ref{pa:uti}>>
+	  //<<Set email addresses, Pa. \ref{pa:uti}>>
+	  //<<Set license, Pa. \ref{pa:uti}>>
+	  clio.PrintInfo(name, version, date,
+		  authors, emails, license)
+	  os.Exit(0)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{clio} and \ty{os}.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:uti}>>=
+  "github.com/evolbioinf/clio"
+  "os"
+#+end_src
+#+begin_export latex
+We set the names of the three authors of \ty{alfy}, Mirjana
+Domazet-Lo\v{s}o, Beatriz Vieira Mourato, and Bernhard Haubold as one
+comma-separated string.
+#+end_export
+#+begin_src go <<Set authors, Pa. \ref{pa:uti}>>=
+  authors = "Mirjana Domazet-Loso," +
+	  "Beatriz Vieira Mourato," +
+	  "Bernhard Haubold"
+#+end_src
+#+begin_export latex
+We set the email addresses of the three authors.
+#+end_export
+#+begin_src go <<Set email addresses, Pa. \ref{pa:uti}>>=
+  emails = "Mirjana.Domazet-Loso@fer.unizg.hr," +
+	  "mourato@evolbio.mpg.de," +
+	  "haubold@evolbio.mpg.de"
+#+end_src
+#+begin_export latex
+We license the program \ty{alfy} under the Gnu General Public license
+and include its URL.
+#+end_export
+#+begin_src go <<Set license, Pa. \ref{pa:uti}>>=
+  license = "Gnu General Public License, " +
+	  "https://www.gnu.org/licenses/gpl.html"
+#+end_src
+#+begin_export latex
+The version and date are global variables that are injected at compile
+time.
+#+end_export
+#+begin_src go <<Variables, Pa. \ref{pa:uti}>>=
+  var version, date string 
+#+end_src
+#+begin_export latex
+\subsection{Check}
+!The function \ty{Check} checks for errors. If yes, it prints them and
+!exits.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:uti}>>=
+  func Check(e error) {
+	  if e !=nil {
+		  log.Fatal(e)
+	  }
+  }
+#+end_src
+#+begin_export latex
+We import log.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:uti}>>=
+"log"
+#+end_src
+#+begin_export latex
+\subsection{PrepareErrorMessages}
+Errors are handled via the log package. By default this prefixes the
+error message with time and date. We change the format of the error
+messages so that it comes prefixed with the name of the program and
+supress the date and time information.
+!\ty{PrepareErrorMessages} takes as argument the program name and sets
+!this as the prefix for the error messages from the \ty{log} package.
+#+end_export
+#+begin_src go <<Functions, Pa. \ref{pa:uti}>>=
+  func PrepareErrorMessages(name string) {
+	  m := fmt.Sprintf("%s - ",name)
+	  log.SetPrefix(m)
+	  log.SetFlags(0)
+  }
+#+end_src
+#+begin_export latex
+We import fmt.
+#+end_export
+#+begin_src go <<Imports, Pa. \ref{pa:uti}>>=
+"fmt"
+#+end_src
