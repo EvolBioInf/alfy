@@ -1,0 +1,139 @@
+#+begin_export latex
+The program \ty{ms2alfy} takes as input the output of the coalescent
+simulation program \ty{ms} and converts that \ty{alfy} output. This
+can then be used to assess the accuracy of
+\ty{alfy}. Figure~\ref{fig:ms} shows a sketch of the intended
+workflow. The program \ty{ms} is used to generate sample output stored
+in the file \ty{ms.out}. This is converted to DNA sequences using the
+program \ty{ms2dna} and these DNA sequences are analyzed with
+\ty{alfy} and the output is stored in the file \ty{foo.alfy}. In a
+second analysis strand the original haplotype sample in \ty{ms.out} is
+converted to the ``true'' \ty{alfy} output with the program
+\ty{ms2alfy} and the result is stored in \ty{ms.alfy}. Now the
+contents of \ty{foo.alfy} and \ty{ms.alfy} can be compared to assess
+the performance of \ty{alfy}.
+
+Any \ty{ms} command to generate \ty{ms.out} requires tree printing,
+and recombination among the same number of sites that will be turned
+into nucleotides later by \ty{ms2dna}. For example, here is a command
+to generate a single sample of five haplotypes length 10\,kb with
+$\theta=\rho=100$:
+\begin{verbatim}
+ms 5 1 -t 100 -r 100 10000 -T
+\end{verbatim}
+Its output might be
+\begin{verbatim}
+ms 5 1 -t 100 -r 100 10000 -T
+3579 27011 59243
+
+//
+[42]((2:0.167,(1:0.158,4:0.158):0.009):0.959,(3:0.954,5:0.954):0.172);
+[24](5:0.954,(3:0.580,(2:0.167,(1:0.158,4:0.158):0.009):0.413):0.374);
+[22](5:0.954,(3:0.580,(2:0.167,(1:0.158,4:0.158):0.009):0.413):0.374);
+...
+segsites: 154
+positions: 0.0042 0.0046 0.0060 0.0081 0.0096...
+1100000001001000101000000011100000000000001...
+1001000000001110010001101100001000111011100...
+0000000000000010000001101100001000111011100...
+1010001000001010000001101100001000111011100...
+0000110110110001000111111100011111001100011...
+\end{verbatim}
+Let's concentrate on the trees, which start with their extent along
+the haplotype in square brackets and end in a semicolon. The program
+\ty{ms2alfy} extracts these trees and for a given query sequence finds
+its closest relatives. These are then printed as pseudo-\ty{alfy}
+output, which starts with a FASTA header giving the name of the query,
+followed by a tab-separated table of four columns consisting of start,
+end, score, and one or more annotations separated by blanks, for
+example, here is some \ty{alfy} output from an analysis of HIV strain
+\verb!A+DQ083238! compared to a sample of 42 HIV strains.
+\begin{verbatim}
+>A+DQ083238
+1       225       8.6   A1+AF004885
+226     495      25.1   A1+AF069670
+496     930      37.8   G+AF084936
+...
+9331    9699     15.8   A1+U51190
+\end{verbatim}
+
+Our outline of \ty{ms2alfy} has hooks for imports, functions, and the
+logic of the main function.
+\bpr{ms2alfy}{pr:m2a}
+#+end_export
+#+begin_src go <<ms2alfy.go>>=
+  package main
+
+  import (
+	  //<<Imports, Pr. \ref{pr:m2a}>>
+  )
+  //<<Functions, Pr. \ref{pr:m2a}>>
+  func main() {
+	  //<<Main function, Pr. \ref{pr:m2a}>>
+  }
+#+end_src
+#+begin_export latex
+\epr In the main function we prepare the log package for error
+messages from \ty{ms2alfy}, set the usage, declare the flags, parse
+the flags, and parse the input.
+#+end_export
+#+begin_src go <<Main function, Pr. \ref{pr:m2a}>>=
+  clio.PrepLog("ms2alfy")
+  //<<Set usage, Pr. \ref{pr:m2a}>>
+  //<<Declare flags, Pr. \ref{pr:m2a}>>
+  //<<Parse flags, Pr. \ref{pr:m2a}>>
+  //<<Parse input, Pr. \ref{pr:m2a}>>
+#+end_src
+#+begin_export latex
+We import \ty{clio}.
+#+end_export
+#+begin_src go <<Import, Pr. \ref{pr:m2a}>>=
+  "github.com/evolbioinf/clio"
+#+end_src
+#+begin_export latex
+The usage consists of three parts, the usage proper, an explanation of
+the purpose of \ty{ms2alfy}, and an example command.
+#+end_export
+#+begin_src go <<Set usage, Pr. \ref{pr:m2a}>>=
+  u := "ms2alfy [-h] [option]... [foo.ms]..."
+  p := "Convert the output of Hudson's ms to alfy output."
+  e := "ms 5 1 -t 100 -r 100 10000 -T | ms2alfy -q 3"
+  clio.Usage(u, p, e)
+#+end_src
+#+begin_export latex
+Apart from the obligatory version, \ty{-v}, we declare one flag, the
+query, \ty{-q}.
+#+end_export
+#+begin_src go <<Declare flags, Pr. \ref{pr:m2a}>>=
+  flagV := flag.Bool("v", false, "version")
+  flagQ := flag.String("q", "", "query")
+#+end_src
+#+begin_export latex
+We parse the flags and respond first to the version flag, then to the
+query flag.
+#+end_export
+#+begin_src go <<Parse flags, Pr. \ref{pr:m2a}>>=
+  flag.Parse()
+  //<<Respond to \ty{-v}, Pr. \ref{pr:m2a}>>
+  //<<Respond to \ty{-q}, Pr. \ref{pr:m2a}>>
+#+end_src
+#+begin_export latex
+In response to the query we print the program info, which includes the
+version.
+#+end_export
+#+begin_src go <<Respond to \ty{-v}, Pr. \ref{pr:m2a}>>=
+  if *flagV {
+	  util.PrintInfo("ms2alfy")
+  }
+#+end_src
+
+<<Respond to \ty{-q}, Pr. \ref{pr:m2a}>>
+
+
+<<Parse input, Pr. \ref{pr:m2a}>>
+
+
+
+
+	  //<<Imports, Pr. \ref{pr:m2a}>>
+	  //<<Functions, Pr. \ref{pr:m2a}>>
