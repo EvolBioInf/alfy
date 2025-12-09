@@ -361,10 +361,18 @@ the end the pair match length and subject ID is written out to a file.
 #+begin_export latex
 To find the maximal subject length, we iterate over the subject files
 and for each file iterate over the sequences it contains to find the
-longest subject file.
+longest subject file. We also keep track of the total length of all
+subject sequences, and calculate the GC-content. For this we create
+new variables to hold the total subject length, the GC content, and
+the set of nucleotides [CGcg] to be counted. The GC counted is
+calculated after iterating over all the suject sequences. Since the
+subject statistics are set, we print it only once before starting the
 #+end_export
 #+begin_src go <<Find maximum subject length, Ch. \ref{ch:prep}>>=
   msl := -1
+  var slen, g int
+  var gc float64
+  count := "GCgc"
   for _, subject := range subjectNames {
 	  p := *optS + "/" + subject
 	  f, err := os.Open(p)
@@ -372,14 +380,30 @@ longest subject file.
 	  //<<Iterate over subjects, Ch. \ref{ch:prep}>>
 	  f.Close()
   }
+  //<<Print subject statistics, Ch. \ref{ch:prep}>>
 #+end_src
 #+begin_export latex
-We use a scanner to iterate over the sequences in the current neighbor file.
+After iterating over all the subject sequences, we can calculate the
+final GC-content and print it, together with the cumulative sequence
+length. Since the set of subject IDs are static, it only needs to be
+printed once.
+#+end_export
+#+begin_src go <<Print subject statistics, Ch. \ref{ch:prep}>>=
+  gc = float64(g)/float64(slen)
+  fmt.Printf("-Stats\t%d\t%f\n", slen, gc)
+#+end_src
+#+begin_export latex
+We use a scanner to iterate over the sequences in the current neighbor
+file. We store the sequence data in the variable d, and its length in
+the variable l. We then calculate the statistics of the set of subject
+sequences, and store the length of the the longest subject sequence.
 #+end_export
 #+begin_src go <<Iterate over subjects, Ch. \ref{ch:prep}>>=
   sc := fasta.NewScanner(f)
   for sc.ScanSequence() {
-	  l := len(sc.Sequence().Data())
+	  d := sc.Sequence().Data()
+	  l := len(d)
+	  //<<Get subject statistics, Ch. \ref{ch:prep}>>
 	  if l > msl {
 		  msl = l
 	  }
@@ -390,6 +414,19 @@ We import \ty{fasta}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:prep}>>=
 "github.com/evolbioinf/fasta"
+#+end_src
+#+begin_export latex
+To calculate the cumulative subject length, we just add the length of
+all subject files. To get the GC-content, we also need the total count
+of all G and C bases.
+#+end_export
+#+begin_src go <<Get subject statistics, Ch. \ref{ch:prep}>>=
+  slen = slen + l
+  for i ,_ := range d {
+	  if bytes.ContainsAny(d[i:i+1], count) {
+		  g++
+	  }
+  }
 #+end_src
 #+begin_export latex
 We then calculate the enhanced suffix arrays for all subject
@@ -782,8 +819,10 @@ mat package.
 \subsection{Write output table}
 After finishing streaming the subject files and updating the arrays of
 matches lengths and IDs we write them to standard out. We start by
-printing the query filename without the extension. Then we iterate
-over the query sequences within the file.
+printing the statistics of the subject sequences: the cumulative
+sequence length and the respective GC-content. Only then do we print
+the query filename without the extension and iterate over the query
+sequences within the file.
 #+end_export
 #+begin_src go <<Write matches to stdout, Ch. \ref{ch:prep}>>=
   e := strings.LastIndex(query,".")

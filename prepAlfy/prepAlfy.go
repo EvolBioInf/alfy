@@ -123,19 +123,31 @@ func main() {
 		}
 	}
 	msl := -1
+	var slen, g int
+	var gc float64
+	count := "GCgc"
 	for _, subject := range subjectNames {
 		p := *optS + "/" + subject
 		f, err := os.Open(p)
 		util.Check(err)
 		sc := fasta.NewScanner(f)
 		for sc.ScanSequence() {
-			l := len(sc.Sequence().Data())
+			d := sc.Sequence().Data()
+			l := len(d)
+			slen = slen + l
+			for i, _ := range d {
+				if bytes.ContainsAny(d[i:i+1], count) {
+					g++
+				}
+			}
 			if l > msl {
 				msl = l
 			}
 		}
 		f.Close()
 	}
+	gc = float64(g) / float64(slen)
+	fmt.Printf("-Stats\t%d\t%f\n", slen, gc)
 	sID := make(map[int]string)
 	esas := make([]*esa.Esa, len(subjectNames))
 	for i, subject := range subjectNames {
