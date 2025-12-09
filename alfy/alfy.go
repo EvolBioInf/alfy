@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"github.com/evolbioinf/alfy/util"
 	"github.com/evolbioinf/clio"
+	"github.com/evolbioinf/sus"
 	"log"
+	"math"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -30,11 +31,12 @@ type Interval struct {
 	subjectIDs []int
 }
 type Window struct {
-	start int
-	end   int
-	score int
-	sbp   float64
-	ID    []int
+	start  int
+	end    int
+	score  []int
+	nm     int
+	note   string
+	winner []int
 }
 
 func main() {
@@ -42,6 +44,7 @@ func main() {
 	optV := flag.Bool("v", false, "version")
 	optF := flag.String("f", "", "interval file")
 	optW := flag.Int("w", 80, "window length")
+	optQ := flag.Float64("q", 0.1, "quantile of match length distribution")
 	u := "alfy [prepAlfy.out]"
 	p := "Calculate homology between queries and subjects."
 	e := "alfy alfy.in"
@@ -63,13 +66,26 @@ func main() {
 	var query *Query
 	var sequence *Sequence
 	var interval *Interval
+	var slen int
+	var gc float64
 	sc := bufio.NewScanner(file)
 	for sc.Scan() {
 		line := sc.Text()
 		if len(line) == 0 {
 			continue
 		}
-		if line[0] == '#' {
+		if line[0] == '-' {
+			var err error
+			fields := strings.Fields(line)
+			slen, err = strconv.Atoi(fields[1])
+			if err != nil {
+				log.Fatalf("%q is not a number", fields[1])
+			}
+			gc, err = strconv.ParseFloat(fields[2], 64)
+			if err != nil {
+				log.Fatalf("%q is not a float", fields[2])
+			}
+		} else if line[0] == '#' {
 			query = new(Query)
 			query.name = line[1:]
 			queries = append(queries, query)
@@ -128,118 +144,149 @@ func main() {
 		}
 	}
 	for _, query := range queries {
-		for _, sequence := range query.sequences {
+		for i, sequence := range query.sequences {
 			m := len(sequence.subjectNames)
 			n := sequence.length
 			matches := make([][]int, m)
-			for i := range sequence.subjectNames {
-				matches[i] = make([]int, n)
+			for a := range sequence.subjectNames {
+				matches[a] = make([]int, n)
 			}
 			for _, interval := range sequence.intervals {
-				for _, i := range interval.subjectIDs {
+				for _, a := range interval.subjectIDs {
 					p := 0
 					start := interval.start
 					end := interval.start + interval.ml - 1
-					for j := start; j <= end; j++ {
+					for b := start; b <= end; b++ {
 						curr := interval.ml - p
-						if curr > matches[i][j] {
-							matches[i][j] = curr
+						if curr > matches[a][b] {
+							matches[a][b] = curr
 						}
 						p++
 					}
 				}
 			}
-			score := make([][]int, len(sequence.subjectNames))
-			for i := range matches {
-				if len(matches[i]) >= *optW {
-					l := 0
-					r := 0
-					match := 0
-					for r < *optW {
-						match = match + matches[i][r]
-						r++
-					}
-					score[i] = append(score[i], match)
-					match = 0
-					for r < len(matches[i]) {
-						l++
-						r++
-						for j := l; j < r; j++ {
-							match = match + matches[i][j]
-						}
-						score[i] = append(score[i], match)
-						match = 0
+			max := make([]int, len(matches[0]))
+			maxID := make([][]int, len(matches[0]))
+			for b := range matches[0] {
+				for a := range matches {
+					if matches[a][b] > max[b] {
+						max[b] = matches[a][b]
+						maxID[b] = maxID[b][:0]
+						maxID[b] = append(maxID[b], a)
+					} else if matches[a][b] == max[b] {
+						maxID[b] = append(maxID[b], a)
 					}
 				}
 			}
-			maxScore := make([]int, 0)
-			maxSbjct := make([][]int, 0)
-			for j := 0; j < len(score[0]); j++ {
-				max := -1
-				var ms []int
-				for i := 0; i < m; i++ {
-					if max < score[i][j] {
-						max = score[i][j]
-						ms = ms[:0]
-						ms = append(ms, i)
-					} else if max == score[i][j] {
-						ms = append(ms, i)
-					}
-				}
-				maxScore = append(maxScore, max)
-				maxSbjct = append(maxSbjct, ms)
-				ms = ms[:0]
-			}
-			windows := []*Window{}
+			q := sus.Quantile(slen, gc, *optQ) - 1
+			t := int(math.Round(float64(*optW) / float64(q)))
+			score := make([]int, len(sequence.subjectNames))
+			windows := make([][]*Window, len(query.sequences))
 			var window *Window
-			p := 0
-			s := 0
-			for i := 0; i < len(maxSbjct); i++ {
-				window = new(Window)
-				window.end = *optW + i
-				window.ID = maxSbjct[i]
-				curr := window.ID
-				if i+1 >= len(maxSbjct) {
-					window.start = p
-					window.score = s + maxScore[i]
-					window.sbp = float64(window.score) /
-						(float64(window.end) -
-							float64(window.start))
-					windows = append(windows, window)
-					break
-				} else {
-					next := maxSbjct[i+1]
-					if slices.Equal(curr, next) {
-						window.end = i + *optW + 1
-						s = s + maxScore[i]
-					} else {
-						window.score = window.score
-						window.end = i + *optW
-						window.start = p
-						window.score = s + maxScore[i]
-						window.sbp = float64(window.score) /
-							(float64(window.end) - float64(window.start))
-						windows = append(windows, window)
-						p = i + 1
-						s = 0
+			if len(max) >= *optW {
+				nm := 1
+				l := 0
+				r := 0
+				for r < *optW {
+					for _, Id := range maxID[r] {
+						score[Id]++
+					}
+					if r > 0 && max[r] >= max[r-1] {
+						nm++
+					}
+					r++
+				}
+				if r > len(max) {
+					if nm < t {
+						window = new(Window)
+						window.score = make([]int, len(score))
+						copy(window.score, score)
+						window.start = l
+						window.end = r - 1
+						window.nm = nm
+						window.note = "homologous"
+						windows[i] = append(windows[i], window)
+					} else if nm >= t {
+						window = new(Window)
+						window.score = make([]int, len(score))
+						copy(window.score, score)
+						window.start = l
+						window.end = r - 1
+						window.nm = nm
+						window.note = "unique"
+						windows[i] = append(windows[i], window)
 					}
 				}
-			}
-			fmt.Printf("#Query %s\n>Sequence: %s\n",
-				query.name, sequence.name)
-			for _, win := range windows {
-				str := make([]string, len(win.ID))
-				for i, val := range win.ID {
-					name := strconv.Itoa(val)
-					name = sequence.subjectNames[val]
-					e := strings.LastIndex(name, ".")
-					name = name[:e]
-					str[i] = fmt.Sprintf("%v", name)
+				for r < len(max)+1 {
+					if nm < t {
+						window = new(Window)
+						window.score = make([]int, len(score))
+						copy(window.score, score)
+						window.start = l
+						window.end = r - 1
+						window.nm = nm
+						window.note = "homologous"
+						windows[i] = append(windows[i], window)
+					} else if nm >= t {
+						window = new(Window)
+						window.score = make([]int, len(score))
+						copy(window.score, score)
+						window.start = l
+						window.end = r - 1
+						window.nm = nm
+						window.note = "unique"
+						windows[i] = append(windows[i], window)
+					}
+					if l == 0 {
+						if max[l] > max[l+1] || max[l] == max[l+1] {
+							nm--
+						}
+					} else if max[l] >= max[l-1] && max[l] != 0 {
+						nm--
+					}
+					if r < len(max) && max[r] >= max[r-1] {
+						nm++
+					}
+					for _, a := range maxID[l] {
+						score[a]--
+					}
+					if r < len(max)-1 {
+						for _, a := range maxID[r] {
+							score[a]++
+						}
+					}
+					l++
+					r++
 				}
-				fmt.Printf("%d\t%d\t%d\t%.3f\t%v\n",
-					win.start, win.end, win.score,
-					win.sbp, strings.Join(str, ","))
 			}
+			for _, win := range windows {
+				for _, w := range win {
+					fmt.Println("start", w.start, "end", w.end, "score", w.score, "nm", w.nm, "note", w.note)
+				}
+			}
+			for _, win := range windows {
+				for _, w := range win {
+					if w.note == "unique" {
+						w.winner = []int{-1}
+					} else {
+						max := 0
+						sID := make([]int, 0)
+						for a := range w.score {
+							if score[a] > max {
+								max = score[a]
+								sID = sID[:0]
+								sID = append(sID, a)
+							} else if score[a] == max {
+								sID = append(sID, a)
+							}
+						}
+						w.winner = make([]int, len(sID))
+						copy(w.winner, sID)
+					}
+					fmt.Println(w.score, w.note, w.winner)
+				}
+			}
+
 		}
 	}
 }

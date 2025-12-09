@@ -9,4 +9,7 @@ require (
 	github.com/evolbioinf/fasta v0.0.0-20220329100526-fa625fa59b5d
 )
 
-require github.com/evolbioinf/clio v0.0.0-20250730155633-f17ebc5319c4
+require (
+	github.com/evolbioinf/clio v0.0.0-20250730155633-f17ebc5319c4
+	github.com/evolbioinf/sus v0.0.0-20230123102713-cc3fd6887965
+)
