@@ -261,29 +261,28 @@ func main() {
 			}
 			for _, win := range windows {
 				for _, w := range win {
-					fmt.Println("start", w.start, "end", w.end, "score", w.score, "nm", w.nm, "note", w.note)
-				}
-			}
-			for _, win := range windows {
-				for _, w := range win {
 					if w.note == "unique" {
 						w.winner = []int{-1}
 					} else {
 						max := 0
 						sID := make([]int, 0)
-						for a := range w.score {
-							if score[a] > max {
-								max = score[a]
+						for a, count := range w.score {
+							if count > max {
+								max = count
 								sID = sID[:0]
 								sID = append(sID, a)
-							} else if score[a] == max {
+							} else if count == max {
 								sID = append(sID, a)
 							}
 						}
 						w.winner = make([]int, len(sID))
 						copy(w.winner, sID)
 					}
-					fmt.Println(w.score, w.note, w.winner)
+				}
+			}
+			for _, win := range windows {
+				for _, w := range win {
+					fmt.Println("start", w.start, "end", w.end, "score", w.score, "nm", w.nm, "note", w.note, "winner", w.winner)
 				}
 			}
 

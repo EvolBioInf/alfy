@@ -402,6 +402,7 @@ score picked.
 		  //<<Calculate t, Ch. \ref{ch:alf}>>
 		  //<<Score intervals, Ch. \ref{ch:alf}>>
 		  //<<Label windows winner, Ch. \ref{ch:alf}>>
+		  //<<Merge adjacent windows, Ch. \ref{ch:alf}>>
 		  //<< Prepare output table, Ch. \ref{ch:alf}>>
 	  }
   }
@@ -517,7 +518,6 @@ the first window.
 	  //<<Open first window, Ch. \ref{ch:alf}>>
 	  //<<Slide window, Ch. \ref{ch:alf}>>
   }
-  //<<Check printed windows, Ch. \ref{ch:alf}>>
 #+end_src
 #+begin_export latex
 The window structure holds five parameters. The left and right border
@@ -669,13 +669,6 @@ right border.
 	  }
   }
 #+end_src
-#+begin_src go <<Check printed windows, Ch. \ref{ch:alf}>>=
-  for _, win := range windows {
-	  for _, w := range win {
-		  fmt.Println("start",w.start,"end",w.end,"score",w.score,"nm",w.nm,"note",w.note)
-	  }
-  }
-#+end_src
 #+begin_export latex
 \subsection{Label and merge adjacent windows}
 After the sliding window analysis, the next step is to label each
@@ -698,22 +691,39 @@ to be called as the winner.
 			  w.winner = []int{-1}
 		  } else {
 		  max := 0
-		  sID := make([]int,0)
-  			for a := range w.score {
-				  if score[a] > max {
-					  max = score[a]
+			  sID := make([]int,0)
+			  for a, count := range w.score {
+				  if count > max {
+					  max = count
 					  sID = sID[:0]
 					  sID = append(sID,a)					
-				  } else if score[a] == max {
+				  } else if count == max {
 					  sID = append(sID,a)
 				  }
 			  }
 			  w.winner = make([]int,len(sID))
 			  copy(w.winner, sID)
 		  }
-		  fmt.Println(w.score,w.note,w.winner)
 	  }
   }
+    //<<Check printed windows, Ch. \ref{ch:alf}>>
+
+#+end_src
+#+begin_src go <<Check printed windows, Ch. \ref{ch:alf}>>=
+  for _, win := range windows {
+	  for _, w := range win {
+		  fmt.Println("start",w.start,"end",w.end,"score",w.score,"nm",w.nm,"note",w.note,"winner",w.winner)
+	  }
+  }
+#+end_src
+#+begin_export latex
+After selecting a winner, we can now merge adjacent windows that have
+the same annotation. For this we go through the existing windows, and
+if two adjacent windows share the same winner, or are considered
+unique we merge them and update the left and right border of the
+intervals.
+#+end_export
+#+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>=
 #+end_src
 #+begin_export latex
 \textbf{To be redone}\\ From here on onwards, it needs to be rewritten
