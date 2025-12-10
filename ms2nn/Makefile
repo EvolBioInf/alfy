@@ -1,4 +1,4 @@
-exe = ms2alfy
+exe = ms2nn
 nw = $(shell which noweb)
 version = $(shell bash ../scripts/getVersion.sh)
 date = $(shell bash ../scripts/getDate.sh)

@@ -9,6 +9,8 @@ import (
 	"github.com/evolbioinf/nwk"
 	"io"
 	"log"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -23,32 +25,25 @@ type Tree struct {
 func parse(r io.Reader, args ...interface{}) {
 	query := args[0].(string)
 	trees := []*Tree{}
-	prev := ""
-	var tree *Tree
-	start := 1
 	sc := bufio.NewScanner(r)
+	start := 1
 	for sc.Scan() {
 		line := sc.Text()
 		if len(line) > 0 && line[0] == '[' {
+			tree := new(Tree)
 			arr := strings.Split(line, "]")
-			curr := arr[1]
+			ts := arr[1]
 			ext, e := strconv.Atoi(arr[0][1:])
 			util.Check(e)
-			if curr != prev {
-				tree = new(Tree)
-				tree.start = start
-				tree.end = tree.start + ext - 1
-				tree.query = query
-				r := strings.NewReader(curr)
-				sc := nwk.NewScanner(r)
-				sc.Scan()
-				tree.root = sc.Tree()
-				trees = append(trees, tree)
-				start = tree.end + 1
-			} else {
-				tree.end += ext
-				start = tree.end + 1
-			}
+			tree.start = start
+			tree.end = tree.start + ext - 1
+			tree.query = query
+			r := strings.NewReader(ts)
+			sc := nwk.NewScanner(r)
+			sc.Scan()
+			tree.root = sc.Tree()
+			start = tree.end + 1
+			trees = append(trees, tree)
 		} else {
 			continue
 		}
@@ -57,9 +52,20 @@ func parse(r io.Reader, args ...interface{}) {
 		findParent(tree.root, tree)
 	}
 	for _, tree := range trees {
-		if len(tree.neighbors) == 0 {
-			fmt.Println(tree)
+		sort.Strings(tree.neighbors)
+	}
+	c := 0
+	for i := 1; i < len(trees); i++ {
+		if slices.Equal(trees[c].neighbors, trees[i].neighbors) {
+			trees[c].end = trees[i].end
+		} else {
+			c++
+			trees[c] = trees[i]
 		}
+	}
+	trees = trees[0 : c+1]
+	fmt.Printf(">%s\n", query)
+	for _, tree := range trees {
 		fmt.Printf("%d\t%d\t-1\t%s",
 			tree.start, tree.end, tree.neighbors[0])
 		for _, neighbor := range tree.neighbors[1:] {
@@ -88,16 +94,16 @@ func addNeighbors(v *nwk.Node, tree *Tree) {
 	}
 }
 func main() {
-	clio.PrepLog("ms2alfy")
-	u := "ms2alfy [-h -v] -q <query> [foo.ms]..."
+	clio.PrepLog("ms2nn")
+	u := "ms2nn [-h -v] -q <query> [foo.ms]..."
 	p := "Convert the output of Hudson's ms to alfy output."
-	e := "ms 5 1 -t 100 -r 100 10000 -T | ms2alfy -q 3"
+	e := "ms 5 1 -t 100 -r 100 10000 -T | ms2nn -q 3"
 	clio.Usage(u, p, e)
 	flagV := flag.Bool("v", false, "version")
 	flagQ := flag.String("q", "", "query")
 	flag.Parse()
 	if *flagV {
-		util.Version("ms2alfy")
+		util.Version("ms2nn")
 	}
 	if *flagQ == "" {
 		log.Fatal("please use -q to enter a query")

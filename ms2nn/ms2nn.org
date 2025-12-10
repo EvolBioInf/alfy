@@ -1,0 +1,471 @@
+#+begin_export latex
+The program \ty{ms2nn} takes as input the output of the coalescent
+simulation program \ty{ms} and prints the nearest neighbors for a
+given query. This can then be used to assess the accuracy of programs
+to identify nearest neighbors, for example
+\ty{alfy}. Figure~\ref{fig:ms} shows a sketch of the intended
+workflow. The program \ty{ms} is used to convert population genetic
+parameters into a sample of haplotypes stored in the file
+\ty{ms.out}. This is converted to DNA sequences using the program
+\ty{ms2dna} and these DNA sequences are analyzed with \ty{alfy} and
+the output is stored in the file \ty{ms.alfy}. In a second analysis
+strand the original haplotype sample in \ty{ms.out} is converted to
+the ``true'' output with the program \ty{ms2nn} and the result is
+stored in \ty{ms.nn}. Now the contents of \ty{ms.alfy} and \ty{ms.nn}
+can be compared to assess the performance of \ty{alfy}.
+
+\begin{figure}
+\begin{center}
+\input{../ms2nn/ms}
+\end{center}
+\caption{Workflow for testing the nearest neighbor predictions
+  produced by \ty{alfy} using \ty{ms2nn}; ideally, the output of
+  \ty{alfy} stored in file \ty{ms.alfy} is identical to the ground
+  truth stored in \ty{ms.nn}.}\label{fig:ms}
+\end{figure}
+
+Any \ty{ms} command to generate \ty{ms.out} requires tree printing,
+and recombination among the same number of sites that will be turned
+into nucleotides later by \ty{ms2dna}. For example, here is a command
+to generate a single sample of five haplotypes length 10\,kb with
+$\theta=\rho=100$:
+\begin{verbatim}
+ms 5 1 -t 100 -r 100 10000 -T
+\end{verbatim}
+Its output might be
+\begin{verbatim}
+ms 5 1 -t 100 -r 100 10000 -T
+3579 27011 59243
+
+//
+[42]((2:0.167,(1:0.158,4:0.158):0.009):0.959,(3:0.954,5:0.954):0.172);
+[24](5:0.954,(3:0.580,(2:0.167,(1:0.158,4:0.158):0.009):0.413):0.374);
+[22](5:0.954,(3:0.580,(2:0.167,(1:0.158,4:0.158):0.009):0.413):0.374);
+...
+segsites: 154
+positions: 0.0042 0.0046 0.0060 0.0081 0.0096...
+1100000001001000101000000011100000000000001...
+1001000000001110010001101100001000111011100...
+0000000000000010000001101100001000111011100...
+1010001000001010000001101100001000111011100...
+0000110110110001000111111100011111001100011...
+\end{verbatim}
+Let's concentrate on the trees, which start with their extent along
+the haplotype in square brackets and end in a semicolon. The program
+\ty{ms2nn} extracts these trees and for a given query sequence finds
+its closest relatives. These are then printed as pseudo-\ty{alfy}
+output, which starts with a FASTA header giving the name of the query,
+followed by a tab-separated table of four columns consisting of start,
+end, score, and one or more annotations separated by blanks, for
+example, here is some \ty{alfy} output from an analysis of HIV strain
+\verb!A+DQ083238! compared to a sample of 42 HIV strains.
+\begin{verbatim}
+>A+DQ083238
+1       225       8.6   A1+AF004885
+226     495      25.1   A1+AF069670
+496     930      37.8   G+AF084936
+...
+9331    9699     15.8   A1+U51190
+\end{verbatim}
+
+Our outline of \ty{ms2nn} has hooks for imports, functions, and the
+logic of the main function.
+\bpr{ms2nn}{pr:m2n}
+#+end_export
+#+begin_src go <<ms2nn.go>>=
+  package main
+
+  import (
+	  //<<Imports, Pr. \ref{pr:m2n}>>
+  )
+  //<<Types, Pr. \ref{pr:m2n}>>
+  //<<Functions, Pr. \ref{pr:m2n}>>
+  func main() {
+	  //<<Main function, Pr. \ref{pr:m2n}>>
+  }
+#+end_src
+#+begin_export latex
+\epr In the main function we prepare the log package for error
+messages from \ty{ms2nn}, set the usage, declare the flags, parse
+the flags, and parse the input.
+#+end_export
+#+begin_src go <<Main function, Pr. \ref{pr:m2n}>>=
+  clio.PrepLog("ms2nn")
+  //<<Set usage, Pr. \ref{pr:m2n}>>
+  //<<Declare flags, Pr. \ref{pr:m2n}>>
+  //<<Parse flags, Pr. \ref{pr:m2n}>>
+  //<<Parse input, Pr. \ref{pr:m2n}>>
+#+end_src
+#+begin_export latex
+We import \ty{clio}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "github.com/evolbioinf/clio"
+#+end_src
+#+begin_export latex
+The usage consists of three parts, the usage proper, an explanation of
+the purpose of \ty{ms2nn}, and an example command. To design the
+usage, we note that there is no sensible default for the query, so we
+make it a mandatory option.
+#+end_export
+#+begin_src go <<Set usage, Pr. \ref{pr:m2n}>>=
+  u := "ms2nn [-h -v] -q <query> [foo.ms]..."
+  p := "Convert the output of Hudson's ms to alfy output."
+  e := "ms 5 1 -t 100 -r 100 10000 -T | ms2nn -q 3"
+  clio.Usage(u, p, e)
+#+end_src
+#+begin_export latex
+Apart from the obligatory version, \ty{-v}, we declare one flag, the
+query, \ty{-q}.
+#+end_export
+#+begin_src go <<Declare flags, Pr. \ref{pr:m2n}>>=
+  flagV := flag.Bool("v", false, "version")
+  flagQ := flag.String("q", "", "query")
+#+end_src
+#+begin_export latex
+We import \ty{flag}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "flag"
+#+end_src
+#+begin_export latex
+We parse the flags and respond first to the version flag, then to the
+query flag.
+#+end_export
+#+begin_src go <<Parse flags, Pr. \ref{pr:m2n}>>=
+  flag.Parse()
+  //<<Respond to \ty{-v}, Pr. \ref{pr:m2n}>>
+  //<<Respond to \ty{-q}, Pr. \ref{pr:m2n}>>
+#+end_src
+#+begin_export latex
+We print the version upon request.
+#+end_export
+#+begin_src go <<Respond to \ty{-v}, Pr. \ref{pr:m2n}>>=
+  if *flagV {
+	  util.Version("ms2nn")
+  }
+#+end_src
+#+begin_export latex
+We import \ty{util}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "github.com/evolbioinf/alfy/util"
+#+end_src
+#+begin_export latex
+If the user didn't set a query, something is wrong and we abort with a
+friendly message.
+#+end_export
+#+begin_src go <<Respond to \ty{-q}, Pr. \ref{pr:m2n}>>=
+  if *flagQ == "" {
+	  log.Fatal("please use -q to enter a query")
+  }
+#+end_src
+#+begin_export latex
+We import \ty{log}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "log"
+#+end_src
+#+begin_export latex
+The remaining arguents on the command line are interpreted as file
+names. Each file is parsed by the function parse, which in turn takes
+as argument the query.
+#+end_export
+#+begin_src go <<Parse input, Pr. \ref{pr:m2n}>>=
+  files := flag.Args()
+  clio.ParseFiles(files, parse, *flagQ)
+#+end_src
+#+begin_export latex
+Inside the function \ty{parse}, we retrieve the query, print it as the
+header, and iterate over the input to store the trees. Since the input
+only contains a tree's extent, we use the variable \ty{start} to track
+their starting positions. From the stored trees we find the query's
+neighbors. Trees may have the same set of neighbors, in which case we
+merge their intervals, before we print the neighbors.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2n}>>=
+  func parse(r io.Reader, args... interface{}) {
+	  query := args[0].(string)
+	  trees := []*Tree{}
+	  sc := bufio.NewScanner(r)
+	  start := 1
+	  for sc.Scan() {
+		  //<<Store tree, Pr. \ref{pr:m2n}>>
+	  }
+	  //<<Find neighbors, Pr. \ref{pr:m2n}>>
+	  //<<Merge trees, Pr. \ref{pr:m2n}>>
+	  //<<Print neighbors, Pr. \ref{pr:m2n}>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{io} and \ty{bufio}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "io"
+  "bufio"
+#+end_src
+#+begin_export latex
+A tree refers to an interval that has a start and an end. It contains
+neighbors with respect to a query. The tree itself is stored as its
+root.
+#+end_export
+#+begin_src go <<Types, Pr. \ref{pr:m2n}>>=
+  type Tree struct {
+	  start, end int
+	  neighbors []string
+	  query string
+	  root *nwk.Node
+  }
+#+end_src
+#+begin_export latex
+We import \ty{nwk}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+"github.com/evolbioinf/nwk"
+#+end_src
+#+begin_export latex
+When storing a tree, we skip any lines that don't contain a
+tree. Given a line containing a tree, we extract tree together with
+its extent, construct the tree from it, and store that.
+#+end_export
+#+begin_src go <<Store tree, Pr. \ref{pr:m2n}>>=
+  line := sc.Text()
+  if len(line) > 0 && line[0] == '[' {
+	  tree := new(Tree)
+	  //<<Extract tree string, Pr. \ref{pr:m2n}>>
+	  //<<Extract extent of tree, Pr. \ref{pr:m2n}>>
+	  //<<Construct tree, Pr. \ref{pr:m2n}>>
+	  trees = append(trees, tree)
+  } else {
+	  continue
+  }
+#+end_src
+#+begin_export latex
+In order to extract the tree string, we split the input line at the closing
+square bracket. The second entry in the resulting array is the tree
+string.
+#+end_export
+#+begin_src go <<Extract tree string, Pr. \ref{pr:m2n}>>=
+  arr := strings.Split(line, "]")
+  ts := arr[1]
+#+end_src
+#+begin_export latex
+We import \ty{strings}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "strings"
+#+end_src
+#+begin_export latex
+The extent of the current tree is the first entry in the array after
+removal of the opening square bracket.
+#+end_export
+#+begin_src go <<Extract extent of tree, Pr. \ref{pr:m2n}>>=
+  ext, e := strconv.Atoi(arr[0][1:])
+  util.Check(e)
+#+end_src
+#+begin_export latex
+We import \ty{strconv}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "strconv"
+#+end_src
+#+begin_export latex
+We construct a new tree, set its start and end positions and convert
+the tree to its root. Then we append it to the slice of trees. At the
+end we shift the start position of the next tree to a position beyond
+the end of the current tree.
+#+end_export
+#+begin_src go <<Construct tree, Pr. \ref{pr:m2n}>>=
+  tree.start = start
+  tree.end = tree.start + ext - 1
+  tree.query = query
+  r := strings.NewReader(ts)
+  sc := nwk.NewScanner(r)
+  sc.Scan()
+  tree.root = sc.Tree()
+  start = tree.end + 1
+#+end_src
+#+begin_export latex
+We iterate over the trees, find the query's parent, and from that the
+neighbors.
+#+end_export
+#+begin_src go <<Find neighbors, Pr. \ref{pr:m2n}>>=
+  for _, tree := range trees {
+	  findParent(tree.root, tree)
+  }
+#+end_src
+#+begin_export latex
+The function \ty{findParent} recursively traverses the tree until it
+finds the query. Once the query is found, its parent is used as
+starting point for adding the neighbors.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2n}>>=
+  func findParent(v *nwk.Node, tree *Tree) {
+	  if v != nil {
+		  if v.Label == tree.query {
+			  addNeighbors(v.Parent, tree)
+		  } else {
+		 	  findParent(v.Child, tree)
+			  findParent(v.Sib, tree)
+		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+Like \ty{getParent}, the function \ty{addNeighbors} is a recursive
+function that traverses the tree rooted on the query's parent and adds
+all leaves that aren't the query.
+#+end_export
+#+begin_src go <<Functions, Pr. \ref{pr:m2n}>>=
+  func addNeighbors(v *nwk.Node, tree *Tree) {
+	  if v != nil {
+		  if v.Child == nil && v.Label != tree.query {
+			  tree.neighbors = append(tree.neighbors, v.Label)
+		  }
+		  addNeighbors(v.Child, tree)
+		  addNeighbors(v.Sib, tree)
+	  }
+  }
+#+end_src
+#+begin_export latex
+In order to merge trees with identical neighbors, we first sort the
+neighbors of all trees.
+#+end_export
+#+begin_src go <<Merge trees, Pr. \ref{pr:m2n}>>=
+  //<<Sort neighbors, Pr. \ref{pr:m2n}>>
+  //<<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>
+#+end_src
+#+begin_export latex
+We sort the neighbors by calling a library function for sorting
+strings.
+#+end_export
+#+begin_src go <<Sort neighbors, Pr. \ref{pr:m2n}>>=
+  for _, tree := range trees {
+	  sort.Strings(tree.neighbors)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{sort}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "sort"
+#+end_src
+#+begin_export latex
+Whenever we find a tree with the same neighbors as its left hand
+neighbor, we merge them by extending the end position.
+#+end_export
+#+begin_src go <<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>=
+  c := 0
+  for i := 1; i < len(trees); i++ {
+	  if slices.Equal(trees[c].neighbors, trees[i].neighbors) {
+		  trees[c].end = trees[i].end
+	  } else {
+		  c++
+		  trees[c] = trees[i]
+	  }
+  }
+  trees = trees[0:c+1]
+#+end_src
+#+begin_export latex
+We import \ty{slices}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "slices"
+#+end_src
+#+begin_export latex
+We print the query name as the header, then we iterate over the
+trees. For each tree we print its start, end, and the query's
+neighbors.
+#+end_export
+#+begin_src go <<Print neighbors, Pr. \ref{pr:m2n}>>=
+  fmt.Printf(">%s\n", query)
+  for _, tree := range trees {
+	  fmt.Printf("%d\t%d\t-1\t%s",
+		  tree.start, tree.end, tree.neighbors[0])
+	  for _, neighbor := range tree.neighbors[1:] {
+		  fmt.Printf(" %s", neighbor)
+	  }
+	  fmt.Printf("\n")
+  }
+#+end_src
+#+begin_export latex
+We import \ty{fmt}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
+  "fmt"
+#+end_src
+#+begin_export latex
+We've finished \ty{ms2nn}, let's test it.
+
+\subsubsection{Testing}
+Our program for testing \ty{ms2nn} has hooks for imports and the
+testing logic.
+\bpr{ms2nn_test}{pr:m2nt}
+#+end_export
+#+begin_src go <<ms2nn_test.go>>=
+  package main
+
+  import (
+	  "testing"
+	  //<<Testing imports, Pr. \ref{pr:m2nt}>>
+  )
+
+  func TestMs2nn(t *testing.T) {
+	  //<<Testing, Pr. \ref{pr:m2nt}>>
+  }
+#+end_src
+#+begin_export latex
+To test \ty{ms2nn}, we construct a set of tests and then run each one
+in turn.
+#+end_export
+#+begin_src go <<Testing, Pr. \ref{pr:m2nt}>>=
+  var tests []*exec.Cmd
+  //<<Construct tests, Pr. \ref{pr:m2nt}>>
+  for i, test := range tests {
+	  //<<Run test, Pr. \ref{pr:m2nt}>>
+  }
+#+end_src
+#+begin_export latex
+We construct two tests with queries 1 and 2, both with the input file
+\ty{ms.out}.
+#+end_export
+#+begin_src go <<Construct tests, Pr. \ref{pr:m2nt}>>=
+  p := "./ms2nn"
+  f := "ms.out"
+  test := exec.Command(p, "-q", "1", f)
+  tests = append(tests, test)
+  test = exec.Command(p, "-q", "2", f)
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+We import \ty{exec}.
+#+end_export
+#+begin_src go <<Testing imports, Pr. \ref{pr:m2nt}>>=
+  "os/exec"
+#+end_src
+#+begin_export latex
+For a given test we compare the output we get to the output we want,
+which is contained in files \ty{r1.txt} and \ty{r2.txt}.
+#+end_export
+#+begin_src go <<Run test, Pr. \ref{pr:m2nt}>>=
+  get, err := test.Output()
+  if err != nil {
+	  t.Error(err)
+  }
+  f = "r" + strconv.Itoa(i + 1) + ".txt"
+  want, err := os.ReadFile(f)
+  if err != nil {
+	  t.Error(err)
+  }
+  if !bytes.Equal(get, want) {
+	  t.Errorf("get:\n%s\nwant:\n%s\n", get, want)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{strconv}, \ty{os}, and \ty{bytes}.
+#+end_export
+#+begin_src go <<Testing imports, Pr. \ref{pr:m2nt}>>=
+  "strconv"
+  "os"
+  "bytes"
+#+end_src

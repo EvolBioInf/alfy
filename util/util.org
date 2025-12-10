@@ -1,7 +1,7 @@
 #+begin_export latex
 !Package \ty{util} collects utility functions for \ty{alfy}.
 
-\section{Implementation}
+\subsection{Implementation}
 
 Our outline of \ty{util} has hooks for imports, variables, and
 functions.
@@ -20,7 +20,7 @@ functions.
 #+begin_export latex
 \epa
 
-\subsection{Version}
+\subsubsection{Version}
 !The function \ty{Version} prints the program version and other
 !information.
 
@@ -80,7 +80,7 @@ time.
   var version, date string 
 #+end_src
 #+begin_export latex
-\subsection{Check}
+\subsubsection{Check}
 !The function \ty{Check} checks for errors. If yes, it prints them and
 !exits.
 #+end_export
@@ -98,7 +98,7 @@ We import log.
 "log"
 #+end_src
 #+begin_export latex
-\subsection{PrepareErrorMessages}
+\subsubsection{PrepareErrorMessages}
 Errors are handled via the log package. By default this prefixes the
 error message with time and date. We change the format of the error
 messages so that it comes prefixed with the name of the program and

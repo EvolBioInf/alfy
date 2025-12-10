@@ -3,7 +3,7 @@ version = $(shell git describe)
 
 all: alfyDoc.pdf
 
-alfyDoc.pdf: alfyDoc.tex header.tex homol.tex
+alfyDoc.pdf: alfyDoc.tex header.tex homol.tex ms2nn.tex util.tex ../ms2nn/ms.tex
 	echo $(date) | tr '_' ' ' > date.txt
 	echo $(version) | tr '-' ' ' | awk '{printf "%s", $$1; if ($$2) printf "-%s", $$2; printf "\n"}' > version.txt
 	latex alfyDoc
@@ -12,10 +12,12 @@ alfyDoc.pdf: alfyDoc.tex header.tex homol.tex
 	latex alfyDoc
 	dvips -o -q alfyDoc
 	ps2pdf -dALLOWPSTRANSPARENCY alfyDoc.ps
+%.tex:	../*/%.org
+	bash ../scripts/org2nw $< | awk -f ../scripts/preWeave.awk | noweave -n -x | sed 's/_test/\\_test/g' > $@
 publish: alfyDoc.pdf
 	if [ -d ~/WinHome/ownCloud ]; then \
 		cp alfyDoc.pdf ~/WinHome/ownCloud/docs/; \
 	fi
 clean:
 	rm -f alfyDoc.aux alfyDoc.bbl alfyDoc.bib alfyDoc.blg alfyDoc.d alfyDoc.dvi \
-	alfyDoc.log alfyDoc.pdf alfyDoc.ps
+	alfyDoc.log alfyDoc.pdf alfyDoc.ps ms2nn.tex util.tex

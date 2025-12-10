@@ -15,6 +15,7 @@ doc/code/
 doc/date.txt
 doc/intro.tex
 doc/mat.tex
+doc/ms2nn.tex
 doc/pab.tex
 doc/prepAlfy.tex
 doc/sir.tex
@@ -23,7 +24,7 @@ doc/version.txt
 
 intro/
 
-ms2alfy/ms2alfy
+ms2nn/ms2nn
 
 pab/
 palfy/

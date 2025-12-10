@@ -166,22 +166,21 @@ as argument the query.
 #+end_src
 #+begin_export latex
 Inside the function \ty{parse}, we retrieve the query, print it as the
-header, and iterate over the input to store the trees. Since
-consecutive trees might be identical, we have to keep track of values
-between current and previous lines of input data, for which we set
-aside a hook. From the stored trees we find the query's neighbors and
-print them.
+header, and iterate over the input to store the trees. From the stored
+trees we find the query's neighbors. Trees may have the same set of
+neighbors, in which case we merge their intervals, before we print the
+neighbors.
 #+end_export
 #+begin_src go <<Functions, Pr. \ref{pr:m2a}>>=
   func parse(r io.Reader, args... interface{}) {
 	  query := args[0].(string)
 	  trees := []*Tree{}
-	  //<<Declare tracking variables, Pr. \ref{pr:m2a}>>
 	  sc := bufio.NewScanner(r)
 	  for sc.Scan() {
 		  //<<Store tree, Pr. \ref{pr:m2a}>>
 	  }
 	  //<<Find neighbors, Pr. \ref{pr:m2a}>>
+	  //<<Merge trees, Pr. \ref{pr:m2a}>>
 	  //<<Print neighbors, Pr. \ref{pr:m2a}>>
   }
 #+end_src
@@ -213,28 +212,32 @@ We import \ty{nwk}.
 #+end_src
 #+begin_export latex
 When storing a tree, we skip any lines that don't contain a
-tree. Given a tree, we extract it together with its extent. This
-extent may or may not have to be revised in the light of the previous
-tree, so we compare the two trees.
+tree. Given a line containing a tree, we extract tree together with
+its extent, construct the tree from it, and store that. Since the
+input only contains tree extents, we track the tree start from
+position 1 onward.
 #+end_export
 #+begin_src go <<Store tree, Pr. \ref{pr:m2a}>>=
   line := sc.Text()
+  start := 1
   if len(line) > 0 && line[0] == '[' {
-	  //<<Extract current tree, Pr. \ref{pr:m2a}>>
-	  //<<Extract extent of current tree, Pr. \ref{pr:m2a}>>
-	  //<<Compare current and previous tree, Pr. \ref{pr:m2a}>>
-    } else {
-	    continue
-    }
+	  tree := new(Tree)
+	  //<<Extract tree string, Pr. \ref{pr:m2a}>>
+	  //<<Extract extent of tree, Pr. \ref{pr:m2a}>>
+	  //<<Construct tree, Pr. \ref{pr:m2a}>>
+	  trees = append(trees, tree)
+  } else {
+	  continue
+  }
 #+end_src
 #+begin_export latex
-In order to extract the current tree, we split the input line at the
-closing square bracket. The second entry in the resulting array is the
-current tree.
+In order to extract the tree string, we split the input line at the closing
+square bracket. The second entry in the resulting array is the tree
+string.
 #+end_export
-#+begin_src go <<Extract current tree, Pr. \ref{pr:m2a}>>=
+#+begin_src go <<Extract tree string, Pr. \ref{pr:m2a}>>=
   arr := strings.Split(line, "]")
-  curr := arr[1]
+  ts := arr[1]
 #+end_src
 #+begin_export latex
 We import \ty{strings}.
@@ -246,7 +249,7 @@ We import \ty{strings}.
 The extent of the current tree is the first entry in the array after
 removal of the opening square bracket.
 #+end_export
-#+begin_src go <<Extract extent of current tree, Pr. \ref{pr:m2a}>>=
+#+begin_src go <<Extract extent of tree, Pr. \ref{pr:m2a}>>=
   ext, e := strconv.Atoi(arr[0][1:])
   util.Check(e)
 #+end_src
@@ -257,54 +260,19 @@ We import \ty{strconv}.
   "strconv"
 #+end_src
 #+begin_export latex
-If the current tree differs from the previous one, we construct a new
-tree and append it to the slice of trees. Otherwise, we extend the
-current tree.
-#+end_export
-#+begin_src go <<Compare current and previous tree, Pr. \ref{pr:m2a}>>=
-  if curr != prev {
-	  //<<Construct new tree, Pr. \ref{pr:m2a}>>
-  } else {
-	  //<<Extend existing tree, Pr. \ref{pr:m2a}>>
-  }
-#+end_src
-#+begin_export latex
-The declare the previous line as one of the tracking variables.
-#+end_export
-#+begin_src go <<Declare tracking variables, Pr. \ref{pr:m2a}>>=
-  prev := ""
-#+end_src
-#+begin_export latex
 We construct a new tree, set its start and end positions and convert
 the tree to its root. Then we append it to the slice of trees. At the
 end we shift the start position of the next tree to a position beyond
 the end of the current tree.
 #+end_export
-#+begin_src go <<Construct new tree, Pr. \ref{pr:m2a}>>=
-  tree = new(Tree)
+#+begin_src go <<Construct tree, Pr. \ref{pr:m2a}>>=
   tree.start = start
   tree.end = tree.start + ext - 1
   tree.query = query
-  r := strings.NewReader(curr)
+  r := strings.NewReader(ts)
   sc := nwk.NewScanner(r)
   sc.Scan()
   tree.root = sc.Tree()
-  trees = append(trees, tree)
-  start = tree.end + 1
-#+end_src
-#+begin_export latex
-We need \ty{tree} and \ty{start} as additional tracking variables.
-#+end_export
-#+begin_src go <<Declare tracking variables, Pr. \ref{pr:m2a}>>=
-  var tree *Tree
-  start := 1
-#+end_src
-#+begin_export latex
-If we extend the tree, we shift its end position and adjust the start
-position of the next tree.
-#+end_export
-#+begin_src go <<Extend existing tree, Pr. \ref{pr:m2a}>>=
-  tree.end += ext
   start = tree.end + 1
 #+end_src
 #+begin_export latex
@@ -348,6 +316,47 @@ all leaves that aren't the query.
 		  addNeighbors(v.Sib, tree)
 	  }
   }
+#+end_src
+#+begin_export latex
+In order to merge trees with identical neighbors, we first sort the
+neighbors of all trees.
+#+end_export
+#+begin_src go <<Merge trees, Pr. \ref{pr:m2a}>>=
+  //<<Sort neighbors, Pr. \ref{pr:m2a}>>=
+  //<<Merge trees with identical neighbors, Pr. \ref{pr:m2a}>>
+#+end_src
+#+begin_export latex
+We sort the neighbors by calling a library function for sorting
+strings.
+#+end_export
+#+begin_src go <<Sort neighbors, Pr. \ref{pr:m2a}>>=
+  for _, tree := range trees {
+	  sort.Strings(tree.neighbors)
+  }
+#+end_src
+#+begin_export latex
+Whenever we find a tree with the same neighbors as its left hand
+neighbor, we merge them by extending the end position of the left hand
+neighbor.
+#+end_export
+#+begin_src go <<Merge trees with identical neighbors, Pr. \ref{pr:m2a}>>=
+  c := 0
+  for i := 1; i < len(trees); i++ {
+	  if slices.Equal(trees[c].neighbors, trees[i].neighbors) {
+		  fmt.Println("equal: ", trees[c].neighbors, trees[i].neighbors)
+		  trees[c].end = trees[i].end
+	  } else {
+		  c++
+	  }
+  }
+  trees = trees[0:c+1]
+#+end_src
+#+begin_export latex
+We import \ty{sort} and \ty{slices}.
+#+end_export
+#+begin_src go <<Imports, Pr. \ref{pr:m2a}>>=
+  "sort"
+  "slices"
 #+end_src
 #+begin_export latex
 For each tree we print the start, the end, a dummy score of -1, and
