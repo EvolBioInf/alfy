@@ -34,8 +34,6 @@ type Window struct {
 	start  int
 	end    int
 	score  []int
-	nm     int
-	note   string
 	winner []int
 }
 
@@ -178,73 +176,53 @@ func main() {
 					}
 				}
 			}
+			mismatches := make([]int, len(matches[0]))
+			for a := 0; a < len(max); a++ {
+				if a == 0 && max[a] != 0 {
+					mismatches[a] = 1
+				} else if max[a] >= max[a-1] && max[a] != 0 {
+					mismatches[a] = 1
+				}
+			}
 			q := sus.Quantile(slen, gc, *optQ) - 1
 			t := int(math.Round(float64(*optW) / float64(q)))
 			score := make([]int, len(sequence.subjectNames))
 			windows := make([][]*Window, len(query.sequences))
 			var window *Window
 			if len(max) >= *optW {
-				nm := 1
+				nm := 0
 				l := 0
 				r := 0
 				for r < *optW {
+					if mismatches[r] == 1 {
+						nm++
+					}
 					for _, Id := range maxID[r] {
 						score[Id]++
 					}
-					if r > 0 && max[r] >= max[r-1] {
-						nm++
-					}
 					r++
 				}
-				if r > len(max) {
+				open := false
+				for r < len(max) {
 					if nm < t {
-						window = new(Window)
-						window.score = make([]int, len(score))
-						copy(window.score, score)
-						window.start = l
-						window.end = r - 1
-						window.nm = nm
-						window.note = "homologous"
-						windows[i] = append(windows[i], window)
-					} else if nm >= t {
-						window = new(Window)
-						window.score = make([]int, len(score))
-						copy(window.score, score)
-						window.start = l
-						window.end = r - 1
-						window.nm = nm
-						window.note = "unique"
-						windows[i] = append(windows[i], window)
-					}
-				}
-				for r < len(max)+1 {
-					if nm < t {
-						window = new(Window)
-						window.score = make([]int, len(score))
-						copy(window.score, score)
-						window.start = l
-						window.end = r - 1
-						window.nm = nm
-						window.note = "homologous"
-						windows[i] = append(windows[i], window)
-					} else if nm >= t {
-						window = new(Window)
-						window.score = make([]int, len(score))
-						copy(window.score, score)
-						window.start = l
-						window.end = r - 1
-						window.nm = nm
-						window.note = "unique"
-						windows[i] = append(windows[i], window)
-					}
-					if l == 0 {
-						if max[l] > max[l+1] || max[l] == max[l+1] {
-							nm--
+						if open {
+							window.end = r
+						} else {
+							window = new(Window)
+							window.score = make([]int, len(score))
+							copy(window.score, score)
+							window.start = l
+							window.end = r
+							open = true
 						}
-					} else if max[l] >= max[l-1] && max[l] != 0 {
+					} else if open && window.end < l {
+						open = false
+						windows[i] = append(windows[i], window)
+					}
+					if mismatches[l] == 1 {
 						nm--
 					}
-					if r < len(max) && max[r] >= max[r-1] {
+					if mismatches[r] == 1 {
 						nm++
 					}
 					for _, a := range maxID[l] {
@@ -258,32 +236,17 @@ func main() {
 					l++
 					r++
 				}
-			}
-			for _, win := range windows {
-				for _, w := range win {
-					if w.note == "unique" {
-						w.winner = []int{-1}
-					} else {
-						max := 0
-						sID := make([]int, 0)
-						for a, count := range w.score {
-							if count > max {
-								max = count
-								sID = sID[:0]
-								sID = append(sID, a)
-							} else if count == max {
-								sID = append(sID, a)
-							}
-						}
-						w.winner = make([]int, len(sID))
-						copy(w.winner, sID)
-					}
+				if open {
+					windows[i] = append(windows[i], window)
 				}
 			}
 			for _, win := range windows {
 				for _, w := range win {
-					fmt.Println("start", w.start, "end", w.end, "score", w.score, "nm", w.nm, "note", w.note, "winner", w.winner)
+					fmt.Println("start", w.start+1,
+						"end", w.end+1,
+						"score", w.score)
 				}
+
 			}
 
 		}

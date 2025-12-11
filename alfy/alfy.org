@@ -403,7 +403,7 @@ score picked.
 		  //<<Score intervals, Ch. \ref{ch:alf}>>
 		  //<<Label windows winner, Ch. \ref{ch:alf}>>
 		  //<<Merge adjacent windows, Ch. \ref{ch:alf}>>
-		  //<< Prepare output table, Ch. \ref{ch:alf}>>
+		  //<<Prepare output table, Ch. \ref{ch:alf}>>
 	  }
   }
 #+end_src
@@ -417,6 +417,8 @@ subject IDs.
   //<<Create match length matrix, Ch. \ref{ch:alf}>>
   //<<Fill match length matrix, Ch. \ref{ch:alf}>>
   //<<Get maximum matches length, Ch. \ref{ch:alf}>>
+  //<<Create array of mismatches, Ch. \ref{ch:alf}>>
+
 #+end_src
 #+begin_export latex
 The matches matrix is an $m$ by $n$ matrix, where $m$ is the number of
@@ -463,6 +465,12 @@ across the full match, we only care about the greatest one.
 	  }
   }
 #+end_src
+#+begin_export latex
+To make it easier to process the matches length information from all
+the distinct subject IDs, we construct a new array of maximal matches
+length, which is composed of the maximal match length found at each
+query position, regardless of the query
+#+end_export
 #+begin_src go <<Get maximum matches length, Ch. \ref{ch:alf}>>=
   max := make([]int, len(matches[0]))
   maxID := make([][]int, len(matches[0]))
@@ -475,6 +483,25 @@ across the full match, we only care about the greatest one.
 		  } else if matches[a][b] == max[b] {
 			  maxID[b] = append(maxID[b],a)
 		  }
+	  }
+  }
+#+end_src
+#+begin_export latex
+To facilitate the count of the mismatches, we create a binary array to
+hold the mismatches found in the query sequence. We iterate over the
+array of maximal matches lengths, and everytime the match ends we set
+that position to 1. A match ends if the match length at the current
+position is longer or identical to the one in the previous
+position. Additionally the match length cannot be zero, as that means
+no match exists in the current position.
+#+end_export
+#+begin_src go <<Create array of mismatches, Ch. \ref{ch:alf}>>=
+  mismatches := make([]int, len(matches[0]))
+  for a := 0; a < len(max); a++ {
+	  if a == 0 && max[a] != 0 {
+		  mismatches[a] = 1
+	  } else if max[a] >= max[a-1] && max[a] != 0 {
+		    mismatches[a] = 1
 	  }
   }
 #+end_src
@@ -511,118 +538,108 @@ the sequence length, is larger than the selected window size, we open
 the first window.
 #+end_export
 #+begin_src go <<Score intervals, Ch. \ref{ch:alf}>>=
-  score := make([]int,len(sequence.subjectNames))
-  windows := make([][]*Window,len(query.sequences))
-  var window *Window
-  if len(max) >= *optW {
-	  //<<Open first window, Ch. \ref{ch:alf}>>
-	  //<<Slide window, Ch. \ref{ch:alf}>>
+    score := make([]int,len(sequence.subjectNames))
+    windows := make([][]*Window,len(query.sequences))
+    var window *Window
+    if len(max) >= *optW {
+	    //<<Open first window, Ch. \ref{ch:alf}>>
+	    //<<Slide window, Ch. \ref{ch:alf}>>
+    }
+  for _, win := range windows {
+	  for _, w := range win {		
+		  fmt.Println("start",w.start+1,
+			  "end",w.end+1,
+			  "score",w.score)
+	  }
+
   }
 #+end_src
 #+begin_export latex
-The window structure holds five parameters. The left and right border
+The window structure holds four parameters. The left and right border
 of the interval, the length of the fragment of each subject ID found
-in a given window and the corresponding slice of subject IDs, and the
-total number of mismatches found in the entire window.
+in a given window and the corresponding slice of subject IDs.
 #+end_export
 #+begin_src go <<Types, Ch. \ref{ch:alf}>>=
   type Window struct{
 	  start int
 	  end int
 	  score []int
-	  nm int
-	  note string
 	  winner []int
   }
 #+end_src
 #+begin_export latex
-When opening the first window we set a counter of mismatches, $nm$, to
-1, and the left and right border to 0. Then, while the current
+When opening the first window we set a counter of mismatches, $nm$, as
+well as the left and right border to 0. Then, while the current
 position, $r$, is smaller than the window size, we count the number of
-base pairs each given subject ID covers, and the number of mismatches
-in the query. Since match lengths decrease at every position, we have
-found new match if the match length remains or increases despite
-walking one position to the left. This marks the presence of a
-mismatch.
+base pairs each given subject ID covers, as well as the number of
+mismatches contained in the first window.
 #+end_export
 #+begin_src go <<Open first window, Ch. \ref{ch:alf}>>=
-  nm := 1
+  nm := 0
   l := 0
   r := 0
   for r < *optW {
+	  if mismatches[r] == 1 {
+		  nm++
+	  }
 	  for _, Id := range maxID[r] {
 		score[Id]++
 	   }
-	   if r > 0 && max[r] >= max[r-1] {
-		  nm++
-	  }
 	  r++
   }
 #+end_src
 #+begin_export latex
 After opening the first window, we want to slide it across the rest of
-the matches. We also check if the intervals are homologous or
-non-homolgous, query unique. If the first opened window is longer or
-equal to the matches length, we only evaluate their homology.
+the matches. We also check if the intervals are homologous. Homologous
+regions contain a low number of mismatches. To keep track of our
+opened intervals we creat an open bolean. If the bolean is true we
+have an opened interval. If false, no interval is currently opened. At
+the end we check if we closed all intervals. If its not the case, we
+close it and append the last interval to the slice of windows.
 #+end_export
 #+begin_src go <<Slide window, Ch. \ref{ch:alf}>>=
-  if r > len(max) {
-	  //<<Check if homologous or unique, Ch. \ref{ch:alf}>>
-  }
-  for r < len(max)+1 {
+  open := false
+  for r < len(max) {
 	  //<<Check if homologous or unique, Ch. \ref{ch:alf}>>
 	  //<<Shift window, Ch. \ref{ch:alf}>>
+  }
+  if open {
+	  windows[i] = append(windows[i], window)
   }
 #+end_src
 #+begin_export latex
 To check for homology we compare the number of mismatches found with
 the calculated threshold. If the number of mismatches found is smaller
 than the calculated treshold, then we are standing at a region with
-homology signal. If the number of mismatches is higher than the
-calculated threshold, then this is a query unique region.
+homology signal. Otherwise, we close potentially open homologous
+intervals.
 #+end_export 
 #+begin_src go <<Check if homologous or unique, Ch. \ref{ch:alf}>>=
   if nm < t {
 	  //<<Open homologous interval, Ch. \ref{ch:alf}>>
-  } else if nm >= t {
-	  //<<Open query unique interval, Ch. \ref{ch:alf}>>
+  } else if open && window.end < l  {
+	  open = false
+	  windows[i] = append(windows[i],window)
   }
 #+end_src
 #+begin_export latex
-If the window contains signs of homology, we note that the interval is
-``homologous''. Then we create a new window and populate it with the
-current left and right border and current calculated score. Since
-slices are reference types we store the score with copy. This ensures
-we store the result without affecting the scores of the follow up
-windows. We want the right interval border to be inclusive, so we
-subtract 1. We also store the window in a slice of windows.
+If the window is homologous we create a new window and populate it
+with the current left and right border and current calculated
+score. Since slices are reference types we store the score with
+copy. This ensures we store the result without affecting the scores of
+the follow up windows.
 #+end_export
 #+begin_src go <<Open homologous interval, Ch. \ref{ch:alf}>>=
-  window = new(Window)
-  window.score = make([]int, len(score))
-  copy(window.score, score)
-  window.start = l
-  window.end = r-1
-  window.nm = nm
-  window.note = "homologous"
-  windows[i] = append(windows[i], window)
-#+end_src
-#+begin_export latex
-If the interval we are dealing with is query unique, we set a note
-that the interval is ``unique''. We store the corrent interval score,
-again with copy, and borders in the slice of windows, together with
-the note and the number of mistmatches. We want the right interval
-border to be inclusive, so we subtract 1.
-#+end_export
-#+begin_src go <<Open query unique interval, Ch. \ref{ch:alf}>>=
-  window = new(Window)
-  window.score = make([]int, len(score))
-  copy(window.score,score)
-  window.start = l
-  window.end = r-1
-  window.nm = nm
-  window.note = "unique"
-  windows[i] = append(windows[i],window)
+  if open {
+	  window.end = r
+  } else {
+	  window = new(Window)
+	  window.score = make([]int, len(score))
+	  copy(window.score, score)
+	  window.start = l
+	  window.end = r
+	  open = true
+  }
 #+end_src
 #+begin_export latex
 Before shifting the window we need to update the number of mismatches
@@ -642,14 +659,10 @@ per one. If the new right includes a new mismatch we increase the
 counter by one.
 #+end_export
 #+begin_src go <<Update nm counter, Ch. \ref{ch:alf}>>=
-  if l == 0 {
-	  if max[l] > max[l+1] || max[l] == max[l+1] {
-		  nm--
-	  }
-  } else if max[l] >= max[l-1] && max[l] != 0 {
+  if mismatches[l] == 1 {
 	  nm--
   }
-  if r < len(max) && max[r] >= max[r-1] {
+  if mismatches[r] == 1 {
 	  nm++
   }
 #+end_src
@@ -684,7 +697,7 @@ homologous, then the ID, or IDs, with the highest scores are called
 the winners. If the window is marked as unique, then no subject ID is
 to be called as the winner.
 #+end_export
-#+begin_src go <<Label windows winner, Ch. \ref{ch:alf}>>=
+#+begin_src go << Label windows winner, Ch. \ref{ch:alf}>>=
   for _, win := range windows {
 	  for _, w := range win {
 		  if w.note == "unique" {
@@ -706,34 +719,77 @@ to be called as the winner.
 		  }
 	  }
   }
-    //<<Check printed windows, Ch. \ref{ch:alf}>>
-
-#+end_src
-#+begin_src go <<Check printed windows, Ch. \ref{ch:alf}>>=
-  for _, win := range windows {
-	  for _, w := range win {
-		  fmt.Println("start",w.start,"end",w.end,"score",w.score,"nm",w.nm,"note",w.note,"winner",w.winner)
-	  }
-  }
 #+end_src
 #+begin_export latex
 After selecting a winner, we can now merge adjacent windows that have
 the same annotation. For this we go through the existing windows, and
 if two adjacent windows share the same winner, or are considered
 unique we merge them and update the left and right border of the
-intervals.
+intervals. We start by creating a final structure
 #+end_export
-#+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>=
+#+begin_src go << Merge adjacent windows, Ch. \ref{ch:alf}>>=
+    var summary []*Summary
+    var prev *Summary
+    for _, win := range windows {
+	    for _, w := range win {
+		    if prev == nil {
+			    prev = &Summary{start: w.start,
+				    end: w.end,
+				    label: w.winner }
+		    }else if slices.Equal(w.winner, prev.label){
+			    prev.end = w.end
+		    } else  {
+			    summary = append(summary, prev)
+			    prev = &Summary{start: w.start,
+				    end: w.end,
+				    label: w.winner }
+		    }
+	    }
+    }
+    if prev != nil {
+	    summary = append(summary,prev)
+    }
+  //<<Merge overlapping windows, Ch. \ref{ch:alf}>>
+  //<<Calculate nm per bp, Ch. \ref{ch:alf}>>
+#+end_src
+#+begin_src go << Types, Ch. \ref{ch:alf}>>=
+  type Summary struct {
+	  start int
+	  end int
+	  nm float64
+	  label []int
+  }
+#+end_src
+#+begin_src go << Imports, Ch. \ref{ch:alf}>>=
+  "slices"
+#+end_src
+#+begin_src go << Merge overlapping windows, Ch. \ref{ch:alf}>>=
+  var border int
+  for a, sum := range summary {
+	  if a == 0 {
+		  border = sum.end
+	  } else {
+		  sum.start = border +1
+	  }
+	  border= sum.end
+  }
+#+end_src
+#+begin_src go <<Calculate nm per bp, Ch. \ref{ch:alf}>>=
+  for _, sum := range summary {
+	  var len int
+	  len = sum.end-sum.start+1
+	  sum.nm= sum.nm/float64(len)
+//	  fmt.Println("start",sum.start+1,"end",sum.end+1,"nm",sum.nm,"winner",sum.label)
+  }
 #+end_src
 #+begin_export latex
-\textbf{To be redone}\\ From here on onwards, it needs to be rewritten
-to match the new sliding window analysis. Code chunks currently being
-ignored.
+We then prepare to write the output table. We first print the header,
+and then parse the subject IDs names and print them out.
 #+end_export
-#+begin_src go <<Prepare output table, Ch. \ref{ch:alf}>>=
+#+begin_src go << Prepare output table, Ch. \ref{ch:alf}>>=
   fmt.Printf("#Query %s\n>Sequence: %s\n" ,
 	  query.name,sequence.name)
-  for _,win := range windows {
+  for _,sum := range summary {
 	  //<<Convert numeric IDs to names, Ch. \ref{ch:alf}>>
 	  //<<Print intervals, Ch. \ref{ch:alf}>>
   }
@@ -748,8 +804,8 @@ map previously constructed and remove the extension of the subject
 file. The slice of converted names is then saved.
 #+end_export
 #+begin_src go <<Convert numeric IDs to names, Ch. \ref{ch:alf}>>=
-  str := make([]string, len(win.ID))
-  for i, val := range win.ID {
+  str := make([]string, len(sum.label))
+  for i, val := range sum.label {
 	  var name string
 	  if val < 0 {
 		  name = "non-homologous"
@@ -779,8 +835,8 @@ coordinates system into 1-based.
 #+end_export
 #+begin_src go <<Print intervals, Ch. \ref{ch:alf}>>=
   fmt.Printf("%d\t%d\t%.3f\t%v\n",
-	  win.start, win.end,
-	  win.sbp, strings.Join(str,","))
+	  sum.start, sum.end,
+	  sum.nm, strings.Join(str,","))
 #+end_src
 #+begin_export latex
 \section{Testing}
