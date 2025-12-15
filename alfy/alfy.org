@@ -402,7 +402,7 @@ score picked.
 		  //<<Calculate t, Ch. \ref{ch:alf}>>
 		  //<<Score intervals, Ch. \ref{ch:alf}>>
 		  //<<Label windows winner, Ch. \ref{ch:alf}>>
-		  //<<Merge adjacent windows, Ch. \ref{ch:alf}>>
+		  //<<Summarize windows, Ch. \ref{ch:alf}>>
 		  //<<Prepare output table, Ch. \ref{ch:alf}>>
 	  }
   }
@@ -545,14 +545,6 @@ the first window.
 	    //<<Open first window, Ch. \ref{ch:alf}>>
 	    //<<Slide window, Ch. \ref{ch:alf}>>
     }
-  for _, win := range windows {
-	  for _, w := range win {		
-		  fmt.Println("start",w.start+1,
-			  "end",w.end+1,
-			  "score",w.score)
-	  }
-
-  }
 #+end_src
 #+begin_export latex
 The window structure holds four parameters. The left and right border
@@ -599,6 +591,7 @@ close it and append the last interval to the slice of windows.
 #+end_export
 #+begin_src go <<Slide window, Ch. \ref{ch:alf}>>=
   open := false
+  prev := maxID[r-1]
   for r < len(max) {
 	  //<<Check if homologous or unique, Ch. \ref{ch:alf}>>
 	  //<<Shift window, Ch. \ref{ch:alf}>>
@@ -623,15 +616,16 @@ intervals.
   }
 #+end_src
 #+begin_export latex
-If the window is homologous we create a new window and populate it
-with the current left and right border and current calculated
-score. Since slices are reference types we store the score with
-copy. This ensures we store the result without affecting the scores of
-the follow up windows.
+When finding an homologous region there are two options. If an
+interval is already previously opened we evaluate the slice of subject
+IDs, to see if we can expand a previous interval or need to create a
+new one. If no interval is open, we create a new interval, a new array
+of scores and update the left and right border with the current
+coordinates. The variable open is then set to true.
 #+end_export
 #+begin_src go <<Open homologous interval, Ch. \ref{ch:alf}>>=
   if open {
-	  window.end = r
+	  //<<Check window IDs, Ch. \ref{ch:alf}>>
   } else {
 	  window = new(Window)
 	  window.score = make([]int, len(score))
@@ -642,12 +636,33 @@ the follow up windows.
   }
 #+end_src
 #+begin_export latex
+To evaluate whether we are expanding or storing a new interval we look
+a the slice of subject IDs. If the slice is identical we can expand
+the current interval. Otherwise, we store the information regarding
+the opened interval and create a new one.
+#+end_export
+#+begin_src go <<Check window IDs, Ch. \ref{ch:alf}>>=
+  if slices.Equal(prev, maxID[r]) {
+	  window.end = r
+  } else {
+	  windows[i] = append(windows[i],window)
+	  window = new(Window)
+	  window.score = make([]int, len(score))
+	  copy(window.score, score)
+	  window.start = l
+	  window.end = r
+  }
+#+end_src
+#+begin_export latex
 Before shifting the window we need to update the number of mismatches
-and the subject ID score. Then we shift the window by one base pair.
+and the subject ID score. We also update the slice of subject IDs
+stored in the prev variable. Then we shift the window by one base
+pair.
 #+end_export
 #+begin_src go <<Shift window, Ch. \ref{ch:alf}>>=
   //<<Update nm counter, Ch. \ref{ch:alf}>>
   //<<Update score counter, Ch. \ref{ch:alf}>>
+  prev = maxID[r]
   l++
   r++
 #+end_src
@@ -683,76 +698,57 @@ right border.
   }
 #+end_src
 #+begin_export latex
-\subsection{Label and merge adjacent windows}
+\subsection{Label and score windows}
 After the sliding window analysis, the next step is to label each
-window with the winner subject IDs. We weigth the label of the window
-with the previously calculated score, which reflects the number of
-base pairs, for a given windows, that the subject ID
-encompasses. Therefore, subject IDs with longer matches will be
-favoured.
+window with the winner subject IDs, merge adjacent windows with the
+same label, and to calculate the number of mismatches found in that
+specific window.
 
-We start by iterating over the stored slices of windows, and weight
-the subject IDs according to their scores. If a window is marked as
-homologous, then the ID, or IDs, with the highest scores are called
-the winners. If the window is marked as unique, then no subject ID is
-to be called as the winner.
+To select the winner of the window we use the previously calculated
+score. This score reflects the number of base pairs, for a given
+windows, that the subject ID encompasses. Therefore, subject IDs with
+longer matches will be favoured.
+
+We start by iterating over the stored slices of windows, and identify
+the subject ID with the largest calculated score.
 #+end_export
-#+begin_src go << Label windows winner, Ch. \ref{ch:alf}>>=
+#+begin_src go <<Label windows winner, Ch. \ref{ch:alf}>>=
   for _, win := range windows {
 	  for _, w := range win {
-		  if w.note == "unique" {
-			  w.winner = []int{-1}
-		  } else {
 		  max := 0
-			  sID := make([]int,0)
-			  for a, count := range w.score {
-				  if count > max {
-					  max = count
-					  sID = sID[:0]
-					  sID = append(sID,a)					
-				  } else if count == max {
-					  sID = append(sID,a)
-				  }
+		  sID := make([]int,0)
+		  for a, count := range w.score {
+			  if count > max {
+				  max = count
+				  sID = sID[:0]
+				  sID = append(sID,a)					
+			  } else if count == max {
+				  sID = append(sID,a)
 			  }
-			  w.winner = make([]int,len(sID))
-			  copy(w.winner, sID)
 		  }
+		  w.winner = make([]int,len(sID))
+		  copy(w.winner, sID)
 	  }
   }
 #+end_src
 #+begin_export latex
 After selecting a winner, we can now merge adjacent windows that have
 the same annotation. For this we go through the existing windows, and
-if two adjacent windows share the same winner, or are considered
-unique we merge them and update the left and right border of the
-intervals. We start by creating a final structure
+if two adjacent windows share the same winner we merge them and update
+the left and right border of the intervals. The final set of intervals
+are stored in a final structure called summary.
 #+end_export
-#+begin_src go << Merge adjacent windows, Ch. \ref{ch:alf}>>=
-    var summary []*Summary
-    var prev *Summary
-    for _, win := range windows {
-	    for _, w := range win {
-		    if prev == nil {
-			    prev = &Summary{start: w.start,
-				    end: w.end,
-				    label: w.winner }
-		    }else if slices.Equal(w.winner, prev.label){
-			    prev.end = w.end
-		    } else  {
-			    summary = append(summary, prev)
-			    prev = &Summary{start: w.start,
-				    end: w.end,
-				    label: w.winner }
-		    }
-	    }
-    }
-    if prev != nil {
-	    summary = append(summary,prev)
-    }
-  //<<Merge overlapping windows, Ch. \ref{ch:alf}>>
-  //<<Calculate nm per bp, Ch. \ref{ch:alf}>>
+#+begin_src go <<Summarize windows, Ch. \ref{ch:alf}>>=
+  var summary []*Summary
+  //<<Merge adjacent windows, Ch. \ref{ch:alf}>>
+  //<<Calculate window mismatches, Ch. \ref{ch:alf}>>
 #+end_src
-#+begin_src go << Types, Ch. \ref{ch:alf}>>=
+#+begin_export latex
+The summary structure consists of four elements. The start and end of
+the merged intervals, the number of mismatches in that given interval,
+and the label of the winner subject, or subjects, IDs.
+#+end_export
+#+begin_src go <<Types, Ch. \ref{ch:alf}>>=
   type Summary struct {
 	  start int
 	  end int
@@ -760,33 +756,69 @@ intervals. We start by creating a final structure
 	  label []int
   }
 #+end_src
-#+begin_src go << Imports, Ch. \ref{ch:alf}>>=
-  "slices"
-#+end_src
-#+begin_src go << Merge overlapping windows, Ch. \ref{ch:alf}>>=
-  var border int
-  for a, sum := range summary {
-	  if a == 0 {
-		  border = sum.end
-	  } else {
-		  sum.start = border +1
+#+begin_export latex
+To evaluate if two consecutive windows have the same label, we create
+a new variable prev to hold the contents of the previous window. Then
+we iterate over the range of existing windows. If the variable prev is
+empty we store the information of the current window to it. Otherwise,
+we check if the slice of subject IDs is identical. If yes, we set the
+ending of the new interval as the new interval end. Otherwise we store
+the new summarize interval. At the end we also store the final
+interval.
+#+end_export
+#+begin_src go <<Merge adjacent windows, Ch. \ref{ch:alf}>>= 
+  var prev *Summary
+  for _, win := range windows {
+	  for _, w := range win {
+		  if prev == nil {
+			  prev = &Summary{start: w.start,
+				  end: w.end,
+				  label: w.winner }
+		  } else if slices.Equal(w.winner, prev.label){
+			  prev.end = w.end
+		  } else  {
+			  prev = &Summary{start: w.start,
+				  end: w.end,
+				  label: w.winner }
+			  summary = append(summary, prev)
+		  }
 	  }
-	  border= sum.end
   }
-#+end_src
-#+begin_src go <<Calculate nm per bp, Ch. \ref{ch:alf}>>=
-  for _, sum := range summary {
-	  var len int
-	  len = sum.end-sum.start+1
-	  sum.nm= sum.nm/float64(len)
-//	  fmt.Println("start",sum.start+1,"end",sum.end+1,"nm",sum.nm,"winner",sum.label)
+  if prev != nil {
+	  summary = append(summary,prev)
   }
 #+end_src
 #+begin_export latex
-We then prepare to write the output table. We first print the header,
-and then parse the subject IDs names and print them out.
+We import \ty{slices}.
 #+end_export
-#+begin_src go << Prepare output table, Ch. \ref{ch:alf}>>=
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+  "slices"
+#+end_src
+#+begin_export latex
+Finally, we need to calculate the number of mismatches found per
+interval as a measure of distance. Given the start and ending point of
+each interval, we count the number of existing mismatches, stored in
+the mismatches array, in that specific interval. The distance score is
+the number of mismatches per bp.
+#+end_export
+#+begin_src go <<Calculate window mismatches, Ch. \ref{ch:alf}>>=
+  for _, sum := range summary {
+	  var len int
+	  var nm int
+	  len = sum.end-sum.start+1
+	  for a := sum.start; a <= sum.end; a++ {
+		  if mismatches[a] == 1 {
+			  nm ++
+		  }
+	  }
+	  sum.nm= float64(nm)/float64(len)
+  }
+#+end_src
+#+begin_export latex
+All that is left is to write the output table. We first print the
+header, and then parse the subject IDs names and print them out.
+#+end_export
+#+begin_src go <<Prepare output table, Ch. \ref{ch:alf}>>=
   fmt.Printf("#Query %s\n>Sequence: %s\n" ,
 	  query.name,sequence.name)
   for _,sum := range summary {

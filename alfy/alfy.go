@@ -10,6 +10,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -35,6 +36,12 @@ type Window struct {
 	end    int
 	score  []int
 	winner []int
+}
+type Summary struct {
+	start int
+	end   int
+	nm    float64
+	label []int
 }
 
 func main() {
@@ -184,6 +191,7 @@ func main() {
 					mismatches[a] = 1
 				}
 			}
+
 			q := sus.Quantile(slen, gc, *optQ) - 1
 			t := int(math.Round(float64(*optW) / float64(q)))
 			score := make([]int, len(sequence.subjectNames))
@@ -203,10 +211,20 @@ func main() {
 					r++
 				}
 				open := false
+				prev := maxID[r-1]
 				for r < len(max) {
 					if nm < t {
 						if open {
-							window.end = r
+							if slices.Equal(prev, maxID[r]) {
+								window.end = r
+							} else {
+								windows[i] = append(windows[i], window)
+								window = new(Window)
+								window.score = make([]int, len(score))
+								copy(window.score, score)
+								window.start = l
+								window.end = r
+							}
 						} else {
 							window = new(Window)
 							window.score = make([]int, len(score))
@@ -233,6 +251,7 @@ func main() {
 							score[a]++
 						}
 					}
+					prev = maxID[r]
 					l++
 					r++
 				}
@@ -242,13 +261,73 @@ func main() {
 			}
 			for _, win := range windows {
 				for _, w := range win {
-					fmt.Println("start", w.start+1,
-						"end", w.end+1,
-						"score", w.score)
+					max := 0
+					sID := make([]int, 0)
+					for a, count := range w.score {
+						if count > max {
+							max = count
+							sID = sID[:0]
+							sID = append(sID, a)
+						} else if count == max {
+							sID = append(sID, a)
+						}
+					}
+					w.winner = make([]int, len(sID))
+					copy(w.winner, sID)
 				}
-
 			}
-
+			var summary []*Summary
+			var prev *Summary
+			for _, win := range windows {
+				for _, w := range win {
+					if prev == nil {
+						prev = &Summary{start: w.start,
+							end:   w.end,
+							label: w.winner}
+					} else if slices.Equal(w.winner, prev.label) {
+						prev.end = w.end
+					} else {
+						prev = &Summary{start: w.start,
+							end:   w.end,
+							label: w.winner}
+						summary = append(summary, prev)
+					}
+				}
+			}
+			if prev != nil {
+				summary = append(summary, prev)
+			}
+			for _, sum := range summary {
+				var len int
+				var nm int
+				len = sum.end - sum.start + 1
+				for a := sum.start; a <= sum.end; a++ {
+					if mismatches[a] == 1 {
+						nm++
+					}
+				}
+				sum.nm = float64(nm) / float64(len)
+			}
+			fmt.Printf("#Query %s\n>Sequence: %s\n",
+				query.name, sequence.name)
+			for _, sum := range summary {
+				str := make([]string, len(sum.label))
+				for i, val := range sum.label {
+					var name string
+					if val < 0 {
+						name = "non-homologous"
+					} else {
+						name = strconv.Itoa(val)
+						name = sequence.subjectNames[val]
+						e := strings.LastIndex(name, ".")
+						name = name[:e]
+					}
+					str[i] = fmt.Sprintf("%v", name)
+				}
+				fmt.Printf("%d\t%d\t%.3f\t%v\n",
+					sum.start, sum.end,
+					sum.nm, strings.Join(str, ","))
+			}
 		}
 	}
 }
