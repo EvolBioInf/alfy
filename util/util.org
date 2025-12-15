@@ -1,8 +1,6 @@
 #+begin_export latex
 !Package \ty{util} collects utility functions for \ty{alfy}.
 
-\subsection{Implementation}
-
 Our outline of \ty{util} has hooks for imports, variables, and
 functions.
 \bpa{util}{pa:uti}

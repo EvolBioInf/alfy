@@ -1,4 +1,5 @@
 #+begin_export latex
+\section{Introduction}
 The program \ty{ms2nn} takes as input the output of the coalescent
 simulation program \ty{ms} and prints the nearest neighbors for a
 given query. This can then be used to assess the accuracy of programs
@@ -30,7 +31,7 @@ into nucleotides later by \ty{ms2dna}. For example, here is a command
 to generate a single sample of five haplotypes length 10\,kb with
 $\theta=\rho=100$:
 \begin{verbatim}
-ms 5 1 -t 100 -r 100 10000 -T
+ms 5 1 -t 100 -r 1 10000 -T
 \end{verbatim}
 Its output might be
 \begin{verbatim}
@@ -57,17 +58,87 @@ its closest relatives. These are then printed as pseudo-\ty{alfy}
 output, which starts with a FASTA header giving the name of the query,
 followed by a tab-separated table of four columns consisting of start,
 end, score, and one or more annotations separated by blanks, for
-example, here is some \ty{alfy} output from an analysis of HIV strain
-\verb!A+DQ083238! compared to a sample of 42 HIV strains.
+example, here is some \ty{alfy} output from an analysis of query
+\verb+1+ compared to four other lineages.
 \begin{verbatim}
->A+DQ083238
-1       225       8.6   A1+AF004885
-226     495      25.1   A1+AF069670
-496     930      37.8   G+AF084936
-...
-9331    9699     15.8   A1+U51190
+>1
+1       555        960.7        3
+556     2505      1071.9        5 2
+2506    2805       203.9        5
+2806    2925       210.3        5 4
+2926    4725       478.0        3
+4726    7335      1087.6        5
+7336    7845       418.8        5 3 2
+7846    9525       772.3        3
+9526    10000      176.0        4
 \end{verbatim}
-
+\section{Testing \ty{alfy}: \ty{testAlfy.sh}}
+Before implementing \ty{ms2nn}, we write the short script
+\ty{testAlfy.sh} that implements the steps sketched in
+Figure~\ref{fig:ms}. Inside \ty{testAlfy.sh}, we set parameters,
+generate haplotypes, analyze the haplotypes with \ty{ms2nn}, analyze
+them with \ty{alfy}, and compare the results of \ty{alfy} to the
+ground truth.
+\bpr{testAlfy.sh}{pr:ta}
+#+end_export
+#+begin_src sh <<testAlfy.sh>>=
+  ##<<Set parameters, Pr. \ref{pr:ta}>>
+  ##<<Generate haplotypes, Pr. \ref{pr:ta}>>
+  ##<<Analyze haplotypes with \ty{ms2nn}, Pr. \ref{pr:ta}>>
+  ##<<Analyze haplotypes with \ty{alfy}, Pr. \ref{pr:ta}>>
+  ##<<Compare \ty{alfy} results to ground truth, Pr. \ref{pr:ta}>>
+#+end_src
+#+begin_export latex
+\epr We set the parameters to arbitrary initial values, which can of
+course be changed by the user to explore other combinations. Here we
+start with a sample size of $n=5$, a population mutation rate of
+$\theta=100$, a population recombination rate of $\rho=1$, and $10^4$
+recombining sites.
+#+end_export
+#+begin_src sh <<Set parameters, Pr. \ref{pr:ta}>>=
+  n=5
+  theta=100
+  rho=1
+  len=10000
+#+end_src
+#+begin_export latex
+To generate the haplotypes, we run \ty{ms} on the parameters with tree
+printing (\ty{-T}) and save the result in the file \ty{ms.out}.
+#+end_export
+#+begin_src sh <<Generate haplotypes, Pr. \ref{pr:ta}>>=
+  ms $n 1 -t $theta -r $rho $len -T > ms.out
+#+end_src
+#+begin_export latex
+We analyze the contents of \ty{ms.out} with \ty{ms2nn} and save the
+result in file \ty{ms.nn}.
+#+end_export
+#+begin_src sh <<Analyze haplotypes with \ty{ms2nn}, Pr. \ref{pr:ta}>>=
+  ms2nn -q 1 ms.out > ms.nn
+#+end_src
+#+begin_export latex
+The program \ty{alfy} works on a pair of query/subject DNA sequences
+rather than haplotypes. So we convert the haplotypes do DNA sequences
+using \ty{ms2dna} and convert the sequence names from ``S1'', ``S2'',
+and so on to the original 1, 2,... before saving the sequences in
+\ty{ms.fasta}. We split the contents of \ty{ms.fasta} into query and
+subject sequences, to which we apply \ty{alfy} and save the result to
+\ty{ms.alfy}.
+#+end_export
+#+begin_src sh <<Analyze haplotypes with \ty{alfy}, Pr. \ref{pr:ta}>>=
+  ms2dna ms.out | tr -d S > ms.fasta
+  getSeq 1 ms.fasta > q.fasta
+  getSeq -c 1 ms.fasta > s.fasta
+  alfy -M -i q.fasta -j s.fasta > ms.alfy
+#+end_src
+#+begin_export latex
+To compare the contents of \ty{ms.nn} and \ty{ms.alfy}, we simply
+paste them next to each other.
+#+end_export
+#+begin_src sh <<Compare \ty{alfy} results to ground truth, Pr. \ref{pr:ta}>>=
+  paste ms.alfy ms.nn
+#+end_src
+#+begin_export latex
+\section{Implementing \ty{ms2nn}}
 Our outline of \ty{ms2nn} has hooks for imports, functions, and the
 logic of the main function.
 \bpr{ms2nn}{pr:m2n}
@@ -397,7 +468,7 @@ We import \ty{fmt}.
 #+begin_export latex
 We've finished \ty{ms2nn}, let's test it.
 
-\subsubsection{Testing}
+\subsection*{Testing}
 Our program for testing \ty{ms2nn} has hooks for imports and the
 testing logic.
 \bpr{ms2nn_test}{pr:m2nt}
@@ -415,6 +486,7 @@ testing logic.
   }
 #+end_src
 #+begin_export latex
+\epr
 To test \ty{ms2nn}, we construct a set of tests and then run each one
 in turn.
 #+end_export
@@ -427,11 +499,11 @@ in turn.
 #+end_src
 #+begin_export latex
 We construct two tests with queries 1 and 2, both with the input file
-\ty{ms.out}.
+\ty{msTest.out}.
 #+end_export
 #+begin_src go <<Construct tests, Pr. \ref{pr:m2nt}>>=
   p := "./ms2nn"
-  f := "ms.out"
+  f := "msTest.out"
   test := exec.Command(p, "-q", "1", f)
   tests = append(tests, test)
   test = exec.Command(p, "-q", "2", f)

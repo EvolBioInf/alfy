@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{report}
 \input{header}
 \begin{document}
 
@@ -7,6 +7,8 @@
 \date{\input{date.txt}\!\!, \input{version.txt}}
 \maketitle
 
+\tableofcontents
+\chapter{alfy}
 \section{Introduction}
 \ty{alfy} is a program for comparing one or more query sequences to a
 set of subject sequences and determining the closest homologue among
@@ -55,19 +57,19 @@ from the sequences (but not from their headers):
 cleanSeq.awk foo.fasta > foo2.fasta
 \end{verbatim}
 
-\section{Tutorial}
-\input{tut}
-
-\section{Auxiliary Program: \ty{ms2nn}}
+\chapter{Finding True Nearest Neighbors: \ty{ms2nn}}
 \input{ms2nn}
 
-\section{Utility Functions: \ty{util}}
+\chapter{Tutorial}
+\input{tut}
+
+\chapter{Utility Functions: \ty{util}}
 \input{util}
 
-\section{Change Log}
+\chapter{Change Log}
 \input{log}
 
-\section{Acknowledgement}
+\chapter{Acknowledgement}
 This software is based on the \ty{divsufsort} library by Yuta Mori~\cite{fis17:dis}.
 
 \bibliography{ref}
