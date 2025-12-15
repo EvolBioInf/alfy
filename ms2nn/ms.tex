@@ -1,0 +1,13 @@
+\begin{pspicture}(0,0)(2,4.5)
+  \psset{nodesep=2pt,yunit=1.5cm}
+  \rput(1,3){\rnode{13}{parameters}}
+  \rput(1,2){\rnode{12}{\ty{ms.out}}}
+  \rput(0,1){\rnode{01}{\ty{ms.fasta}}}
+  \rput(0,0){\rnode{00}{\ty{ms.alfy}}}
+  \rput(2,1){\rnode{21}{\ty{ms.nn}}}
+
+  \ncline{->}{13}{12}\naput{\ty{ms}}
+  \ncline{->}{12}{01}\nbput{\ty{ms2dna}}
+  \ncline{->}{01}{00}\nbput{\ty{alfy}}
+  \ncline{->}{12}{21}\naput{\ty{ms2nn}}
+\end{pspicture}
