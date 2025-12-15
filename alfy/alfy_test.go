@@ -15,8 +15,12 @@ func TestAlfy(t *testing.T) {
 	w := "5"
 	test := exec.Command(p, "-f", f, "-w", w)
 	tests = append(tests, test)
+	q := "0.01"
+	test = exec.Command(p, "-f", f, "-w", w, "-q", q)
+	tests = append(tests, test)
 	w = "10"
-	test = exec.Command(p, "-f", f, "-w", w)
+	q = "0.1"
+	test = exec.Command(p, "-f", f, "-w", w, "-q", q)
 	tests = append(tests, test)
 	for i, test := range tests {
 		get, err := test.Output()

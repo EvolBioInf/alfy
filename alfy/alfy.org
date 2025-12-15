@@ -953,17 +953,27 @@ the test sequence.
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
-In the second test, we test with a window size of 10, the length of
-the testing sequence.
+In a second test, we test again a window size of 5, but with a reduced
+quantile of 0.01.
+#+end_export
+#+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
+  q := "0.01"
+  test = exec.Command(p, "-f", f, "-w", w, "-q", q)
+  tests = append(tests, test)
+#+end_src
+#+begin_export latex
+In a third test, we test with a window size of 10, the length of the
+testing sequence, and the default quantile.
 #+end_export
 #+begin_src go <<Construct tests, Ch. \ref{ch:alf}>>=
   w = "10"
-  test = exec.Command(p, "-f", f, "-w", w)
+  q = "0.1"
+  test = exec.Command(p, "-f", f, "-w", w, "-q", q)
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
 When running a test, we compare the output we get with the one we
-want, which is stored in the files r1.txt and r2.txt.
+want, which is stored in the files r1.txt to r3.txt.
 #+end_export
 #+begin_src go <<Run test, Ch. \ref{ch:alf}>>=
   //<<Read test output, Ch. \ref{ch:alf}>>

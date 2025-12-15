@@ -1,7 +1,6 @@
 #Query q1
 >Sequence: q1
-2	10	0.222	s2
-2	10	0.222	s2
+1	10	0.200	s1,s2
 #Query q2
 >Sequence: q2
 1	10	0.200	s2
