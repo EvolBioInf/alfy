@@ -771,16 +771,20 @@ interval.
   for _, win := range windows {
 	  for _, w := range win {
 		  if prev == nil {
-			  prev = &Summary{start: w.start,
+			  prev = &Summary{
+				  start: w.start,
 				  end: w.end,
-				  label: w.winner }
-		  } else if slices.Equal(w.winner, prev.label){
+				  label: w.winner}
+		  } else if slices.Equal(w.winner,
+			  prev.label){
 			  prev.end = w.end
 		  } else  {
-			  prev = &Summary{start: w.start,
+			  prev = &Summary{
+				  start: w.start,
 				  end: w.end,
-				  label: w.winner }
-			  summary = append(summary, prev)
+				  label: w.winner}
+			  summary = append(summary,
+				  prev)
 		  }
 	  }
   }
@@ -867,7 +871,7 @@ coordinates system into 1-based.
 #+end_export
 #+begin_src go <<Print intervals, Ch. \ref{ch:alf}>>=
   fmt.Printf("%d\t%d\t%.3f\t%v\n",
-	  sum.start, sum.end,
+	  sum.start+1, sum.end+1,
 	  sum.nm, strings.Join(str,","))
 #+end_src
 #+begin_export latex

@@ -1,6 +1,4 @@
 #Query q1
 >Sequence: q1
-0	10	16	1.600	s2
 #Query q2
 >Sequence: q2
-0	10	20	2.000	s2

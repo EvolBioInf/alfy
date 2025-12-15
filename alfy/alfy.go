@@ -281,16 +281,20 @@ func main() {
 			for _, win := range windows {
 				for _, w := range win {
 					if prev == nil {
-						prev = &Summary{start: w.start,
+						prev = &Summary{
+							start: w.start,
 							end:   w.end,
 							label: w.winner}
-					} else if slices.Equal(w.winner, prev.label) {
+					} else if slices.Equal(w.winner,
+						prev.label) {
 						prev.end = w.end
 					} else {
-						prev = &Summary{start: w.start,
+						prev = &Summary{
+							start: w.start,
 							end:   w.end,
 							label: w.winner}
-						summary = append(summary, prev)
+						summary = append(summary,
+							prev)
 					}
 				}
 			}
@@ -325,7 +329,7 @@ func main() {
 					str[i] = fmt.Sprintf("%v", name)
 				}
 				fmt.Printf("%d\t%d\t%.3f\t%v\n",
-					sum.start, sum.end,
+					sum.start+1, sum.end+1,
 					sum.nm, strings.Join(str, ","))
 			}
 		}
