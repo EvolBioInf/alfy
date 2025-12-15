@@ -24,6 +24,8 @@ type Tree struct {
 
 func parse(r io.Reader, args ...interface{}) {
 	query := args[0].(string)
+	mergeT := args[1].(bool)
+	mergeD := args[2].(bool)
 	trees := []*Tree{}
 	sc := bufio.NewScanner(r)
 	start := 1
@@ -54,16 +56,21 @@ func parse(r io.Reader, args ...interface{}) {
 	for _, tree := range trees {
 		sort.Strings(tree.neighbors)
 	}
-	c := 0
-	for i := 1; i < len(trees); i++ {
-		if slices.Equal(trees[c].neighbors, trees[i].neighbors) {
-			trees[c].end = trees[i].end
-		} else {
-			c++
-			trees[c] = trees[i]
+	if mergeT {
+		c := 0
+		for i := 1; i < len(trees); i++ {
+			if slices.Equal(trees[c].neighbors, trees[i].neighbors) {
+				trees[c].end = trees[i].end
+			} else {
+				c++
+				trees[c] = trees[i]
+			}
 		}
+		trees = trees[0 : c+1]
+
+	} else if mergeD {
+
 	}
-	trees = trees[0 : c+1]
 	fmt.Printf(">%s\n", query)
 	for _, tree := range trees {
 		fmt.Printf("%d\t%d\t-1\t%s",
@@ -101,6 +108,8 @@ func main() {
 	clio.Usage(u, p, e)
 	flagV := flag.Bool("v", false, "version")
 	flagQ := flag.String("q", "", "query")
+	flagT := flag.Bool("t", false, "merge by topology")
+	flagD := flag.Bool("d", false, "merge by distance")
 	flag.Parse()
 	if *flagV {
 		util.Version("ms2nn")
@@ -108,6 +117,11 @@ func main() {
 	if *flagQ == "" {
 		log.Fatal("please use -q to enter a query")
 	}
+	if *flagT && *flagD {
+		m := "please use at most one of the two " +
+			"merge flags -t and -d"
+		log.Fatal(m)
+	}
 	files := flag.Args()
-	clio.ParseFiles(files, parse, *flagQ)
+	clio.ParseFiles(files, parse, *flagQ, *flagT, *flagD)
 }

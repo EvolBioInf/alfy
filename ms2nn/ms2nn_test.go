@@ -16,6 +16,10 @@ func TestMs2nn(t *testing.T) {
 	tests = append(tests, test)
 	test = exec.Command(p, "-q", "2", f)
 	tests = append(tests, test)
+	test = exec.Command(p, "-q", "1", "-t", f)
+	tests = append(tests, test)
+	test = exec.Command(p, "-q", "2", "-t", f)
+	tests = append(tests, test)
 	for i, test := range tests {
 		get, err := test.Output()
 		if err != nil {

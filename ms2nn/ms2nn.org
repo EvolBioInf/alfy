@@ -177,7 +177,7 @@ We import \ty{clio}.
 The usage consists of three parts, the usage proper, an explanation of
 the purpose of \ty{ms2nn}, and an example command. To design the
 usage, we note that there is no sensible default for the query, so we
-make it a mandatory option.
+make it a mandatory flag.
 #+end_export
 #+begin_src go <<Set usage, Pr. \ref{pr:m2n}>>=
   u := "ms2nn [-h -v] -q <query> [foo.ms]..."
@@ -186,12 +186,15 @@ make it a mandatory option.
   clio.Usage(u, p, e)
 #+end_src
 #+begin_export latex
-Apart from the obligatory version, \ty{-v}, we declare one flag, the
-query, \ty{-q}.
+Apart from the obligatory version, \ty{-v}, we declare three flags,
+the query, \ty{-q}, merge by topology (\ty{-t}), and merge by distance
+(\ty{-d}).
 #+end_export
 #+begin_src go <<Declare flags, Pr. \ref{pr:m2n}>>=
   flagV := flag.Bool("v", false, "version")
   flagQ := flag.String("q", "", "query")
+  flagT := flag.Bool("t", false, "merge by topology")
+  flagD := flag.Bool("d", false, "merge by distance")
 #+end_src
 #+begin_export latex
 We import \ty{flag}.
@@ -200,13 +203,14 @@ We import \ty{flag}.
   "flag"
 #+end_src
 #+begin_export latex
-We parse the flags and respond first to the version flag, then to the
-query flag.
+We parse the flags and respond to the version flag, the query flag,
+and the merge flags.
 #+end_export
 #+begin_src go <<Parse flags, Pr. \ref{pr:m2n}>>=
   flag.Parse()
   //<<Respond to \ty{-v}, Pr. \ref{pr:m2n}>>
   //<<Respond to \ty{-q}, Pr. \ref{pr:m2n}>>
+  //<<Respond to merge flags, Pr. \ref{pr:m2n}>>
 #+end_src
 #+begin_export latex
 We print the version upon request.
@@ -238,25 +242,38 @@ We import \ty{log}.
   "log"
 #+end_src
 #+begin_export latex
+Switching on both merge flags may lead to different results, depending
+on the order in which the merges are carried out. It is also probably
+an error. So in that case we kindly ask the user to chose at most one
+of the merge flags.
+#+end_export
+#+begin_src go <<Respond to merge flags, Pr. \ref{pr:m2n}>>=
+  if *flagT && *flagD {
+	  m := "please use at most one of the two " +
+		  "merge flags -t and -d"
+	  log.Fatal(m)
+  }
+#+end_src
+#+begin_export latex
 The remaining arguents on the command line are interpreted as file
 names. Each file is parsed by the function parse, which in turn takes
-as argument the query.
+as argument the query and the two merge flags.
 #+end_export
 #+begin_src go <<Parse input, Pr. \ref{pr:m2n}>>=
   files := flag.Args()
-  clio.ParseFiles(files, parse, *flagQ)
+  clio.ParseFiles(files, parse, *flagQ, *flagT, *flagD)
 #+end_src
 #+begin_export latex
-Inside the function \ty{parse}, we retrieve the query, print it as the
-header, and iterate over the input to store the trees. Since the input
-only contains a tree's extent, we use the variable \ty{start} to track
-their starting positions. From the stored trees we find the query's
-neighbors. Trees may have the same set of neighbors, in which case we
-merge their intervals, before we print the neighbors.
+Inside the function \ty{parse}, we retrieve the arguments, print it as
+the header, and iterate over the input to store the trees. Since the
+input only contains a tree's extent, we use the variable \ty{start} to
+track their starting positions. From the stored trees we find the
+query's neighbors. Trees may have the same set of neighbors, in which
+case we merge their intervals, before we print the neighbors.
 #+end_export
 #+begin_src go <<Functions, Pr. \ref{pr:m2n}>>=
   func parse(r io.Reader, args... interface{}) {
-	  query := args[0].(string)
+	  //<<Retrieve arguments, Pr. \ref{pr:m2n}>>
 	  trees := []*Tree{}
 	  sc := bufio.NewScanner(r)
 	  start := 1
@@ -274,6 +291,15 @@ We import \ty{io} and \ty{bufio}.
 #+begin_src go <<Imports, Pr. \ref{pr:m2n}>>=
   "io"
   "bufio"
+#+end_src
+#+begin_export latex
+We retrieve the three aguments query, merge by topology, and merge by
+distance by type assertion.
+#+end_export
+#+begin_src go <<Retrieve arguments, Pr. \ref{pr:m2n}>>=
+  query := args[0].(string)
+  mergeT := args[1].(bool)
+  mergeD := args[2].(bool)
 #+end_src
 #+begin_export latex
 A tree refers to an interval that has a start and an end. It contains
@@ -404,7 +430,12 @@ neighbors of all trees.
 #+end_export
 #+begin_src go <<Merge trees, Pr. \ref{pr:m2n}>>=
   //<<Sort neighbors, Pr. \ref{pr:m2n}>>
-  //<<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>
+  if mergeT {
+	  //<<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>
+
+  } else if mergeD {
+	  //<<Merge trees with equidistant neighbors, Pr. \ref{pr:m2n}>>
+  }
 #+end_src
 #+begin_export latex
 We sort the neighbors by calling a library function for sorting
@@ -498,8 +529,8 @@ in turn.
   }
 #+end_src
 #+begin_export latex
-We construct two tests with queries 1 and 2, both with the input file
-\ty{msTest.out}.
+We construct two tests with queries 1 and 2, then repeat with tree
+merging. All tests run on the input file \ty{msTest.out}.
 #+end_export
 #+begin_src go <<Construct tests, Pr. \ref{pr:m2nt}>>=
   p := "./ms2nn"
@@ -507,6 +538,10 @@ We construct two tests with queries 1 and 2, both with the input file
   test := exec.Command(p, "-q", "1", f)
   tests = append(tests, test)
   test = exec.Command(p, "-q", "2", f)
+  tests = append(tests, test)
+  test = exec.Command(p, "-q", "1", "-t", f)
+  tests = append(tests, test)
+  test = exec.Command(p, "-q", "2", "-t", f)
   tests = append(tests, test)
 #+end_src
 #+begin_export latex
