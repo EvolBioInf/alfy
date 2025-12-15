@@ -24,7 +24,14 @@ doc/version.txt
 
 intro/
 
+ms2nn/ms.alfy
+ms2nn/ms.fasta
+ms2nn/ms.nn
+ms2nn/ms.out
 ms2nn/ms2nn
+ms2nn/q.fasta
+ms2nn/s.fasta
+ms2nn/seedms
 
 pab/
 palfy/

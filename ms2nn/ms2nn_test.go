@@ -11,7 +11,7 @@ import (
 func TestMs2nn(t *testing.T) {
 	var tests []*exec.Cmd
 	p := "./ms2nn"
-	f := "ms.out"
+	f := "msTest.out"
 	test := exec.Command(p, "-q", "1", f)
 	tests = append(tests, test)
 	test = exec.Command(p, "-q", "2", f)
