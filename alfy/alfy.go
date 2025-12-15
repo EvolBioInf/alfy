@@ -185,8 +185,8 @@ func main() {
 			}
 			mismatches := make([]int, len(matches[0]))
 			for a := 0; a < len(max); a++ {
-				if a == 0 && max[a] != 0 {
-					mismatches[a] = 1
+				if a == 0 {
+					continue
 				} else if max[a] >= max[a-1] && max[a] != 0 {
 					mismatches[a] = 1
 				}
@@ -212,7 +212,9 @@ func main() {
 				}
 				open := false
 				prev := maxID[r-1]
+				shifted := false
 				for r < len(max) {
+					shifted = true
 					if nm < t {
 						if open {
 							if slices.Equal(prev, maxID[r]) {
@@ -254,6 +256,16 @@ func main() {
 					prev = maxID[r]
 					l++
 					r++
+				}
+				if !shifted && r == len(max) {
+					if nm < t {
+						window = new(Window)
+						window.score = make([]int, len(score))
+						copy(window.score, score)
+						window.start = l
+						window.end = r - 1
+						windows[i] = append(windows[i], window)
+					}
 				}
 				if open {
 					windows[i] = append(windows[i], window)
