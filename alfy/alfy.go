@@ -58,22 +58,21 @@ func main() {
 	if *optV {
 		util.Version("alfy")
 	}
-	if *optF == "" {
-		m := "please provide the intervals file " +
-			"(prepAlfy output)"
-		fmt.Fprintf(os.Stderr, "%s\n", m)
-		os.Exit(1)
+	var sc *bufio.Scanner
+	if *optF != "" {
+		file, err := os.Open(*optF)
+		util.Check(err)
+		defer file.Close()
+		sc = bufio.NewScanner(file)
+	} else {
+		sc = bufio.NewScanner(os.Stdin)
 	}
-	file, err := os.Open(*optF)
-	util.Check(err)
-	defer file.Close()
 	queries := []*Query{}
 	var query *Query
 	var sequence *Sequence
 	var interval *Interval
 	var slen int
 	var gc float64
-	sc := bufio.NewScanner(file)
 	for sc.Scan() {
 		line := sc.Text()
 		if len(line) == 0 {

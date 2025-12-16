@@ -32,7 +32,7 @@ between the queries and the subject files.
   //<<Declare options, Ch. \ref{ch:alf}>>
   //<<Set usage, Ch. \ref{ch:alf}>>
   //<<Parse options, Ch. \ref{ch:alf}>>
-  //<<Read intervals file, Ch. \ref{ch:alf}>>
+  //<<Parse input file, Ch. \ref{ch:alf}>>
   // <<Iterate over Query and Sequence, Ch. \ref{ch:alf}>>
 #+end_src
 #+begin_export latex
@@ -98,51 +98,49 @@ If the user requested the version, we call the utility function
   }
 #+end_src
 #+begin_export latex
-If the user did not set an interval file, we exit with a friendly
-message.
+We then parse the interval files. If a file was given, we open the
+file, check for errors, defer its closure and set the input as a
+bufio.Scanner type. If the user did not set an interval file, we read
+from standard in, and also set the input as a bufio.Scanner type.
 #+end_export
 #+begin_src go <<Respond to -f, Ch. \ref{ch:alf}>>=
-  if *optF == "" {
-	  m := "please provide the intervals file " +
-		  "(prepAlfy output)"
-	  fmt.Fprintf(os.Stderr, "%s\n",m)
-	  os.Exit(1)
+  var sc *bufio.Scanner
+  if *optF != "" {
+	  file, err := os.Open(*optF)
+	  util.Check(err)
+	  defer file.Close()
+	  sc = bufio.NewScanner(file)
+  } else {
+	  sc = bufio.NewScanner(os.Stdin)
   }
 #+end_src
 #+begin_export latex
-We then read the interval files, defer its closure and parse its
-header and content. The parsed file is saved in the queries variable
-which contains the data from all queries, sequences and intervals that
-have been read.
-#+end_export
-#+begin_src go <<Read intervals file, Ch. \ref{ch:alf}>>=
-  file, err := os.Open(*optF)
-  util.Check(err)
-  defer file.Close()
-  queries := []*Query{}
-  //<<Parse Input file, Ch. \ref{ch:alf}>>
-#+end_src
-#+begin_export latex
-We import \ty{os} and \ty{fmt}.
+We import \ty{os} and \ty{bufio}.
 #+end_export
 #+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
   "os"
-  "fmt"
+  "bufio"
 #+end_src
 #+begin_export latex
-To parse the input file, we start by initializing the variable queries
-of the type Query. We construct the bufio reader, initialize the
-remaining variables and start to parse the document. We skip empty
-lines, and parse the two types of headers and the intervals. The
-interval files contains two type of headers. The main header, which
-starts with a \#, and denotes the start of a query, a secondary
-header, starting with $>$, denoting the start of a sequence and the
-intervals describing the location of the exact matches and the
-annotation of the subject IDs.
+After reading and storing the input we create a new variable of type
+Query to hold all the data that is to be parsed. Then we initialize
+all required variables and scan the text that has been read into the
+bufio Scanner. Only after do we start parsing the input file.
 #+end_export
-#+begin_src go <<Parse Input file, Ch. \ref{ch:alf}>>=
+#+begin_src go <<Parse input file, Ch. \ref{ch:alf}>>=
+  queries := []*Query{}
   //<<New Query, Sequence and Interval, Ch.\ref{ch:alf}>>
-  sc := bufio.NewScanner(file)
+  //<<Iterate over file, Ch. \ref{ch:alf}>>
+#+end_src
+#+begin_export latex
+While parsing the file we skip empty lines, and parse
+the two types of headers and the intervals. The interval files
+contains two type of headers. The main header, which starts with a \#,
+and denotes the start of a query, a secondary header, starting with
+$>$, denoting the start of a sequence and the intervals describing the
+location of the exact matches and the annotation of the subject IDs.
+#+end_export
+#+begin_src go <<Iterate over file, Ch. \ref{ch:alf}>>=
   for sc.Scan() {
 	  line := sc.Text()
 	  //<<Skip empty lines, Ch. \ref{ch:alf}>>
@@ -156,12 +154,6 @@ annotation of the subject IDs.
 		  //<<Deal with intervals, Ch. \ref{ch:alf}>>
 	  }
   }
-#+end_src
-#+begin_export latex
-We import \ty{bufio}.
-#+end_export
-#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
-  "bufio"
 #+end_src
 #+begin_export latex
 To conveniently handle the input we create three structure types:
@@ -857,6 +849,12 @@ header, and then parse the subject IDs names and print them out.
 	  //<<Convert numeric IDs to names, Ch. \ref{ch:alf}>>
 	  //<<Print intervals, Ch. \ref{ch:alf}>>
   }
+#+end_src
+#+begin_export latex
+We import \ty{fmt}.
+#+end_export
+#+begin_src go <<Imports, Ch. \ref{ch:alf}>>=
+"fmt"
 #+end_src
 #+begin_export latex
 To convert the numeric IDs to the subject names, we iterate over the
