@@ -78,7 +78,7 @@ func main() {
 		if len(line) == 0 {
 			continue
 		}
-		if line[0] == '-' {
+		if strings.HasPrefix(line, "#!") {
 			var err error
 			fields := strings.Fields(line)
 			slen, err = strconv.Atoi(fields[1])

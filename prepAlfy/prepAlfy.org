@@ -324,7 +324,7 @@ with a message if we find one.
 		  m := "Found %s%s and %s%s." +
 			  "Please ensure queries and " +
 			  "subjects do not " +
-			  "overlap."
+			  "overlap.\n"
 		  fmt.Fprintf(os.Stderr, m, *optQ, query,
 			  *optS, query)
 		  os.Exit(1)
@@ -390,7 +390,7 @@ printed once.
 #+end_export
 #+begin_src go <<Print subject statistics, Ch. \ref{ch:prep}>>=
   gc = float64(g)/float64(slen)
-  fmt.Printf("-Stats\t%d\t%f\n", slen, gc)
+  fmt.Printf("#!Stats\t%d\t%f\n", slen, gc)
 #+end_src
 #+begin_export latex
 We use a scanner to iterate over the sequences in the current neighbor

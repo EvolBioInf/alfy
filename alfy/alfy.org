@@ -144,7 +144,7 @@ location of the exact matches and the annotation of the subject IDs.
   for sc.Scan() {
 	  line := sc.Text()
 	  //<<Skip empty lines, Ch. \ref{ch:alf}>>
-	  if line[0] =='-' {
+	  if strings.HasPrefix(line, "#!") {
 		  //<<Deal with subject statistics, Ch. \ref{ch:alf}>>
 	  } else if line[0] == '#' {
 		  //<<Deal with query header, Ch. \ref{ch:alf}>>

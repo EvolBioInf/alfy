@@ -116,7 +116,7 @@ func main() {
 			m := "Found %s%s and %s%s." +
 				"Please ensure queries and " +
 				"subjects do not " +
-				"overlap."
+				"overlap.\n"
 			fmt.Fprintf(os.Stderr, m, *optQ, query,
 				*optS, query)
 			os.Exit(1)
@@ -147,7 +147,7 @@ func main() {
 		f.Close()
 	}
 	gc = float64(g) / float64(slen)
-	fmt.Printf("-Stats\t%d\t%f\n", slen, gc)
+	fmt.Printf("#!Stats\t%d\t%f\n", slen, gc)
 	sID := make(map[int]string)
 	esas := make([]*esa.Esa, len(subjectNames))
 	for i, subject := range subjectNames {
