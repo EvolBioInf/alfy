@@ -30,7 +30,7 @@ Any \ty{ms} command to generate \ty{ms.out} requires tree printing,
 and recombination among the same number of sites that will be turned
 into nucleotides later by \ty{ms2dna}. For example, here is a command
 to generate a single sample of five haplotypes length 10\,kb with
-$\theta=\rho=100$:
+mutation and recombination rates $\theta=\rho=100$:
 \begin{verbatim}
 ms 5 1 -t 100 -r 100 10000 -T
 \end{verbatim}
@@ -52,14 +52,15 @@ positions: 0.0042 0.0046 0.0060 0.0081 0.0096...
 1010001000001010000001101100001000111011100...
 0000110110110001000111111100011111001100011...
 \end{verbatim}
-The first line gives the \ty{ms} command, of which the \ty{-r} flag is
-relevant, as its second argument is the sequence length.  Unless the
-recombination rate is zero, trees start with their extent along this
-sequence in square brackets. They always end with a semi colon. The
-mutations, or segregating sites, along the sequence are given for the
-interval $(0,1)$, which we convert to sequence positions by
-multiplying with the sequence length. The haplotypes of zeros and
-ones, finally, are the basis for calculating distances to the query.
+The first line gives the \ty{ms} command, of which the sample size and
+the sequence length of the \ty{-r} flag are relevant for the
+subsequent analysis.  Unless the recombination rate is zero, trees
+start with their extent along this sequence in square brackets. They
+always end with a semi colon. The mutations, or segregating sites,
+along the sequence are given for the interval $(0,1)$, which we
+convert to sequence positions by multiplying with the sequence
+length. The haplotypes of zeros and ones, finally, are the basis for
+calculating distances to the query.
 
 The program \ty{ms2nn} parses the \ty{ms} output and for a given query
 finds its closest relatives for each tree. By default these closest
@@ -131,7 +132,7 @@ make it a mandatory flag.
   clio.Usage(u, p, e)
 #+end_src
 #+begin_export latex
-Apart from the obligatory version, \ty{-v}, we declare two flags, the
+Apart from the customary version, \ty{-v}, we declare two flags, the
 query, \ty{-q}, and tree analysis rather than distance analysis for
 getting the neighbors, \ty{-t}.
 #+end_export
@@ -186,8 +187,8 @@ We import \ty{log}.
 #+end_src
 #+begin_export latex
 The remaining arguments on the command line are interpreted as file
-names. Each file is parsed by the function parse, which in turn takes
-as argument the query and the tree analysis flags.
+names. Each file is parsed by the function \ty{parse}, which in turn
+takes as argument the query and the tree analysis flags.
 #+end_export
 #+begin_src go <<Parse input, Pr. \ref{pr:m2n}>>=
   files := flag.Args()
@@ -241,7 +242,8 @@ We import \ty{strconv}.
 We need storage for the sample size, the sequence length, the trees,
 the positions of mutations, and the haplotypes. We also declare a
 variable for the tree start position, which we initialize to the
-position implied by \ty{ms}, 1.
+position implied by \ty{ms}, 1. In the zero-based world of Go this
+means 0.
 #+end_export
 #+begin_src go <<Prepare storage, Pr. \ref{pr:m2n}>>=
   var nsam, seqLen int
@@ -266,12 +268,13 @@ the line. Otherwise we classify it by its first or last character.
 #+begin_export latex
 The line can be one of four things
 \begin{enumerate}
-\item the command starting with ``m'', in which case we analyze it
+\item the original \ty{ms} command starting with ``m'', in which case
+  we analyze it
 \item a tree ending with ``;``, in which case we store it
 \item a row of positions of mutations starting with ``p'', in which
   case we store them
-\item a row of haplotypes starting with ``0'' or ``1'', in which case
-  we store it
+\item a row of polymorphisms starting with ``0'' or ``1'', in which case
+  we store the resulting haplotype
 \end{enumerate}
 #+end_export
 #+begin_src go <<Classify line, Pr. \ref{pr:m2n}>>=
@@ -392,8 +395,12 @@ full sequence. Otherwise, its extent is the first entry in the array
 after removal of the opening square bracket.
 #+end_export
 #+begin_src go <<Extract extent of tree, Pr. \ref{pr:m2n}>>=
-  ext, e := strconv.Atoi(arr[0][1:])
-  util.Check(e)
+  ext := seqLen
+  if hasExt {
+	  var e error
+	  ext, e = strconv.Atoi(arr[0][1:])
+	  util.Check(e)
+  }
 #+end_src
 #+begin_export latex
 We construct a new tree, set its start and end positions, and convert
@@ -490,9 +497,9 @@ we append the node label to the tree's slice of neighbors.
   }
 #+end_src
 #+begin_export latex
-To analyze the distances, we first determine the start and end
-positions along the haplotypes that belong to the tree. Then we find
-the nearest neighbors by distance.
+If instead of analyzing the trees we analyze the distances, we first
+determine the start and end positions along the haplotypes that belong
+to the tree. Then we find the nearest neighbors by distance.
 #+end_export
 #+begin_src go <<Analyze distances, Pr. \ref{pr:m2n}>>=
   //<<Find haplotype start and end indexes, Pr. \ref{pr:m2n}>>
@@ -525,10 +532,10 @@ of the slice of positions.
 #+end_src
 #+begin_export latex
 The end index is initialized to the start index. Then we map the end
-of the tree to $(0,1)$---like we did with the start---and walk until
-we exceed the end of the tree. The position we have now reached is
-just beyond the desired one, and identical to the start position for
-the next round.
+of the tree to $(0,1)$---like we did with the start---and walk right
+until we exceed the end of the tree. The position we have now reached
+is just beyond the desired one, and identical to the start position
+for the next round.
 #+end_export
 #+begin_src go <<Find end index, Pr. \ref{pr:m2n}>>=
   ei := si
@@ -554,7 +561,7 @@ minimum distance, and add the distance neighbors.
   }
 #+end_src
 #+begin_export latex
-We iterate over the sample and for each member---except for the
+We iterate over the sample, and for each member---except for the
 query---calculate the distance to the query.
 #+end_export
 #+begin_src go <<Calculate distances, Pr. \ref{pr:m2n}>>=
@@ -601,7 +608,8 @@ We store all neighbors with the minimum distance.
   for i := 0; i < nsam; i++ {
 	  if i+1 != qi && dist[i] == min {
 		  nei := strconv.Itoa(i+1)
-		  tree.neighbors = append(tree.neighbors, nei)
+		  tree.neighbors =
+			  append(tree.neighbors, nei)
 	  }
   }
 #+end_src
@@ -634,18 +642,18 @@ neighbor, we merge them by extending the end position and summing the
 mismatches.
 #+end_export
 #+begin_src go <<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>=
-  c := 1
+  c := 0
   for i := 1; i < len(trees); i++ {
 	  if slices.Equal(trees[c].neighbors,
 		  trees[i].neighbors) {
 			  trees[c].end = trees[i].end
 			  trees[c].mm += trees[i].mm
-	  } else {
-		  trees[c] = trees[i]
-		  c++
-	  }
+		  } else {
+			  c++
+			  trees[c] = trees[i]
+		  }
   }
-  trees = trees[0:c]
+  trees = trees[0:c+1]
 #+end_src
 #+begin_export latex
 We import \ty{slices}.
@@ -682,13 +690,13 @@ We import \ty{fmt}.
 If we used tree analysis, we have not kept track of the mismatches, in
 which case we signal this by setting the number of mismatches per site
 to the nonsensical -1. Otherwise we simply divide the mismatches by
-the tree length.
+the tree extent.
 #+end_export
 #+begin_src go <<Calculate mismatches per site, Pr. \ref{pr:m2n}>>=
   mm = -1
   if !treeAnalysis {
-	  l := tree.end - tree.start
-	  mm = float64(tree.mm) / float64(l)
+	  ext := tree.end - tree.start
+	  mm = float64(tree.mm) / float64(ext)
   }
 #+end_src
 #+begin_export latex

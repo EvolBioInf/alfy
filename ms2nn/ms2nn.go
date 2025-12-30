@@ -67,8 +67,12 @@ func parse(r io.Reader, args ...interface{}) {
 			if hasExt {
 				ts = arr[1]
 			}
-			ext, e := strconv.Atoi(arr[0][1:])
-			util.Check(e)
+			ext := seqLen
+			if hasExt {
+				var e error
+				ext, e = strconv.Atoi(arr[0][1:])
+				util.Check(e)
+			}
 			tree.start = start
 			tree.end = tree.start + ext - 1
 			tree.query = query
@@ -138,7 +142,8 @@ func parse(r io.Reader, args ...interface{}) {
 			for i := 0; i < nsam; i++ {
 				if i+1 != qi && dist[i] == min {
 					nei := strconv.Itoa(i + 1)
-					tree.neighbors = append(tree.neighbors, nei)
+					tree.neighbors =
+						append(tree.neighbors, nei)
 				}
 			}
 		}
@@ -146,25 +151,25 @@ func parse(r io.Reader, args ...interface{}) {
 	for _, tree := range trees {
 		sort.Strings(tree.neighbors)
 	}
-	c := 1
+	c := 0
 	for i := 1; i < len(trees); i++ {
 		if slices.Equal(trees[c].neighbors,
 			trees[i].neighbors) {
 			trees[c].end = trees[i].end
 			trees[c].mm += trees[i].mm
 		} else {
-			trees[c] = trees[i]
 			c++
+			trees[c] = trees[i]
 		}
 	}
-	trees = trees[0:c]
+	trees = trees[0 : c+1]
 	mm := 0.0
 	fmt.Printf(">%s\n", query)
 	for _, tree := range trees {
 		mm = -1
 		if !treeAnalysis {
-			l := tree.end - tree.start
-			mm = float64(tree.mm) / float64(l)
+			ext := tree.end - tree.start
+			mm = float64(tree.mm) / float64(ext)
 		}
 		fmt.Printf("%d\t%d\t%.4f\t%s",
 			tree.start+1, tree.end+1, mm,
