@@ -1,5 +1,6 @@
 date = $(shell git log | grep -m 1 Date | sed -r 's/Date: +[A-Z][a-z]+ ([A-Z][a-z]+) ([0-9]+) [^ ]+ ([0-9]+) .+/\2_\1_\3/')
 version = $(shell git describe)
+ownCloud = ~/WinHome/ownCloud
 
 all: alfyDoc.pdf
 
@@ -12,9 +13,10 @@ alfyDoc.pdf: alfyDoc.tex header.tex homol.tex
 	latex alfyDoc
 	dvips -o -q alfyDoc
 	ps2pdf -dALLOWPSTRANSPARENCY alfyDoc.ps
-publish: alfyDoc.pdf
-	if [ -d ~/WinHome/ownCloud ]; then \
-		cp alfyDoc.pdf ~/WinHome/ownCloud/docs/; \
+publish: $(ownCloud)/docs/alfyDoc.pdf
+$(ownCloud)/docs/alfyDoc.pdf: alfyDoc.pdf
+	if [ -d $(ownCloud) ]; then \
+		cp alfyDoc.pdf $(ownCloud)/docs/; \
 	fi
 clean:
 	rm -f alfyDoc.aux alfyDoc.bbl alfyDoc.bib alfyDoc.blg alfyDoc.d alfyDoc.dvi \
