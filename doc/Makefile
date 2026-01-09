@@ -11,8 +11,7 @@ alfyDoc.pdf: alfyDoc.tex header.tex homol.tex ms2nn.tex util.tex ../ms2nn/ms.tex
 	bibtex alfyDoc
 	latex alfyDoc
 	latex alfyDoc
-	dvips -o -q alfyDoc
-	ps2pdf -dALLOWPSTRANSPARENCY alfyDoc.ps
+	dvipdf -dALLOWPSTRANSPARENCY alfyDoc
 %.tex:	../*/%.org
 	bash ../scripts/org2nw $< | awk -f ../scripts/preWeave.awk | noweave -n -x | sed 's/_test/\\_test/g' > $@
 publish: $(ownCloud)/docs/alfyDoc.pdf
@@ -22,4 +21,4 @@ $(ownCloud)/docs/alfyDoc.pdf: alfyDoc.pdf
 	fi
 clean:
 	rm -f alfyDoc.aux alfyDoc.bbl alfyDoc.bib alfyDoc.blg alfyDoc.d alfyDoc.dvi \
-	alfyDoc.log alfyDoc.pdf alfyDoc.ps ms2nn.tex util.tex
+	alfyDoc.log alfyDoc.pdf ms2nn.tex util.tex
