@@ -29,6 +29,7 @@ func parse(r io.Reader, args ...interface{}) {
 	treeAnalysis := args[1].(bool)
 	qi, err := strconv.Atoi(query)
 	util.Check(err)
+	qi = qi - 1
 	var nsam, seqLen int
 	trees := []*Tree{}
 	positions := []float64{}
@@ -89,7 +90,8 @@ func parse(r io.Reader, args ...interface{}) {
 				util.Check(e)
 				positions = append(positions, p)
 			}
-		} else if fc == '1' || fc == '0' {
+		} else if (fc == '1' || fc == '0') &&
+			strings.Index(line, " ") == -1 {
 			haplotypes = append(haplotypes, line)
 		}
 	}
@@ -98,21 +100,15 @@ func parse(r io.Reader, args ...interface{}) {
 			findParent(tree.root, tree)
 		}
 	} else {
-		si := 0
+		ii := 0
+		np := len(positions)
 		for _, tree := range trees {
-			np := len(positions)
-			s := float64(tree.start) / float64(seqLen)
-			for si < np && positions[si] < s {
-				si++
-			}
-			tree.si = si
-			ei := si
+			tree.si = ii
 			e := float64(tree.end) / float64(seqLen)
-			for ei < np && positions[ei] <= e {
-				ei++
+			for ii < np && positions[ii] <= e {
+				ii++
 			}
-			tree.ei = ei - 1
-			si = ei
+			tree.ei = ii - 1
 		}
 		dist := make([]int, nsam)
 		for _, tree := range trees {
@@ -140,7 +136,7 @@ func parse(r io.Reader, args ...interface{}) {
 			}
 			tree.mm = min
 			for i := 0; i < nsam; i++ {
-				if i+1 != qi && dist[i] == min {
+				if i != qi && dist[i] == min {
 					nei := strconv.Itoa(i + 1)
 					tree.neighbors =
 						append(tree.neighbors, nei)
@@ -168,7 +164,7 @@ func parse(r io.Reader, args ...interface{}) {
 	for _, tree := range trees {
 		mm = -1
 		if !treeAnalysis {
-			ext := tree.end - tree.start
+			ext := tree.end - tree.start + 1
 			mm = float64(tree.mm) / float64(ext)
 		}
 		fmt.Printf("%d\t%d\t%.4f\t%s",
@@ -203,7 +199,7 @@ func addNeighbors(v *nwk.Node, tree *Tree) {
 func main() {
 	clio.PrepLog("ms2nn")
 	u := "ms2nn -q <query> [option]... [foo.ms]..."
-	p := "Convert the output of Hudson's ms to alfy output."
+	p := "Convert the output of ms to alfy output."
 	e := "ms 5 1 -t 100 -r 100 10000 -T | ms2nn -q 1"
 	clio.Usage(u, p, e)
 	flagV := flag.Bool("v", false, "version")

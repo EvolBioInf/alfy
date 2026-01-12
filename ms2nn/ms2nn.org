@@ -6,83 +6,147 @@ given query. This output can then be compared to the output of
 programs for identifying nearest neighbors, for example
 \ty{alfy}. Figure~\ref{fig:ms} shows a sketch of the intended
 workflow. The program \ty{ms} is used to convert population genetic
-parameters into a sample of haplotypes stored in the file
-\ty{ms.out}. This is converted to DNA sequences using the program
+parameters into a sample of haplotypes. The haplotypes are converted
+to DNA sequences using the program
 \ty{ms2dna}\footnote{\ty{https://github.com/evolbioinf/ms2dna}}. These
-DNA sequences are analyzed with \ty{alfy} and the output is stored in
-the file \ty{ms.alfy}. In a second analysis strand the original
-haplotype sample in \ty{ms.out} is converted to the ``true'' output
-with the program \ty{ms2nn} and the result is stored in
-\ty{ms.nn}. Now the contents of \ty{ms.alfy} and \ty{ms.nn} can be
-compared to assess the performance of \ty{alfy}.
+DNA sequences are analyzed with \ty{alfy} to get a set of estimated
+nearest neighbors. In a second analysis strand the original haplotypes
+are converted by \ty{ms2nn} to the true nearest neighbors. Now the
+estimated and true nearest neighbors can be compared.
 
-\begin{figure}
+\begin{figure}[ht]
 \begin{center}
 \input{../ms2nn/ms}
 \end{center}
 \caption{Workflow for testing the nearest neighbor predictions
-  produced by \ty{alfy} using \ty{ms2nn}; ideally, the output of
-  \ty{alfy} stored in file \ty{ms.alfy} is identical to the ground
-  truth stored in \ty{ms.nn}.}\label{fig:ms}
+  produced by \ty{alfy} using \ty{ms2nn}; ideally, the nearest
+  neighbors estimated by \ty{alfy} are identical to the true nearest
+  neighbors.}\label{fig:ms}
 \end{figure}
 
-Any \ty{ms} command to generate \ty{ms.out} requires tree printing,
-and recombination among the same number of sites that will be turned
-into nucleotides later by \ty{ms2dna}. For example, here is a command
-to generate a single sample of five haplotypes length 10\,kb with
-mutation and recombination rates $\theta=\rho=100$:
+Any \ty{ms} command to generate a sample of haplotypes requires tree
+printing and recombination among the number of sites that will be
+turned into nucleotides later by \ty{ms2dna}. For example, here is a
+command to generate one tiny sample of three haplotypes with two
+segregating sites (\ty{-s}), recombination rate $\rho=1$ among 100
+recombining units---think base pairs---(\ty{-r}), and tree printing
+(\ty{-T}):
 \begin{verbatim}
-ms 5 1 -t 100 -r 100 10000 -T
+ms 3 1 -s 2 -r 1 100 -T
 \end{verbatim}
-Its output might be
+This command might generate the output shown in Figure~\ref{fig:mso}
+with additional line numbering.
+\begin{figure}
+  \begin{center}
+  \fbox{
+      \begin{tabular}{rl}
+ 1  & \ty{ms 3 1 -s 2 -r 1 100 -T}\\
+ 2  & \ty{45133 4835 14524}\\
+ 3  &\\
+ 4  & \ty{//}\\
+ 5  & \ty{[11](2:0.544,(1:0.482,3:0.482):0.063);}\\
+ 6  & \ty{[46](3:0.939,(1:0.544,2:0.544):0.395);}\\
+ 7  & \ty{[43](3:1.107,(1:0.544,2:0.544):0.563);}\\
+ 8  & \ty{segsites: 2}\\
+ 9  & \ty{positions: 0.2966 0.7152}\\
+10  & \ty{10}\\
+11  & \ty{00}\\
+12  & \ty{01}\\
+\end{tabular}
+}
+  \end{center}
+  \caption{Sample output from \ty{ms}.}\label{fig:mso}
+\end{figure}
+The first line echoes the \ty{ms} command, of which the sample size and
+the sequence length of the \ty{-r} flag, and the \ty{-T} flag are relevant for the
+subsequent analysis. The second line gives the seeds for the random
+number generator that can be used to reproduce this run by appending
+the \ty{-seeds} flag to the command to give
 \begin{verbatim}
-ms 5 1 -t 100 -r 100 10000 -T
-3579 27011 59243
+ms 3 1 -s 2 -r 1 100 -T -seeds 45133 4835 14524
+\end{verbatim}
 
-//
-[42]((2:0.167,(1:0.158,4:0.158):0.009):0.959,...);
-[24](5:0.954,(3:0.580,(2:0.167,(1:0.158,...);
-[22](5:0.954,(3:0.580,(2:0.167,(1:0.158,...);
-...
-segsites: 154
-positions: 0.0042 0.0046 0.0060 0.0081 0.0096...
-1100000001001000101000000011100000000000001...
-1001000000001110010001101100001000111011100...
-0000000000000010000001101100001000111011100...
-1010001000001010000001101100001000111011100...
-0000110110110001000111111100011111001100011...
-\end{verbatim}
-The first line gives the \ty{ms} command, of which the sample size and
-the sequence length of the \ty{-r} flag are relevant for the
-subsequent analysis.  Unless the recombination rate is zero, trees
-start with their extent along this sequence in square brackets. They
-always end with a semi colon. The mutations, or segregating sites,
-along the sequence are given for the interval $(0,1)$, which we
-convert to sequence positions by multiplying with the sequence
-length. The haplotypes of zeros and ones, finally, are the basis for
-calculating distances to the query.
+The third line is blank, and the double forward slashes on the fourth
+line indicates the start of a sample. The next three lines contain
+trees. Unless the recombination rate is zero, trees start with their
+extent along the sequence in square brackets. They always end with a
+semi colon. So the first tree extends from position 1--11 along the
+sequence, the second along the 46 positions between 12 and 57, and the
+third along the remaining 43 positions 58--100. Notice that the three
+trees differ both in topology and branch lengths. Let's concentrate on
+the topology. The first tree has topology ((1,3)2) and thus groups 3
+with 1. The second has topology ((1,2)3) and thus groups 2 with 1, as
+does the third tree.
+
+\begin{figure}
+\begin{center}
+\input{../ms2nn/tree}
+\end{center}
+\caption{A sketch of the tree toplologies along the haplotype sample
+  consisting of 100 recombining units in Figure~\ref{fig:ms};
+  mutations are shown in red.}\label{fig:tree}
+\end{figure}
+
+Line 8 says there are two segregating sites, or mutations, in the
+sample. In line 9 the two segregating sites are listed by their
+``positions'' along the unit interval $(0,1)$, 0.2966 and
+0.7152. Along the sequence these positions are 30 and 72 as marked in
+red in Figure~\ref{fig:tree}.
+
+The three haplotypes of zeros and ones in the last three lines are the
+basis for calculating distances to the query. Since the first tree
+contains no mutations, the two distances from 1 to its neighbors are
+both zero. This means the closest neighbors are 2 and 3. Notice that
+this is different from the topological nearest neighbor, 2. The
+stochastic nature of mutations means that such contradictions between
+tree topology and distances are common.
+
+The second tree contains the first polymorphism mutation at position
+30. This mutation happened along the branch leading to 1, which means
+that its closest neighbors are again 2 and 3, this time with a
+distance of one mismatch (Figure~\ref{fig:tree}). Since the first two
+sets of nearest neighbors agree, they are merged into a single
+annotation. The third tree contains the second polymorphism at
+position 72. This mutation happened along the branch leading to 3. As
+a result, query 1 is closer to 2 than to 3, so its closest neighbor
+changes to 2.
 
 The program \ty{ms2nn} parses the \ty{ms} output and for a given query
-finds its closest relatives for each tree. By default these closest
-relatives are defined with respect to mutation distances, because
-these could be observed with a tool like Blast. However, the user can
-also opt for getting the ``true'' neighbors as read from the trees.
-
-The results are printed as pseudo-\ty{alfy} output, which starts with
-a FASTA header giving the name of the query, followed by a
-tab-separated table of four columns consisting of start, end, score,
-and one or more annotations separated by blanks. For example, if we
-apply \ty{alfy} with query 1 to the sequences obtained from the
-\ty{ms} output sketched above, we get
+finds its nearest neighbors for each tree. The results are printed as
+pseudo-\ty{alfy} output, which starts with a FASTA header giving the
+name of the query, followed by a tab-separated table of four columns
+consisting of start, end, score, and one or more annotations separated
+by blanks. For example, if we apply \ty{ms2nn} to the data in
+Figure~\ref{fig:mso}, we get
 \begin{verbatim}
-alfy -i q.fasta -j s.fasta | tr -d S
 >1
-1       345        134.1        3
-346     690        162.1        4
-691     975        271.6        4 3
-...
-9106    10000      418.5        2
+1       57      0.0175  2 3
+58      100     0.0000  2
 \end{verbatim}
+This means that for sequence positions 1--57, sequence 1 has closest
+neighbors 2 and 3 with a distance of $1/57\approx 0.0175$ mutations
+per site. For positions 72--100 the closest neighbor of 1 is 2, and
+the two sequences are identical.
+
+For simplicity, \ty{ms2nn} outputs the tree boundaries to delimit the
+annotations, even though they cannot be discovered from the
+data. Still, a search for the interval $(1,57)$ from sequence 1 would
+confirm that sequences 2 and 3 are neighbors with distance 0.0175.
+
+Instead of picking the nearest neighbors by distance, the user can
+also opt for getting the ``true'' neighbors as read from the trees. If
+we apply \ty{ms2nn} to the same data with tree analysis instead of
+distance analysis, we get
+\begin{verbatim}
+>1
+1       11      -1.0000 3
+12      100     -1.0000 2
+\end{verbatim}
+Now the topologically identical last two trees are merged into one
+annotation that extends from position 12 to the end
+(Figure~\ref{fig:tree}).  To remind the user that these neighbors were
+not determined from distances, the distances are set to a nonsensical
+value -1.
 
 \section{Implementing \ty{ms2nn}}
 Our outline of \ty{ms2nn} has hooks for imports, functions, and the
@@ -127,7 +191,7 @@ make it a mandatory flag.
 #+end_export
 #+begin_src go <<Set usage, Pr. \ref{pr:m2n}>>=
   u := "ms2nn -q <query> [option]... [foo.ms]..."
-  p := "Convert the output of Hudson's ms to alfy output."
+  p := "Convert the output of ms to alfy output."
   e := "ms 5 1 -t 100 -r 100 10000 -T | ms2nn -q 1"
   clio.Usage(u, p, e)
 #+end_src
@@ -197,9 +261,9 @@ takes as argument the query and the tree analysis flags.
 #+begin_export latex
 Inside the function \ty{parse}, we retrieve the arguments, prepare the
 storage, and iterate over the input to store the data. From the stored
-data we find the query's neighbors per tree. Trees may have identical
-neighbors, in which case we merge their intervals, before we print the
-neighbors.
+data we find the query's neighbors per tree. As explained above, trees
+may have identical neighbors, in which case we merge their intervals,
+before we print the neighbors.
 #+end_export
 #+begin_src go <<Functions, Pr. \ref{pr:m2n}>>=
   func parse(r io.Reader, args... interface{}) {
@@ -222,15 +286,18 @@ We import \ty{io} and \ty{bufio}.
   "bufio"
 #+end_src
 #+begin_export latex
-We retrieve the two arguments, query and tree analysis. The query is a
+We retrieve two arguments, query and tree analysis. The query is a
 string denoting an integer, which serves as index into the slice of
-haplotypes. So we also convert it to its integer value.
+haplotypes. So we also convert it to its integer value. The input
+integer is one-based, but indexes are zero-based, so we make the query
+index zero-based, too.
 #+end_export
 #+begin_src go <<Retrieve arguments, Pr. \ref{pr:m2n}>>=
   query := args[0].(string)
   treeAnalysis := args[1].(bool)
   qi, err := strconv.Atoi(query)
   util.Check(err)
+  qi = qi - 1
 #+end_src
 #+begin_export latex
 We import \ty{strconv}.
@@ -239,11 +306,12 @@ We import \ty{strconv}.
   "strconv"
 #+end_src
 #+begin_export latex
-We need storage for the sample size, the sequence length, the trees,
-the positions of mutations, and the haplotypes. We also declare a
-variable for the tree start position, which we initialize to the
-position implied by \ty{ms}, 1. In the zero-based world of Go this
-means 0.
+\subsection{Store \ty{ms} Output}
+To store the output from \ty{ms}, we need storage for the sample size,
+the sequence length, the trees, the positions of mutations, and the
+haplotypes. We also declare a variable for the tree start position,
+which we initialize to the position implied by \ty{ms}, 1. In the
+zero-based world of Go this means 0.
 #+end_export
 #+begin_src go <<Prepare storage, Pr. \ref{pr:m2n}>>=
   var nsam, seqLen int
@@ -273,8 +341,9 @@ The line can be one of four things
 \item a tree ending with ``;``, in which case we store it
 \item a row of positions of mutations starting with ``p'', in which
   case we store them
-\item a row of polymorphisms starting with ``0'' or ``1'', in which case
-  we store the resulting haplotype
+\item a row of polymorphisms starting with ``0'' or ``1'' and not
+  containing any blanks (else it might be the seed), in which case we
+  store the resulting haplotype
 \end{enumerate}
 #+end_export
 #+begin_src go <<Classify line, Pr. \ref{pr:m2n}>>=
@@ -284,17 +353,18 @@ The line can be one of four things
 	  //<<Store tree, Pr. \ref{pr:m2n}>>
   } else if fc == 'p' {
 	  //<<Store positions of mutations, Pr. \ref{pr:m2n}>>
-  } else if fc == '1' || fc == '0' {
+  } else if (fc == '1' || fc == '0') &&
+	  strings.Index(line, " ") == -1 {
 	  //<<Store haplotype, Pr. \ref{pr:m2n}>>
   }
 #+end_src
 #+begin_export latex
 Recall that an \ty{ms} command looks like this,
 \begin{verbatim}
-ms 5 1 -t 100 -r 100 10000 -T
+ms 3 1 -s 2 -r 1 100 -T
 \end{verbatim}
-of which we need the sample size, 5, the sequence length, 10,000, and
-require tree printing, \ty{-T}. Since tree printing is necessary for
+of which we need the sample size, 3, the sequence length, 100, and
+tree printing, \ty{-T}. Since tree printing is necessary for
 \ty{ms2nn} to work, we check this first. Then we get the sample size
 and the sequence length.
 #+end_export
@@ -340,10 +410,11 @@ The sequence length is the second of the arguments of \ty{-r}.
   }
 #+end_src
 #+begin_export latex
-A tree refers to an interval that has a start and an end. These start
-and end positions imply start and end indexes in a haplotype
-array. The tree also contains neighbors and mismatches with respect to
-a query. The tree itself is stored as its root.
+The next thing we store is a tree. A tree refers to an interval that
+has a start and an end. These start and end positions imply start and
+end indexes in a haplotype array. The tree also contains neighbors and
+mismatches with respect to a query. The tree itself is stored as its
+root.
 #+end_export
 #+begin_src go <<Types, Pr. \ref{pr:m2n}>>=
   type Tree struct {
@@ -362,8 +433,8 @@ We import \ty{nwk}.
 "github.com/evolbioinf/nwk"
 #+end_src
 #+begin_export latex
-To store a tree, we extract it together with
-its extent, and construct it.
+To store a tree, we extract its string representation together with
+its extent, and construct it from the string representation.
 #+end_export
 #+begin_src go <<Store tree, Pr. \ref{pr:m2n}>>=
   tree := new(Tree)
@@ -374,9 +445,9 @@ its extent, and construct it.
 #+end_src
 #+begin_export latex
 In order to extract the tree string, we split the input line at the
-closing square bracket. If the tree has an extent, the second entry in
-the resulting array is the tree string, otherwise it's the first
-entry.
+closing square bracket. If the tree has a prepended extent in square
+brackets (Figure~\ref{fig:mso}), the second entry in the resulting
+array is the tree string, otherwise it's the first entry.
 #+end_export
 #+begin_src go <<Extract tree string, Pr. \ref{pr:m2n}>>=
   arr := strings.Split(line, "]")
@@ -436,8 +507,8 @@ We store a haplotype as a raw string.
   haplotypes = append(haplotypes, line)
 #+end_src
 #+begin_export latex
-The neighbors are either found by analyzing the tree or by analyzing
-the distances between the haplotypes along the extent of the tree.
+The nearest neighbors are found by analyzing either the trees or the
+haplotype distances along the sequence.
 #+end_export
 #+begin_src go <<Find neighbors, Pr. \ref{pr:m2n}>>=
   if treeAnalysis {
@@ -447,8 +518,12 @@ the distances between the haplotypes along the extent of the tree.
   }
 #+end_src
 #+begin_export latex
-To analyze trees, we iterate over them and call the function
-\ty{findParent} on the root of each one.
+\subsection{Analyze Trees}
+When analyzing a tree, we first visit the query leaf. Its parent's
+children are the desired nearest neighbors (plus the query). The
+machinery for finding the nearest neighbors starts by iterating over
+the trees and calling the function \ty{findParent} on the root of each
+one.
 #+end_export
 #+begin_src go <<Analyze trees, Pr. \ref{pr:m2n}>>=
   for _, tree := range trees {
@@ -497,6 +572,7 @@ we append the node label to the tree's slice of neighbors.
   }
 #+end_src
 #+begin_export latex
+\subsection{Analyze Distances}
 If instead of analyzing the trees we analyze the distances, we first
 determine the start and end positions along the haplotypes that belong
 to the tree. Then we find the nearest neighbors by distance.
@@ -507,44 +583,31 @@ to the tree. Then we find the nearest neighbors by distance.
 #+end_src
 #+begin_export latex
 To find the haplotype start and end indexes, we iterate over the trees
-and first find the start index, then the end index.
+and adjust the end index. For this we scan the positions array, so we
+store its length for later reference.
 #+end_export
 #+begin_src go <<Find haplotype start and end indexes, Pr. \ref{pr:m2n}>>=
-  si := 0
+  ii := 0
+  np := len(positions)
   for _, tree := range trees {
-	  //<<Find start index, Pr. \ref{pr:m2n}>>
 	  //<<Find end index, Pr. \ref{pr:m2n}>>
   }
 #+end_src
 #+begin_export latex
-To find the start index, we map the start of the tree to the interval
-$(0,1)$ and then advance until we have found the first mutation that
-intersects the tree. We make sure that we do not move beyond the end
-of the slice of positions.
-#+end_export
-#+begin_src go <<Find start index, Pr. \ref{pr:m2n}>>=
-  np := len(positions)
-  s := float64(tree.start) / float64(seqLen)
-  for si < np && positions[si] < s {
-	  si++
-  }
-  tree.si = si
-#+end_src
-#+begin_export latex
-The end index is initialized to the start index. Then we map the end
-of the tree to $(0,1)$---like we did with the start---and walk right
-until we exceed the end of the tree. The position we have now reached
-is just beyond the desired one, and identical to the start position
-for the next round.
+The current index is the start index for this tree. We map the end of
+the tree to $(0,1)$, the interval on which mutations are placed by
+\ty{ms} (Figure~\ref{fig:mso}). Then we walk to the right until we
+either find the end of the tree or the first mutation beyond it. The
+position we have now reached is just beyond the desired one, and
+identical to the start index for the next round.
 #+end_export
 #+begin_src go <<Find end index, Pr. \ref{pr:m2n}>>=
-  ei := si
+  tree.si = ii
   e := float64(tree.end) / float64(seqLen)
-  for ei < np && positions[ei] <= e {
-	  ei++
+  for ii < np && positions[ii] <= e {
+	  ii++
   }
-  tree.ei = ei - 1
-  si = ei
+  tree.ei = ii - 1
 #+end_src
 #+begin_export latex
 Having divided the haplotypes among the trees, we can now find the
@@ -606,7 +669,7 @@ We store all neighbors with the minimum distance.
 #+end_export
 #+begin_src go <<Add distance neighbors, Pr. \ref{pr:m2n}>>=
   for i := 0; i < nsam; i++ {
-	  if i+1 != qi && dist[i] == min {
+	  if i != qi && dist[i] == min {
 		  nei := strconv.Itoa(i+1)
 		  tree.neighbors =
 			  append(tree.neighbors, nei)
@@ -622,7 +685,7 @@ neighbors of all trees.
   //<<Merge trees with identical neighbors, Pr. \ref{pr:m2n}>>
 #+end_src
 #+begin_export latex
-We sort the neighbors by calling a library function for sorting
+We sort the neighbors by calling the library function for sorting
 strings.
 #+end_export
 #+begin_src go <<Sort neighbors, Pr. \ref{pr:m2n}>>=
@@ -688,14 +751,13 @@ We import \ty{fmt}.
 #+end_src
 #+begin_export latex
 If we used tree analysis, we have not kept track of the mismatches, in
-which case we signal this by setting the number of mismatches per site
-to the nonsensical -1. Otherwise we simply divide the mismatches by
-the tree extent.
+which case we set the number of mismatches per site to -1. Otherwise
+we simply divide the mismatches by the tree extent.
 #+end_export
 #+begin_src go <<Calculate mismatches per site, Pr. \ref{pr:m2n}>>=
   mm = -1
   if !treeAnalysis {
-	  ext := tree.end - tree.start
+	  ext := tree.end - tree.start + 1
 	  mm = float64(tree.mm) / float64(ext)
   }
 #+end_src
@@ -733,11 +795,11 @@ in turn.
 #+end_src
 #+begin_export latex
 We construct two tests with queries 1 and 2, then repeat with tree
-merging. All tests run on the input file \ty{msTest.out}.
+merging. All tests run on the input file \ty{test.ms}.
 #+end_export
 #+begin_src go <<Construct tests, Pr. \ref{pr:m2nt}>>=
   p := "./ms2nn"
-  f := "msTest.out"
+  f := "test.ms"
   test := exec.Command(p, "-q", "1", f)
   tests = append(tests, test)
   test = exec.Command(p, "-q", "2", f)

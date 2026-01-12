@@ -1,0 +1,16 @@
+\begin{pspicture}(0,0)(2,2)
+  \psset{xunit=0.5cm,yunit=0.5cm}
+  \rput(0,0){\rnode{1}{}}
+  \rput(0,-0.4){1}
+  \rput(1,0){\rnode{2}{}}
+  \rput(1,-0.4){2}
+  \rput(2,0){\rnode{3}{}}
+  \rput(2,-0.4){3}
+  \rput(0.5,1){\rnode{4}{}}
+  \rput(1.5,2){\rnode{5}{}}
+
+  \ncline{1}{4}
+  \ncline{2}{4}
+  \ncline{4}{5}
+  \ncline{3}{5}\ncput{\textcolor{red}{\textbf{$-$}}}
+\end{pspicture}
