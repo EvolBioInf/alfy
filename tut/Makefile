@@ -1,7 +1,7 @@
 txt = tut
 nw = $(shell which noweb)
 
-all: cross.sh sda.sh eda.sh neis.sh alfy2bed.awk senspec.awk
+all: cross.sh sda.sh eda.sh neiSim.sh alfy2bed.awk senspec.awk
 cross.sh: $(txt).org
 	if [ "$(nw)" != "" ]; then\
 		bash ../scripts/org2nw $(txt).org | notangle -Rcross.sh > cross.sh;\
@@ -14,9 +14,9 @@ eda.sh: $(txt).org
 	if [ "$(nw)" != "" ]; then\
 		bash ../scripts/org2nw $(txt).org | notangle -Reda.sh > eda.sh;\
 	fi
-neis.sh: $(txt).org
+neiSim.sh: $(txt).org
 	if [ "$(nw)" != "" ]; then\
-		bash ../scripts/org2nw $(txt).org | notangle -Rneis.sh > neis.sh;\
+		bash ../scripts/org2nw $(txt).org | notangle -RneiSim.sh > neiSim.sh;\
 	fi
 alfy2bed.awk: $(txt).org
 	if [ "$(nw)" != "" ]; then\
@@ -27,4 +27,4 @@ senspec.awk: $(txt).org
 		bash ../scripts/org2nw $(txt).org | notangle -Rsenspec.awk > senspec.awk;\
 	fi
 clean:
-	rm -f cross.sh sda.sh eda.sh neis.sh alfy2bed.awk senspec.awk
+	rm -f cross.sh sda.sh eda.sh neiSim.sh alfy2bed.awk senspec.awk
