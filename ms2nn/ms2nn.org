@@ -16,7 +16,7 @@ estimated and true nearest neighbors can be compared.
 
 \begin{figure}[ht]
 \begin{center}
-\input{../ms2nn/ms}
+\scalebox{0.5}{\input{../ms2nn/ms}}
 \end{center}
 \caption{Workflow for testing the nearest neighbor predictions
   produced by \ty{alfy} using \ty{ms2nn}; ideally, the nearest
@@ -71,7 +71,7 @@ line indicates the start of a sample. The next three lines contain
 trees. Unless the recombination rate is zero, trees start with their
 extent along the sequence in square brackets. They always end with a
 semi colon. So the first tree extends from position 1--11 along the
-sequence, the second along the 46 positions between 12 and 57, and the
+sequence, the second along the next 46 positions between 12 and 57, and the
 third along the remaining 43 positions 58--100. Notice that the three
 trees differ both in topology and branch lengths. Let's concentrate on
 the topology. The first tree has topology ((1,3)2) and thus groups 3
@@ -91,15 +91,16 @@ Line 8 says there are two segregating sites, or mutations, in the
 sample. In line 9 the two segregating sites are listed by their
 ``positions'' along the unit interval $(0,1)$, 0.2966 and
 0.7152. Along the sequence these positions are 30 and 72 as marked in
-red in Figure~\ref{fig:tree}.
+red in Figure~\ref{fig:tree}. The three haplotypes of zeros and ones
+in the last three lines are the basis for calculating distances to the
+query.
 
-The three haplotypes of zeros and ones in the last three lines are the
-basis for calculating distances to the query. Since the first tree
-contains no mutations, the two distances from 1 to its neighbors are
-both zero. This means the closest neighbors are 2 and 3. Notice that
-this is different from the topological nearest neighbor, 2. The
-stochastic nature of mutations means that such contradictions between
-tree topology and distances are common.
+As shown in Figure~\ref{fig:tree}, the first tree contains no
+mutations, so the two distances from 1 to its neighbors are both
+zero. This means the closest neighbors are 2 and 3. Notice that this
+is different from the topological nearest neighbor, 2. The stochastic
+nature of mutations means that such contradictions between tree
+topology and distances are common.
 
 The second tree contains the first polymorphism mutation at position
 30. This mutation happened along the branch leading to 1, which means
@@ -134,9 +135,9 @@ data. Still, a search for the interval $(1,57)$ from sequence 1 would
 confirm that sequences 2 and 3 are neighbors with distance 0.0175.
 
 Instead of picking the nearest neighbors by distance, the user can
-also opt for getting the ``true'' neighbors as read from the trees. If
-we apply \ty{ms2nn} to the same data with tree analysis instead of
-distance analysis, we get
+also opt for getting the ``true'' neighbors as read from the tree
+topology. If we apply \ty{ms2nn} to the same data with tree analysis
+instead of distance analysis, we get
 \begin{verbatim}
 >1
 1       11      -1.0000 3
@@ -146,7 +147,7 @@ Now the topologically identical last two trees are merged into one
 annotation that extends from position 12 to the end
 (Figure~\ref{fig:tree}).  To remind the user that these neighbors were
 not determined from distances, the distances are set to a nonsensical
-value -1.
+value, -1.
 
 \section{Implementing \ty{ms2nn}}
 Our outline of \ty{ms2nn} has hooks for imports, functions, and the
@@ -374,7 +375,7 @@ and the sequence length.
   //<<Get sequence length, Pr. \ref{pr:m2n}>>
 #+end_src
 #+begin_export latex
-If the user did no switch on tree printing, something is wrong and we
+If the user did not switch on tree printing, something is wrong and we
 exit with a friendly message.
 #+end_export
 #+begin_src go <<Check tree printing, Pr. \ref{pr:m2n}>>=

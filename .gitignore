@@ -21,6 +21,7 @@ doc/ms2nn.tex
 doc/pab.tex
 doc/prepAlfy.tex
 doc/sir.tex
+doc/tut.tex
 doc/util.tex
 doc/version.txt
 
@@ -45,8 +46,12 @@ src/alfy
 src/MakefileMac
 
 test/
-tut
-
+tut/*.awk
+tut/*.sh
+tut/*.fasta
+tut/*.bed
+tut/*.out
+tut/*.ms
 
 
 
