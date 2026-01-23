@@ -1,3 +1,5 @@
+alfy/
+
 bin/
 
 data
@@ -15,13 +17,24 @@ doc/code/
 doc/date.txt
 doc/intro.tex
 doc/mat.tex
+doc/ms2nn.tex
 doc/pab.tex
 doc/prepAlfy.tex
 doc/sir.tex
+doc/tut.tex
 doc/util.tex
 doc/version.txt
 
 intro/
+
+ms2nn/ms.alfy
+ms2nn/ms.fasta
+ms2nn/ms.nn
+ms2nn/ms.out
+ms2nn/ms2nn
+ms2nn/q.fasta
+ms2nn/s.fasta
+ms2nn/seedms
 
 pab/
 palfy/
@@ -33,8 +46,12 @@ src/alfy
 src/MakefileMac
 
 test/
-tut
-
+tut/*.awk
+tut/*.sh
+tut/*.fasta
+tut/*.bed
+tut/*.out
+tut/*.ms
 
 
 

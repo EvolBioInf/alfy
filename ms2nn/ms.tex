@@ -1,0 +1,15 @@
+\begin{forest}
+  for tree={edge={->}, l sep=1cm}
+  [parameters
+    [haplotypes,
+      edge label={node[midway,right]{\ty{ms}}}
+      [DNA sequences,
+        edge label={node[midway,left]{\ty{ms2dna}~~}}
+        [estimated nearest neighbors,
+          edge label={node[midway,left]{\ty{alfy}}}]
+      ]
+      [true nearest neighbors,
+        edge label={node[midway,right]{~~\ty{ms2nn}}}]
+    ]
+  ]
+\end{forest}

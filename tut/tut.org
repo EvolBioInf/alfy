@@ -1,0 +1,830 @@
+#+begin_export latex
+\section{Getting Started}
+Apart from the programs in the
+\href{https://github.com/evolbioinf/alfy}{\ty{alfy}} repo, this
+tutorial requires the program
+\href{https://home.uchicago.edu/rhudson1/source/mksamples.html}{\ty{ms}}
+and the programs of the \href{https://github.com/evolbioinf/biobox}{Biobox
+ repo}.
+\section{Simulated Data}
+\subsection*{Single Crossover}
+For our first simulation experiment we construct three 10\,kb
+sequences, a query, $q$, and two subjects, $s_1$ and $s_2$. As
+sketched in Figure~\ref{fig:hom}, the first half of $q$ is more
+closely related to $s_1$, the second half of $q$ is more closely
+related to $s_2$.
+
+\begin{figure}
+  \begin{center}
+  \hspace{-5cm}
+    \begin{tabular}{cc}
+      $q$ & \psline[linewidth=2pt,linecolor=red](0,0)(2.5,0)
+      \psline[linewidth=2pt,linecolor=blue](2.5,0)(5,0)\\
+      $s_1$ & \psline[linewidth=2pt,linecolor=red](0,0)(5,0)\\
+      $s_2$ & \psline[linewidth=2pt,linecolor=blue](0,0)(5,0)
+    \end{tabular}
+  \end{center}
+  \caption{A query sequence, $q$ and two subject sequences, $s_1$ and
+    $s_2$; matching colors indicate homology.}\label{fig:hom}
+\end{figure}
+
+We can think of $q$ as the result of a crossing over between $s_1$ and
+$s_2$, so we call the script for generating these sequences
+\ty{cross.sh}. Inside \ty{cross.sh} we construct the two subject
+sequences and the query. Since \ty{alfy} requires the subject
+sequences to be in a single file, we also store $s_1$ and $s_2$ in one
+file. At the end we inform the user what we've done.
+\bpr{cross.sh}{pr:cro}
+#+end_export
+#+begin_src sh <<cross.sh>>=
+  ##<<Construct $s_1$, Pr. \ref{pr:cro}>>
+  ##<<Construct $s_2$, Pr. \ref{pr:cro}>>
+  ##<<Construct $q$, Pr. \ref{pr:cro}>>
+  ##<<Store $s_1$ and $s_2$ in single file, Pr. \ref{pr:cro}>>
+  ##<<Inform user, Pr. \ref{pr:cro}>>
+#+end_src
+#+begin_export latex
+\epr
+Subject $s_1$ is just a random 10\,kb sequence. We label it \ty{s\_1}
+and save it in \ty{s1.fasta}.
+#+end_export
+#+begin_src sh <<Construct $s_1$, Pr. \ref{pr:cro}>>=
+  ranseq -l 10000 |
+      sed 's/>.*/>s_1/' > s1.fasta
+#+end_src
+#+begin_export latex
+The second subject, $s_2$, is homologous to $s_1$, so we construct
+$s_2$ by mutating $s_1$ at 10\,\% of its positions. We call the
+sequence \ty{s\_2} and store it in \ty{s2.fasta}.
+#+end_export
+#+begin_src sh <<Construct $s_2$, Pr. \ref{pr:cro}>>=
+  mutator -m 0.1 s1.fasta |
+      sed 's/>.*/>s_2/' > s2.fasta
+#+end_src
+#+begin_export latex
+We construct the query in two steps. In the first step we cut out the
+first 5\,kb of $s_1$ and mutate them with mutation rate 1\,\%. We
+label the sequence q and store it in \ty{q.fasta}.
+#+end_export
+#+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
+  cutSeq -r 1-5000 s1.fasta |
+      mutator -m 0.01 |
+      sed 's/>.*/>q/' > q.fasta
+#+end_src
+#+begin_export latex
+In the second step we cut out the second 5\,kb of $s_2$, also mutate
+them with rate 1\,\%, remove the header and append them to $q$.
+#+end_export
+#+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
+  cutSeq -r 5001-10000 s2.fasta |
+      mutator -m 0.01 |
+      tail -n +2 >> q.fasta
+#+end_src
+#+begin_export latex
+We store the two subject sequences in a single file, \ty{s.fasta}.
+#+end_export
+#+begin_src sh <<Store $s_1$ and $s_2$ in single file, Pr. \ref{pr:cro}>>=
+  cat s[12].fasta > s.fasta
+#+end_src
+#+begin_export latex
+We tell the user that the query is in \ty{q.fasta} and the subjects
+are in \ty{s.fasta}.
+#+end_export
+#+begin_src sh <<Inform user, Pr. \ref{pr:cro}>>=
+  printf "Wrote one query to q.fasta and "
+  printf "two subjects to s.fasta.\n"
+#+end_src
+#+begin_export latex
+Now we can run \ty{cross.sh}.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  bash cross.sh
+#+end_src
+#+begin_export latex
+The program \ty{alfy} does a reasonable job at detecting the crossover
+close to position 5,000. We can run this experiment repeatedly to see
+that the result is stable.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i q.fasta -j s.fasta
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>q
+1       4995      71.1  s_1
+4996    10000    101.8  s_2
+\end{verbatim}
+
+\subsection*{Multiple Crossovers}
+The script \ty{cross.sh} is rather limited in the scenarios it can
+simulate. We now write a more general script for neighbors
+simulations, \ty{neiSim.sh}, which uses the coalescent simulation
+program \ty{ms}~\cite{hud02:gen} to generate one query sequence and
+one or more subject sequences. Inside \ty{neiSim.sh}, we interact with
+the user, simulate haplotypes, convert them to sequences, store the
+query sequence, and store the subject sequences.
+\bpr{neiSim.sh}{pr:nei}
+#+end_export
+#+begin_src sh <<neiSim.sh>>=
+  ##<<User interaction, Pr. \ref{pr:nei}>>
+  ##<<Generate haplotypes, Pr. \ref{pr:nei}>>
+  ##<<Convert haplotypes to sequences, Pr. \ref{pr:nei}>>
+  ##<<Store query, Pr. \ref{pr:nei}>>
+  ##<<Store subjects, Pr. \ref{pr:nei}>>
+#+end_src
+#+begin_export latex
+\epr In the user interaction we first set the default option values
+for the \ty{ms} command, then we iterate over the options.
+#+end_export
+#+begin_src sh <<User interaction, Pr. \ref{pr:nei}>>=
+  ##<<Set default option values, Pr. \ref{pr:nei}>>
+  ##<<Iterate over options, Pr. \ref{pr:nei}>>
+#+end_src
+#+begin_export latex
+We set the default values for five options, the
+\begin{enumerate}
+\item sample size, \ty{-n}, to 3
+\item $\theta$, \ty{-t}, to 100
+\item $\rho$, \ty{-r}, to 0
+\item sequence length, \ty{-l}, to 10\,kb
+\item seed for random number generator, \ty{-s}, to a random number
+\end{enumerate}
+#+end_export
+#+begin_src sh <<Set default option values, Pr. \ref{pr:nei}>>=
+  n=3
+  t=100
+  r=0
+  l=10000
+  s=$RANDOM
+#+end_src
+#+begin_export latex
+We iterate over the options and respond to our own options. We also
+respond to a plea for help and an unknown option.
+#+end_export
+#+begin_src sh <<Iterate over options, Pr. \ref{pr:nei}>>=
+  while getopts "hn:t:r:l:s:" opt; do
+      case $opt in
+	  ##<<Respond to own option, Pr. \ref{pr:nei}>>
+	  ##<<Respond to help option, Pr. \ref{pr:nei}>>
+	  ##<<Respond to unknown option, Pr. \ref{pr:nei}>>
+      esac
+  done
+#+end_src
+#+begin_export latex
+We set our five options.
+#+end_export
+#+begin_src sh <<Respond to own option, Pr. \ref{pr:nei}>>=
+  n) n=$OPTARG;;
+  t) t=$OPTARG;;
+  r) r=$OPTARG;;
+  l) l=$OPTARG;;
+  s) s=$OPTARG;;
+#+end_src
+#+begin_export latex
+If the user asked for help, we print the usage and exit without an
+error.
+#+end_export
+#+begin_src sh <<Respond to help option, Pr. \ref{pr:nei}>>=
+  h)
+    ##<<Print usage, Pr. \ref{pr:nei}>>
+    exit 0;;
+#+end_src
+#+begin_export latex
+In the usage we print the actual usage message, an explanation of
+\ty{neiSim.sh}, and an example command. Then we list our five options
+with their default values.
+#+end_export
+#+begin_src sh <<Print usage, Pr. \ref{pr:nei}>>=
+  printf "Usage: bash neiSim.sh [-h] [option]...\n"
+  printf "Neighbors simulation as one query in query.fasta "
+  printf "and one or more subject sequences in "
+  printf "subjects.fasta.\n\tThe underlying haplotypes "
+  printf "are in haplotypes.ms.\n"
+  printf "Example: bash neiSim.sh -n 5 -t 50 -r 1 -s 23\n"
+  printf "   -n int\n\tsample size (default $n)\n"
+  printf "   -t float\n\ttheta (default $t)\n"
+  printf "   -r float\n\trho (default $r)\n"
+  printf "   -l int\n\tsequence length (default $l)\n"
+  printf "   -s int\n\tseed (default random integer)\n"
+#+end_src
+#+begin_export latex
+If we find an unknown option, we also print the usage, but this time
+exit with an error.
+#+end_export
+#+begin_src sh <<Respond to unknown option, Pr. \ref{pr:nei}>>=
+  ?)
+    ##<<Print usage, Pr. \ref{pr:nei}>>
+    exit 1;;
+#+end_src
+#+begin_export latex
+We generate the haplotypes by combining \ty{ms} with the options just
+recovered plus tree printing (\ty{-T}), and save them in
+\ty{haplotypes.ms}.
+#+end_export
+#+begin_src sh <<Generate haplotypes, Pr. \ref{pr:nei}>>=
+  ms $n 1 -t $t -r $r $l -seeds 0 0 $s -T > haplotypes.ms
+#+end_src
+#+begin_export latex
+We convert the haplotypes to sequences with \ty{ms2dna}, which we also
+seed to keep results reproducible. Now, the program \ty{ms} labels
+sequences 1, 2,... while \ty{ms2dna} labels them S1, S2,... To get
+uniform labels, we remove the S from the labels generated by
+\ty{ms2dna} before we save the sequences to the temporary file
+\ty{tmp.fasta}.
+#+end_export
+#+begin_src sh <<Convert haplotypes to sequences, Pr. \ref{pr:nei}>>=
+  ms2dna -s $s haplotypes.ms |
+      tr -d S > tmp.fasta
+#+end_src
+#+begin_export latex
+Any of the sequences just generated can be used as query, we pick
+sequence 1 and store it in file \ty{query.fasta}.
+#+end_export
+#+begin_src sh <<Store query, Pr. \ref{pr:nei}>>=
+  getSeq 1 tmp.fasta > query.fasta
+#+end_src
+#+begin_export latex
+The non-query sequences are the subject sequences, which we store in
+\ty{sub\-jects.\-fasta}.
+#+end_export
+#+begin_src sh <<Store subjects, Pr. \ref{pr:nei}>>=
+  getSeq -c 1 tmp.fasta > subjects.fasta
+#+end_src
+#+begin_export latex
+We don't need the temporary file any more, so we delete it.
+#+end_export
+#+begin_src sh <<Store subjects, Pr. \ref{pr:nei}>>=
+  rm tmp.fasta
+#+end_src
+#+begin_export latex
+Having written \ty{neiSim.sh}, we run it and set the seed for the random
+number generator to 1.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  bash neiSim.sh -s 1
+#+end_src
+#+begin_export latex
+When we run \ty{alfy} on the query and subject sequences we just
+generated, we get sequence 3 as the closest neighbor.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  alfy -i query.fasta -j subjects.fasta
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1       10000      1194.0       3
+\end{verbatim}
+#+end_export
+#+begin_export latex
+If we extract the expectation from the simulated haplotypes, we get
+the same result.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+ms2nn -q 1 haplotypes.ms
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1	10000	0.0006	3
+\end{verbatim}
+#+end_export
+#+begin_export latex
+We can also get the same result using Blast.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  blastn -query query.fasta -subject subjects.fasta \
+	 -outfmt 6 |
+      column -t
+#+end_src
+#+begin_export latex
+\small
+\begin{verbatim}
+1  3  99.940  10000  6   0  1  10000  1  10000  0.0  18434
+1  2  99.430  10000  57  0  1  10000  1  10000  0.0  18151
+\end{verbatim}
+\normalsize
+So far, so good. Let's simulate another set of haplotypes by changing
+the seed of the random number generator.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  bash neiSim.sh -s 2
+#+end_src
+#+begin_export latex
+Now the \ty{alfy} result fluctuates between 2 and 3, even though we
+know that no recombination has taken place. We save the output to
+\ty{alfy.out}.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  alfy -i query.fasta -j subjects.fasta |
+      tee alfy.out
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1	2205	   1100.2	2
+2206	2865	    378.6	3
+2866	7185	   2562.3	2
+7186	7845	   1131.3	3
+7846	10000	   1051.7	2
+\end{verbatim}
+#+end_export
+#+begin_export latex
+We can calculate that 87\,\% of the query is annotated as having
+closest neighbor 2, the remaining 13\,\% as having closest neighbor 3
+using the script \ty{quan\-ti\-fy\-Ge\-no\-types.\-awk} distributed
+with \ty{alfy}.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  awk -f quantifyGenotypes.awk alfy.out
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+2	86.8
+3	13.2
+\end{verbatim}
+Subject 2 is also the ``true'' result. In the absence of
+recombination, \ty{ms2nn} just picks the closest haplotype.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  ms2nn -q 1 haplotypes.ms
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1	10000	0.0005	2
+\end{verbatim}
+#+end_export
+#+begin_export latex
+With Blast we can see that the local annotations of \ty{alfy} are
+correct four out of five times in this particular example.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  printf "Alfy\tBlast\n"
+  tail -n +2 alfy.out |
+      while read start end score anno; do
+	  printf "$anno\t"
+	  cutSeq -r $start-$end query.fasta > f.fasta
+	  blastn -query f.fasta -subject \
+		 subjects.fasta -outfmt 6 |
+	      head -n 1 |
+	      cut -f 2
+      done
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+Alfy    Blast
+3       3
+2       2
+3       3
+2       3
+3       3
+2       2
+\end{verbatim}
+#+end_export
+#+begin_export latex
+We now add recombination to the simulation.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  bash neiSim.sh -r 1 -s 3
+#+end_src
+#+begin_export latex
+The neighbors now fluctuate along the query, where for each
+recombining fragment, \ty{ms2nn} picks the closest subject.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  ms2nn -q 1 haplotypes.ms
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1	6874	0.0089	3
+6875	7444	0.0140	2
+7445	8130	0.0087	3
+8131	10000	0.0144	2
+\end{verbatim}
+#+end_export
+#+begin_export latex
+This fluctuation is traced by \ty{alfy}, albeit not perfectly.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  alfy -i query.fasta -j subjects.fasta |
+      tee alfy.out
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>1
+1       6825     108.7  3
+6826    7425      71.1  2
+7426    7815      98.9  3
+7816    8025      51.2  2
+8026    8145      34.9  3
+8146    10000     79.4  2
+\end{verbatim}
+To quantify the accuracy of \ty{alfy}, we calculate the sensitivity,
+$\sn$, of its prediction as
+\begin{equation}\label{eq:sn}
+\sn=\frac{\tp}{\tp+\fn},
+\end{equation}
+where $\tp$ are the true positive positions and $\fn$ the false
+negative positions. Similarly, we calculate the specificity, $\sp$, of
+the predictions as
+\begin{equation}\label{eq:sp}
+\sp=\frac{\tp}{\tp+\fp},
+\end{equation}
+where $\fp$ are the false positive positions.
+
+We use Bedtools for these calculations, which take as input three
+tab-delimited columns consisting of annotation, start, and
+end. Positions are zero-based, intervals are inclusive start,
+exclusive end. Hence the first five positions on chromosome1 would be
+\begin{verbatim}
+chromosome1     0       5
+\end{verbatim}
+We write the Awk program \ty{alfy2bed.awk} to convert the output from
+\ty{alfy} to Bedtools input.
+\bpr{alfy2bed.awk}{pr:a2b}
+#+end_export
+#+begin_src awk <<alfy2bed.awk>>=
+  !/>/ {
+    start = $1 - 1
+    end = $2
+    sbjct = $4
+    printf "%s\t%s\t%s\n",
+      sbjct, start, end
+  }
+#+end_src
+#+begin_export latex
+\epr We convert expected annotations and save them in \ty{exp.bed}.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  ms2nn -q 1 haplotypes.ms |
+      awk -f alfy2bed.awk > exp.bed
+#+end_src
+#+begin_export latex
+Similarly, we convert the observed \ty{alfy} annotations and save them
+in \ty{obs.bed}.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+  awk -f alfy2bed.awk alfy.out > obs.bed
+#+end_src
+#+begin_export latex
+We write the Awk program \ty{senspec.awk} to calculate the sensitivity
+and specificity from the expected and observed results. Inside the
+program we interact with the user and calculate the true positives,
+false negatives, and false positives. Then we calculate the
+sensitivity followed by the specificity before we print the result.
+\bpr{senspec.awk}{pr:sen}
+#+end_export
+#+begin_src awk <<senspec.awk>>=
+  BEGIN {
+    ##<<User interaction, Pr. \ref{pr:sen}>>
+    ##<<Calculate true positives, Pr. \ref{pr:sen}>>
+    ##<<Calculate false negatives, Pr. \ref{pr:sen}>>
+    ##<<Calculate false positives, Pr. \ref{pr:sen}>>
+    ##<<Calculate sensitivity, Pr. \ref{pr:sen}>>
+    ##<<Calculate specificity, Pr. \ref{pr:sen}>>
+    ##<<Print results, Pr. \ref{pr:sen}>>
+  }
+#+end_src
+#+begin_export latex
+\epr When interacting with the user, we make sure we are given the
+files containing the expected the observed intervals, $e$ and $o$.
+#+end_export
+#+begin_src awk <<User interaction, Pr. \ref{pr:sen}>>=
+  if (!e || !o) {
+    m = "Usage: awk -f senspec.awk "
+    m = m "-v e=<exp.txt> -v o=<obs.txt>"
+    print m
+    m = "Calculate sensitivity and speciticity "
+    m = m "from expected and observed nearest neighbors"
+    print m
+    exit 0
+  }
+#+end_src
+#+begin_export latex
+The true positives are calculated as $\tp=e\cap o$.
+#+end_export
+#+begin_src awk <<Calculate true positives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools intersect -a %s -b %s"
+  cmd = sprintf(cmd, e, o)
+  while (cmd | getline) {
+    l = $3 - $2
+    tp += l
+  }
+  close(cmd)
+#+end_src
+#+begin_export latex
+The false negatives are calculated as $\fn=e\setminus o$.
+#+end_export
+#+begin_src awk <<Calculate false negatives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools subtract -a %s -b %s"
+  cmd = sprintf(cmd, e, o)
+  while (cmd | getline) {
+    l = $3 - $2
+    fn += l
+  }
+  close(cmd)
+#+end_src
+#+begin_export latex
+The false positives are calculated as $\fp=o\setminus e$.
+#+end_export
+#+begin_src awk <<Calculate false positives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools subtract -a %s -b %s"
+  cmd = sprintf(cmd, o, e)
+  while (cmd | getline) {
+    l = $3 - $2
+    fp += l
+  }
+  close (cmd)
+#+end_src
+#+begin_export latex
+We calculate the sensitivity according to equation~(\ref{eq:sn}).
+#+end_export
+#+begin_src awk <<Calculate sensitivity, Pr. \ref{pr:sen}>>=
+  sn = tp / (tp + fn)
+#+end_src
+#+begin_export latex
+We calculate the specificity according to equation~(\ref{eq:sp}).
+#+end_export
+#+begin_src awk <<Calculate specificity, Pr. \ref{pr:sen}>>=
+  sp = tp / (tp + fp)
+#+end_src
+#+begin_export latex
+We end \ty{senspec.awk} by printing the sensitivity and specificity.
+#+end_export
+#+begin_src awk <<Print results, Pr. \ref{pr:sen}>>=
+  printf("#s_n\ts_p\n")
+  printf("%.4f\t%.4f\n", sn, sp)
+#+end_src
+#+begin_export latex
+For our data we calculate $\sn=\sp=0.97$, which is perhaps not bad for
+this particular example.
+#+end_export
+#+begin_src sh <<sda.sh>>=
+awk -f senspec.awk -v e=exp.bed -v o=obs.bed
+#+end_src
+#+begin_export latex
+We now have all the parts in hand for carrying out a systematic
+exploration of the accuracy of a tool for neighbors prediction like
+\ty{alfy}. This exploration is left to you, gentle reader.
+
+In this tutorial we now switch gears to look at real data.
+\section{Real Data}
+We now assume you have copied the data contained in the \ty{data}
+directory distributed with \ty{alfy} to your current directory. Your
+current directory should also contain the script
+\ty{quantifyGenotypes.awk} from the directory \ty{scripts} distributed
+with \ty{alfy}.
+
+Our analysis is centered on HIV genomes. We annotate the query strain
+\ty{A+\-DQ\-083238} using 42 pure strains as subject.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A+DQ083238
+1       225       8.6   A1+AF004885
+226     495      25.1   A1+AF069670
+496     930      37.8   G+AF084936
+931     1155      6.6   A1+AF069670
+1156    1770     21.3   C+U52953
+1771    1875     16.4   C+AF067155
+1876    2175     11.7   A1+AF069670
+2176    2655     25.1   A1+AF004885
+2656    3285     23.6   C+AF067155
+3286    3585     29.5   C+AY772699
+3586    3825     14.7   C+AF067155
+3826    3915     15.0   C+U52953
+3916    4185     16.1   C+AY772699
+4186    4335     12.6   C+U52953
+4336    5025     23.9   A1+AF004885
+5026    5205     24.9   G+AF061642
+5206    5295     24.9   A1+AF004885
+5296    5415     10.0   A1+AF069670
+5416    5820     12.4   A1+U51190
+5821    6030     16.4   A1+AF484509
+6031    6225      8.4   A1+AF069670
+6226    6555     11.6   A1+AF004885
+6556    6705      7.7   A2+AF286238
+6706    6825      0.0   A1+AF004885
+6826    7140     11.3   A1+AF484509
+7141    7485      8.1   A1+AF004885
+7486    7755     18.4   D+K03454
+7756    8640     19.6   A1+AF004885
+8641    8805      1.4   A1+U51190
+8806    9330      8.9   A1+AF004885
+9331    9699     15.8   A1+U51190
+\end{verbatim}
+This means that positions 1--225 of A+DQ083238 are most closely
+related to strain A1+AF004885. Further, across that interval the
+average shustring length of the shustrings induced by the ``winning''
+subject sequence---A1+AF004885 in this case---is 8.6, which is a
+measure of the strength of the homology signal across that interval.
+
+To get a clearer view of the distribution of the various annotations,
+we summarize the \ty{alfy} output.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta  | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A+DQ083238
+A1+AF004885  38.0
+A1+AF069670  11.4
+C+AF067155   10.1
+A1+U51190    9.7
+C+U52953     8.8
+C+AY772699   5.9
+A1+AF484509  5.4
+G+AF084936   4.5
+D+K03454     2.8
+G+AF061642   1.9
+A2+AF286238  1.5
+\end{verbatim}
+This indicates that 38.0\% of strain A+DQ083238 is most closely
+related to strain A1+AF004885, 11.4\% to strain C+AF067155, etc.
+
+We further summarizes the result by collapsing annotations for strains
+that belong to the same group.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta  | 
+      sed 's/+.*//' | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A
+A1  64.6
+C   24.7
+G   6.3
+D   2.8
+A2  1.5
+\end{verbatim}
+The program \ty{alfy} works in three steps:
+\be
+\I Construct enhanced suffix array from all query and
+subject sequences;
+\I determine ``winning'' subjects across contiguous intervals
+along a query;
+\I carry out sliding window analysis of these closest neighbors intervals to
+find the final annotation of a given query.
+\ee
+The last step is sensitive to the length of the sliding window. By
+default this is 300 bp; if we set it to 400 bp, the results
+change somewhat, but not dramatically.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -w 400 -i A+DQ083238.fasta -j hiv42.fasta  | 
+      sed 's/+.*//' | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A
+A1  63.1
+C   26.8
+G   7.6
+D   2.5
+\end{verbatim}
+
+We may only be interested in ``strong'' homology signals in our
+analysis. These are defined as regions where the average shustring
+length is greater than the maximum shustring length occurring by
+chance alone. Regions with an average shustring length below the
+threshold value are marked \ty{nh} for ``no homology''.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta -M
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A+DQ083238
+1       225       8.6   A1+AF004885
+226     495      25.1   A1+AF069670
+496     930      37.8   G+AF084936
+931     1155      6.6   nh
+1156    1770     21.3   C+U52953
+1771    1875     16.4   C+AF067155
+1876    2175     11.7   A1+AF069670
+2176    2655     25.1   A1+AF004885
+2656    3285     23.6   C+AF067155
+3286    3585     29.5   C+AY772699
+3586    3825     14.7   C+AF067155
+3826    3915     15.0   C+U52953
+3916    4185     16.1   C+AY772699
+4186    4335     12.6   C+U52953
+4336    5025     23.9   A1+AF004885
+5026    5205     24.9   G+AF061642
+5206    5295     24.9   A1+AF004885
+5296    5415      9.5   A1+AF069670
+5416    5820     13.3   A1+U51190
+5821    6030     16.4   A1+AF484509
+6031    6225      8.4   A1+AF069670
+6226    6555     11.6   A1+AF004885
+6556    6705      7.7   nh
+6706    6825      0.0   nh
+6826    7125     11.5   A1+AF484509
+7126    7275      2.2   nh
+7276    7485     11.4   A1+AF004885
+7486    7755     18.4   D+K03454
+7756    8505     20.3   A1+AF004885
+8506    8640     11.8   A1+AF004885
+8641    8835      1.4   nh
+8836    9330      9.1   A1+AF004885
+9331    9699     15.8   A1+U51190
+\end{verbatim}
+
+As before, we summarize the annotations, and find that the K
+annotation is now missing altogether and 8.7\% of the annotations are
+revealed as ``weak'' (\ty{nh}).
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta -M |
+      sed 's/+.*//' | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A
+A1  57.5
+C   24.7
+nh  8.7
+G   6.3
+D   2.8
+\end{verbatim}
+
+To further investigate what an \ty{nh} annotation means, we can
+extract such a region and blast it against the 42 subject
+sequences. This returns only weak homologues.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  cutSeq -r 6556-6705 A+DQ083238.fasta > nh.fasta
+  blastn -query nh.fasta -subject hiv42.fasta -outfmt 6  
+#+end_src
+#+begin_export latex
+\scriptsize
+\begin{verbatim}
+A+DQ083238  A1+AF069670  78.698  169  15  10  1  148  5770  5938  3.71e-21  93.5
+A+DQ083238  B+AY173951   93.333  60   4   0   1  60   5903  5962  4.79e-20  89.8
+A+DQ083238  J+AF082395   87.838  74   9   0   1  74   5877  5950  1.72e-19  87.9
+A+DQ083238  K+AJ249239   88.710  62   7   0   1  62   5756  5817  3.73e-16  76.8
+\end{verbatim}
+\normalsize
+
+The amount of weakly homologous regions is sensitive to the minimal
+length of a recombining fragment. This quantity is set by the \ty{-f}
+option with a default value of $\ty{-w}/4=75$. Increasing this value
+leads to fewer regions diagnosed as ``non homologous''. For example,
+if we double the value of \ty{-f}, we get none.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -f 150 -i A+DQ083238.fasta -j hiv42.fasta -M |
+      sed 's/+.*//' | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A
+A1  64.0
+C   24.7
+G   8.5
+D   2.8
+\end{verbatim}
+
+The previous result is again sensitive to the parameter settings. In
+this case the central quantity is the significance value for the
+maximum shustring length. The mathematical theory for this was derived
+in~\cite{hau09:est} and it is set with the \ty{-P} option. This can be
+interpreted like a classical $P$-value: it is the error probability
+when rejecting the null hypothesis that a shustring of some given
+length is due to chance alone. The default value of the \ty{-P} option
+is 0.4, which may strike you as rather high---why not use the
+classical $P=0.05$ threshold? It is important to realize that a query
+has to contain not just one shustring that is longer than the maximum
+shustring length, but this property has to apply on average to
+\textit{all} shustrings across a given window. If we set \ty{-P} to a
+much more stringent value like 0.05, almost a quarter of the query is
+annotated as non-homologous, most likely an overestimate.
+#+end_export
+#+begin_src sh <<eda.sh>>=
+  alfy -i A+DQ083238.fasta -j hiv42.fasta -M -P 0.05 | 
+      sed 's/+.*//' | 
+      awk -f quantifyGenotypes.awk
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>A
+A1  44.2
+nh  23.8
+C   22.7
+G   6.3
+D   2.9
+\end{verbatim}
+#+end_export
