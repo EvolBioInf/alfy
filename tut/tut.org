@@ -2,8 +2,9 @@
 \section{Getting Started}
 Apart from the programs in the
 \href{https://github.com/evolbioinf/alfy}{\ty{alfy}} repo, this
-tutorial requires the program
-\href{https://home.uchicago.edu/rhudson1/source/mksamples.html}{\ty{ms}}
+tutorial requires the coalescent simulator
+\href{https://home.uchicago.edu/rhudson1/source/mksamples.html}{\ty{ms}},
+the program \href{http://github.com/evolbioinf/ms2dna}{\ty{ms2dna}}, 
 and the programs of the \href{https://github.com/evolbioinf/biobox}{Biobox
  repo}.
 \section{Simulated Data}
