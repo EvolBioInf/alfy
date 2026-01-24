@@ -3,12 +3,12 @@
 \begin{document}
 
 \title{\ty{alfy}: ALignment-Free local homologY}
-\author{Mirjana Domazet-Lo\v{s}o and Bernhard Haubold}
+\author{Mirjana Domazet-Lo\v{s}o, Beatriz Vieira-Mourato, and Bernhard Haubold}
 \date{\input{date.txt}\!\!, \input{version.txt}}
 \maketitle
 
 \tableofcontents
-\chapter{\ty{alfy}}
+\chapter{Alignment-free Local Homology: \ty{alfy}}
 \section{Introduction}
 \ty{alfy} is a program for comparing one or more query sequences to a
 set of subject sequences and determining the closest homologue among
@@ -19,9 +19,12 @@ of \ty{alfy} when applied to HIV-1 genomes.
 
 \section{Getting Started}
 \ty{alfy} is written in C and is intended to work on any UNIX system
-with a C compiler. However, please contact MDL at
-\ty{Mirjana.Domazet-Loso@fer.hr} or BH at \ty{haubold@evolbio.mpg.de}
-if you have any problems with the program.
+with a C compiler. The auxiliary program \ty{ms2nn} is written in Go
+and should work even more broadly on any system with a Go
+compiler. However, please contact MDL at
+\ty{Mirjana.Domazet-Loso@fer.hr}, BVM at \ty{mourato@evolbio.mpg.de},
+or BH at \ty{haubold@evolbio.mpg.de} if you have any problems with the
+programs in this repo.
 \begin{itemize}
   \I Download \ty{alfy}
 \begin{verbatim}
@@ -39,9 +42,8 @@ ls
 \begin{verbatim}
 make
 \end{verbatim}
-This creates the executable \ty{alfy} inside the directory,
-\ty{bin}.
-\I List options
+This creates the executables \ty{alfy} and \ty{ms2nn} inside the
+directory \ty{bin}.  \I List options
 \begin{verbatim}
 ./bin/alfy -h
 \end{verbatim}

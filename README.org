@@ -2,9 +2,9 @@
 
 - Description: Fast detection of local homologies between a query
   sequence and a set of subject sequences, as explained further [[https://doi.org/10.1093/bioinformatics/btr176][here]].
-- Authors: Mirjana Domazet-Loso and Bernhard Haubold
+- Authors: Mirjana Domazet-Loso, Beatriz Vieira Mourato, and Bernhard Haubold
 - License: Gnu GPL
-- Contact: Mirjana.Domazet-Loso@fer.hr or haubold@evolbio.mpg.de
+- Contact: Mirjana.Domazet-Loso@fer.hr, mourato@evolbio.mpg.de, or haubold@evolbio.mpg.de
 
 ** Make =alfy=
 The program =alfy= depends on the divsufsort library. On Debian-like

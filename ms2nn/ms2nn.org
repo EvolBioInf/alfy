@@ -16,7 +16,7 @@ estimated and true nearest neighbors can be compared.
 
 \begin{figure}[ht]
 \begin{center}
-\scalebox{0.5}{\input{../ms2nn/ms}}
+\scalebox{0.66}{\input{../ms2nn/ms}}
 \end{center}
 \caption{Workflow for testing the nearest neighbor predictions
   produced by \ty{alfy} using \ty{ms2nn}; ideally, the nearest
