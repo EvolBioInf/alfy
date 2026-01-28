@@ -1,0 +1,47 @@
+\documentclass[a4paper]{article}
+\usepackage{graphics,color,eurosym,latexsym}
+\usepackage{times}
+\usepackage{listings}
+\lstset{columns=fixed,basicstyle=\ttfamily,numbers=left,numberstyle=\tiny,stepnumber=5,breaklines=true}
+%\usepackage[german]{babel}
+%\pagestyle{empty}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{eurosym}
+\usepackage[round]{natbib}
+\bibliographystyle{plainnat}
+\oddsidemargin=0cm
+\evensidemargin=0cm
+\headheight=0cm
+\headsep=0cm
+\newcommand{\be}{\begin{enumerate}}
+\newcommand{\ee}{\end{enumerate}}
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\I}{\item}
+\newcommand{\ty}{\texttt}
+\textwidth=16cm
+\textheight=23cm
+\begin{document}
+
+\title{Comments on Alfy Code}
+\author{Bernhard Haubold}
+\maketitle
+
+\section{Sliding Window Analysis}
+For the sliding window analysis it might be helpful to distinguish
+more clearly between a \emph{window} and an \emph{interval}. A
+\emph{window} has a fixed length and is slid across the query. An
+\emph{interval} initially has the same length as the window, but can
+then be expanded. The sliding window analysis should result in a list
+of non-overlapping intervals. So what is currently called ``window'',
+I will call ``interval'' here to help me think.
+
+After storage of an interval in the \ty{else} phrase of chunk 43b, a
+new interval is created that is identical to the current window
+$(\ell,r)$. Shouldn't the new interval start at $r+1$?
+
+\bibliography{/home/haubold/References/references}
+
+\end{document}
+

@@ -6,6 +6,11 @@ src/alfy/alfy*
 data/*
 !data/bug*
 
+comments/*.aux
+comments/*.dvi
+comments/*.log
+comments/*.pdf
+
 doc/alfy.tex
 doc/alfyDoc.aux
 doc/alfyDoc.bbl
