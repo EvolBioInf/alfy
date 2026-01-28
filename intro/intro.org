@@ -453,14 +453,14 @@ Algorithm~\ref{alg:alf} shows the sliding window algorithm.
 \end{algorithm}
 
 The output from \ty{alfy} is similar to the one from the previous
-version, shown in Table~\ref{fig:alf}. Its comprised by a four column
+version, shown in Figure~\ref{fig:alfo}. Its comprised by a four column
 table with the start and end coordinates of the homologous region in
 the query, the percentage of the region that is homologous and the
 name of the subject it is homologous to.
 
 \begin{figure}[h]
 \caption{The output of \ty{alfy} for a window of 5bp.}
-\label{fig:alf}
+\label{fig:alfo}
 \begin{center}
   \footnotesize
 \begin{tabular}{|c|c|}
