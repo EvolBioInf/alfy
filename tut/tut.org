@@ -1,16 +1,46 @@
 #+begin_export latex
 \section{Getting Started}
-Apart from the programs in the
-\href{https://github.com/evolbioinf/alfy}{\ty{alfy}} repo, this
-tutorial requires the coalescent simulator
-\href{https://home.uchicago.edu/rhudson1/source/mksamples.html}{\ty{ms}},
-the program \href{http://github.com/evolbioinf/ms2dna}{\ty{ms2dna}}, 
-and the programs of the \href{https://github.com/evolbioinf/biobox}{Biobox
- repo}.
+In this tutorial we use \ty{alfy} to analyze simulated and real
+data. to get started, dependencies are met.  Apart from the programs
+in the Alfy repo, these include the coalescent simulator \ty{ms}, the
+program \ty{ms2dna} for converting the output of \ty{ms} to DNA
+sequences, local Blast, and the programs of the Biobox repo. The
+sources for these programs are listed in Table~\ref{tab:dep}
+
+\begin{table}
+  \caption{Dependencies for this tutorial.}\label{tab:dep}
+  \begin{center}
+  \scalebox{0.9}{
+    \begin{tabular}{lll}
+      \hline
+      \# & Software & Source\\\hline
+      1 & Alfy &
+      \href{https://github.com/evolbioinf/alfy}{\ty{github.com/evolbioinf/alfy}}\\
+      2 & \ty{ms} &
+      \href{https://home.uchicago.edu/rhudson1/source/mksamples.html}{\ty{home.uchicago.edu/rhudson1/source/mksamples.html}}\\
+      3 & \ty{ms2dna} &
+      \href{http://github.com/evolbioinf/ms2dna}{\ty{github.com/evolbioinf/ms2dna}}\\
+      4 & Biobox &
+      \href{https://github.com/evolbioinf/biobox}{\ty{github.com/evolbioinf/biobox}}\\
+      5 & Blast & Package managers like \ty{apt}\\\hline
+    \end{tabular}
+    }
+  \end{center}
+\end{table}
+
 \section{Simulated Data}
+We begin by simulating single crossover events before we generalize
+this to multiple crossovers.
 \subsection*{Single Crossover}
-The program \ty{cross.sh} simulates single crossovers. We copy it to
-our working directory and print its help message.
+The program \ty{cross.sh} simulates single crossovers between two
+subject sequences to generate one query sequence. By default, the
+three sequences are 10\,kb long and the crossover event is in the
+middle. So we get the result illustrated in Figure~\ref{fig:hom},
+where the first 5\,kb of the query are more closely elated to $s_1$,
+the rest is more closely related to $s_2$.
+
+We copy \ty{cross.sh} to our working directory and print its help
+message.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   cp ../scripts/cross.sh .
@@ -27,9 +57,6 @@ Example: bash cross.sh -s 3
    -s int
         seed (default random integer)
 \end{verbatim}
-So by default we get the result illustrated in Figure~\ref{fig:hom},
-where the first 5\,kb of the query are more closely related to $s_1$,
-the rest is more closely related to $s_2$.
 \begin{figure}
   \begin{center}
   \hspace{-5cm}
@@ -54,7 +81,8 @@ We run \ty{cross.sh} with default parameters to get the query file
 #+end_src
 #+begin_export latex
 We run \ty{alfy} on the query and the subjects we just generated to
-find that the expected crossover point is reasonably well predicted.
+find that the expected crossover point at position 5000 is reasonably
+well detected.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   alfy -i q.fasta -j s.fasta
@@ -90,16 +118,15 @@ quite stable.
 #+end_export
 #+begin_export latex
 \subsection*{Multiple Crossovers}
-The simple simulation scenario implemented in \ty{cross.sh} is rather
-simple. For a more thorough exploration of \ty{alfy}, we need to
-simulate more diverse datasets for which we know the expected result,
-which we can then compare the observed result. Figure~\ref{fig:wf}
-shows the corresponding work flow. It starts with population genetic
-parameters, which are transformed by the script \ty{neiSim.sh} into
-haplotypes in \ty{haplotypes.ms}, which in turn are transformed into a
-query sequence in \ty{query.fasta} and two or more subject sequences
-in \ty{subjects.fasta}. From the sequence data \ty{alfy} calculates
-the observed annotations, while \ty{ms2nn} extracts the expected
+The simulation scenario implemented in \ty{cross.sh} is rather
+simple. For a more thorough exploration of \ty{alfy}, we need to be
+able to simulate more diverse datasets. Figure~\ref{fig:wf} shows our
+workflow for this. It starts with population genetic parameters,
+which are transformed by the script \ty{neiSim.sh} into haplotypes in
+\ty{haplotypes.ms}, a corresponding query sequence in \ty{query.fasta}
+and two or more corresponding subject sequences in
+\ty{subjects.fasta}. From the sequence data \ty{alfy} calculates the
+observed annotations, while \ty{ms2nn} extracts the expected
 annotations from the haplotypes. Finally, the observed and expected
 results are compared to calculate the sensitivity, $\sn$, and
 specificity, $\sp$ of \ty{alfy}.
@@ -111,10 +138,10 @@ specificity, $\sp$ of \ty{alfy}.
   blue.}\label{fig:wf}
 \end{figure}
 
-In the following we first work through the individual steps of the
-work flow in Figure~\ref{fig:wf} before we summarize them into the
-script \ty{testAlfy.sh}. We begin with \ty{neiSim.sh}, which we copy
-to our working directory and print its help message.
+In the following, we first familiarize ourselves with the individual
+steps of the workflow in Figure~\ref{fig:wf}, before we summarize
+them into the script \ty{testAlfy.sh}. We begin with \ty{neiSim.sh},
+which we copy to our working directory and print its help message.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   cp ../scripts/neiSim.sh .
@@ -141,9 +168,9 @@ Example: bash neiSim.sh -n 5 -t 50 -r 1
 \end{verbatim}
 #+end_export
 #+begin_export latex
-We run \ty{neiSim.sh} with default options except for seed for the
-random number generator, which we set to 1 to make the simulation
-reproducible.
+We run \ty{neiSim.sh} with default options, which in particular means
+no recombination, except for the seed for the random number generator,
+which we set to 1 to make the simulation reproducible.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   bash neiSim.sh -s 1
@@ -162,8 +189,11 @@ generated, we get sequence 3 as the closest neighbor.
 \end{verbatim}
 #+end_export
 #+begin_export latex
-If we extract the expectation from the simulated haplotypes, we get
-the same result.
+If we use \ty{ms2nn} to extract the closest neighbor from the
+simulated haplotypes, we also get 3. In addition to the closest
+neighbor, the program \ty{ms2nn} also tells us that sequences 1 and 3
+differ at 0.0006 positions per site. For our 10\,kb sequence this
+implies six mismatches.
 #+end_export
 #+begin_src sh <<sda.sh>>=
 ms2nn -q 1 haplotypes.ms
@@ -175,7 +205,8 @@ ms2nn -q 1 haplotypes.ms
 \end{verbatim}
 #+end_export
 #+begin_export latex
-We can also get the same result using Blast.
+We can also see that sequence 3 is more closely related to the query
+than sequence 2 using Blast.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   blastn -query query.fasta -subject subjects.fasta \
@@ -230,8 +261,7 @@ to our working directory and apply to the \ty{alfy} output.
 2	86.8
 3	13.2
 \end{verbatim}
-Subject 2 is also the ``true'' result. In the absence of
-recombination, \ty{ms2nn} just picks the closest haplotype.
+Sequence 2 is also the ``true'' result as given by \ty{ms2nn}.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   ms2nn -q 1 haplotypes.ms
@@ -243,8 +273,11 @@ recombination, \ty{ms2nn} just picks the closest haplotype.
 \end{verbatim}
 #+end_export
 #+begin_export latex
-With Blast we can see that the local annotations of \ty{alfy} are
-correct four out of five times in this particular example.
+Now, local fluctuations in the mutation density can lead to local
+fluctuations of nearest neighbors even in the absence of
+recombination. With Blast we can see that the local annotations of
+\ty{alfy} are correct four out of five times in this particular
+example.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   printf "Alfy\tBlast\n"
@@ -394,7 +427,9 @@ simulated scenario.
 \end{verbatim}
 #+end_export
 #+begin_export latex
-In this tutorial we now switch gears to look at real data.
+The script \ty{testAlfy.sh} could now be modified to test \ty{alfy}
+under diverse evolutionary scenarios. However, in this tutorial we
+move on to look at real data.
 \section{Real Data}
 Our analysis of real data is centered on HIV genomes. We wish to
 annotate the query strain \ty{A+\-DQ\-083238} using 42 pure strains as
@@ -427,7 +462,8 @@ subject sequence---A1+AF004885 in this case---is 8.6, which is a
 measure of the strength of the homology signal across that interval.
 
 To get a clearer view of the distribution of the various annotations,
-we summarize the \ty{alfy} output.
+we again use \ty{quantifyGenomes.awk} to summarize the \ty{alfy}
+output.
 #+end_export
 #+begin_src sh <<eda.sh>>=
   alfy -i A+DQ083238.fasta -j hiv42.fasta  | 
@@ -445,7 +481,7 @@ A2+AF286238  1.5
 This indicates that 38.0\% of strain A+DQ083238 is most closely
 related to strain A1+AF004885, 11.4\% to strain C+AF067155, etc.
 
-We further summarizes the result by collapsing annotations for strains
+We further summarize the result by collapsing annotations for strains
 that belong to the same group.
 #+end_export
 #+begin_src sh <<eda.sh>>=

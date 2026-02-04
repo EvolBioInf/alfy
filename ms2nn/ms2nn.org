@@ -1,5 +1,5 @@
 #+begin_export latex
-\section{Introduction}
+\subsection*{Introduction}
 The program \ty{ms2nn} takes as input the output of the coalescent
 simulation program \ty{ms} and prints the nearest neighbors for a
 given query. This output can then be compared to the output of
@@ -149,7 +149,7 @@ annotation that extends from position 12 to the end
 not determined from distances, the distances are set to a nonsensical
 value, -1.
 
-\section{Implementing \ty{ms2nn}}
+\subsection*{Implementing \ty{ms2nn}}
 Our outline of \ty{ms2nn} has hooks for imports, functions, and the
 logic of the main function.
 \bpr{ms2nn}{pr:m2n}
@@ -307,7 +307,7 @@ We import \ty{strconv}.
   "strconv"
 #+end_src
 #+begin_export latex
-\subsection*{Store \ty{ms} Output}
+\subsubsection*{Store \ty{ms} Output}
 To store the output from \ty{ms}, we need storage for the sample size,
 the sequence length, the trees, the positions of mutations, and the
 haplotypes. We also declare a variable for the tree start position,
@@ -519,7 +519,7 @@ haplotype distances along the sequence.
   }
 #+end_src
 #+begin_export latex
-\subsection*{Analyze Trees}
+\subsubsection*{Analyze Trees}
 When analyzing a tree, we first visit the query leaf. Its parent's
 children are the desired nearest neighbors (plus the query). The
 machinery for finding the nearest neighbors starts by iterating over
@@ -573,7 +573,7 @@ we append the node label to the tree's slice of neighbors.
   }
 #+end_src
 #+begin_export latex
-\subsection*{Analyze Distances}
+\subsubsection*{Analyze Distances}
 If instead of analyzing the trees we analyze the distances, we first
 determine the start and end positions along the haplotypes that belong
 to the tree. Then we find the nearest neighbors by distance.
@@ -765,7 +765,7 @@ we simply divide the mismatches by the tree extent.
 #+begin_export latex
 We've finished \ty{ms2nn}, let's test it.
 
-\section{Testing \ty{ms2nn}}
+\subsection*{Testing \ty{ms2nn}}
 Our program for testing \ty{ms2nn} has hooks for imports and the
 testing logic.
 \bpr{ms2nn_test}{pr:m2nt}
