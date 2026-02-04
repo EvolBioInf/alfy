@@ -1,0 +1,24 @@
+\begin{psmatrix}[colsep=0.3cm,rowsep=0.75cm]
+  & & parameters & &\\
+& &     $\bullet$       & &\\
+\ty{query.fasta} && \ty{subjects.fasta} & \ty{haplotypes.ms}\\
+& $\bullet$ \\
+&\ty{obs.txt} && \ty{exp.txt}\\
+&&$\bullet$\\
+&& $s_{\rm n}, s_{\rm p}$
+\end{psmatrix}
+\ncline[nodesepA=2pt]{1,3}{2,3}\trput{\textcolor{blue}{\ty{neiSim.sh}}}
+
+\ncline[nodesepB=2pt]{->}{2,3}{3,1}
+\ncline[nodesepB=2pt]{->}{2,3}{3,3}
+\ncline[nodesepB=2pt]{->}{2,3}{3,4}
+
+\ncline[nodesepA=2pt]{3,1}{4,2}
+\ncline[nodesepA=2pt]{3,3}{4,2}
+
+\ncline[nodesepB=2pt]{->}{4,2}{5,2}\tlput{\textcolor{red}{\ty{alfy}}}
+\ncline[nodesep=2pt]{->}{3,4}{5,4}\trput{\textcolor{blue}{\ty{ms2nn}}}
+
+\ncline[nodesepA=2pt]{5,2}{6,3}
+\ncline[nodesepA=2pt]{5,4}{6,3}
+\ncline[nodesepB=2pt]{->}{6,3}{7,3}\trput{\textcolor{blue}{\ty{senSpec.awk}}}

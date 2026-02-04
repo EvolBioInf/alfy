@@ -1,0 +1,158 @@
+#+begin_export latex
+We write the Awk program \ty{senSpec.awk} to calculate the sensitivity
+and specificity from the expected and observed results. To calculate
+the sensitivity and specificity, we need to intersect and subtract
+intervals, for which we use the software package Bedtools. So inside
+the program we first interact with the user. Then we convert the input
+files to BED files, before we calculate the sensitivity and
+specificity. At the end, we remove the BED files again to leave the
+directory as we found it. \bpr{senSpec.awk}{pr:sen}
+#+end_export
+#+begin_src awk <<senSpec.awk>>=
+  BEGIN {
+    ##<<User interaction, Pr. \ref{pr:sen}>>
+    ##<<Convert input files to BED files, Pr. \ref{pr:sen}>>
+    ##<<Calculate sensitivity and specificity, Pr. \ref{pr:sen}>>
+    ##<<Remove BED files, Pr. \ref{pr:sen}>>
+  }
+#+end_src
+#+begin_export latex
+\epr When interacting with the user, we make sure we are given the
+files containing the expected and the observed intervals, $e$ and $o$.
+#+end_export
+#+begin_src awk <<User interaction, Pr. \ref{pr:sen}>>=
+  if (!e || !o) {
+    m = "Usage: awk -f senSpec.awk "
+    m = m "-v e=<exp.txt> -v o=<obs.txt>"
+    print m
+    m = "Calculate sensitivity and speciticity "
+    m = m "from expected and observed nearest neighbors"
+    print m
+    exit 0
+  }
+#+end_src
+#+begin_export latex
+To convert the two input files to BED files, we store their names in
+an array that we iterate over. Inside the iteration loop we create the
+name of the output file by appending ``bed'' to the name of the input
+file. We will append to this to this output file, so we and make sure
+it is empty, before we generate the intervals in BED format.
+#+end_export
+#+begin_src awk <<Convert input files to BED files, Pr. \ref{pr:sen}>>=
+  files[0] = e
+  files[1] = o
+  for (i in files) {
+    file = files[i]
+    out = file ".bed"
+    printf "" > out
+    ##<<Generate BED intervals, Pr. \ref{pr:sen}>>
+  }
+#+end_src
+#+begin_export latex
+We read the current input file using a call to the system command
+\ty{cat} that opens a pipe. Our version of BED format consists of
+three tab-delimited columns denoting annotation, start, and end. The
+BED format further stipulates that positions are zero-based, and
+intervals are inclusive start, exclusive end. Hence the first five
+positions on chromosome1 would be
+\begin{verbatim}
+chromosome1     0       5
+\end{verbatim}
+We append this interval to the current output file. After we have
+parsed all input we close the pipe and the output file.
+#+end_export
+#+begin_src awk <<Generate BED intervals, Pr. \ref{pr:sen}>>=
+  cmd = sprintf("cat %s", file)
+  while (cmd | getline) {
+    if ($1 ~ /^>/)
+      continue
+    start = $1 - 1
+    end = $2
+    sbjct = $4
+    printf "%s\t%s\t%s\n",
+      sbjct, start, end >> out
+  }
+  close(cmd)
+  close(out)
+#+end_src
+#+begin_export latex
+To calculate the sensitivity and specificity, we first set $e$ and $o$
+to the BED files we have just constructed. Then we calculate the true
+positives, false negatives, and false positives. From these values we
+can calculate the sensitivity followed by the specificity, before we
+print the result
+#+end_export
+#+begin_src awk <<Calculate sensitivity and specificity, Pr. \ref{pr:sen}>>=
+  e = files[0] ".bed"
+  o = files[1] ".bed"
+  ##<<Calculate true positives, Pr. \ref{pr:sen}>>
+  ##<<Calculate false negatives, Pr. \ref{pr:sen}>>
+  ##<<Calculate false positives, Pr. \ref{pr:sen}>>
+  ##<<Calculate sensitivity, Pr. \ref{pr:sen}>>
+  ##<<Calculate specificity, Pr. \ref{pr:sen}>>
+  ##<<Print results, Pr. \ref{pr:sen}>>
+#+end_src
+#+begin_export latex
+The true positives are calculated as $\tp=e\cap o$.
+#+end_export
+#+begin_src awk <<Calculate true positives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools intersect -a %s -b %s"
+  cmd = sprintf(cmd, e, o)
+  while (cmd | getline) {
+    l = $3 - $2
+    tp += l
+  }
+  close(cmd)
+#+end_src
+#+begin_export latex
+The false negatives are calculated as $\fn=e\setminus o$.
+#+end_export
+#+begin_src awk <<Calculate false negatives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools subtract -a %s -b %s"
+  cmd = sprintf(cmd, e, o)
+  while (cmd | getline) {
+    l = $3 - $2
+    fn += l
+  }
+  close(cmd)
+#+end_src
+#+begin_export latex
+The false positives are calculated as $\fp=o\setminus e$.
+#+end_export
+#+begin_src awk <<Calculate false positives, Pr. \ref{pr:sen}>>=
+  cmd = "bedtools subtract -a %s -b %s"
+  cmd = sprintf(cmd, o, e)
+  while (cmd | getline) {
+    l = $3 - $2
+    fp += l
+  }
+  close (cmd)
+#+end_src
+#+begin_export latex
+We calculate the sensitivity according to equation~(\ref{eq:sn}).
+#+end_export
+#+begin_src awk <<Calculate sensitivity, Pr. \ref{pr:sen}>>=
+  sn = tp / (tp + fn)
+#+end_src
+#+begin_export latex
+We calculate the specificity according to equation~(\ref{eq:sp}).
+#+end_export
+#+begin_src awk <<Calculate specificity, Pr. \ref{pr:sen}>>=
+  sp = tp / (tp + fp)
+#+end_src
+#+begin_export latex
+We print the sensitivity and specificity.
+#+end_export
+#+begin_src awk <<Print results, Pr. \ref{pr:sen}>>=
+  printf("#s_n\ts_p\n")
+  printf("%.4f\t%.4f\n", sn, sp)
+#+end_src
+#+begin_export latex
+The last step in \ty{senSpec.awk} is to remove the intermediary BED
+files.
+#+end_export
+#+begin_src awk <<Remove BED files, Pr. \ref{pr:sen}>>=
+  system("rm " e)
+  system("rm " o)
+#+end_src
+

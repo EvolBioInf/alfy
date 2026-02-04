@@ -2,6 +2,11 @@ alfy/
 
 bin/
 
+comments/
+
+cross/*.fasta
+cross/haplotypes.ms
+
 data
 doc/alfy.tex
 doc/alfyDoc.aux
@@ -14,12 +19,15 @@ doc/alfyDoc.pdf
 doc/alfyDoc.ps
 doc/alfyDoc.toc
 doc/code/
+doc/cross.tex
 doc/date.txt
 doc/intro.tex
 doc/mat.tex
 doc/ms2nn.tex
+doc/neiSim.tex
 doc/pab.tex
 doc/prepAlfy.tex
+doc/senSpec.tex
 doc/sir.tex
 doc/tut.tex
 doc/util.tex
@@ -36,9 +44,17 @@ ms2nn/q.fasta
 ms2nn/s.fasta
 ms2nn/seedms
 
+neiSim/*.fasta
+neiSim/exp.txt
+neiSim/haplotypes.ms
+neiSim/obs.txt
+
 pab/
 palfy/
 prepAlfy/
+
+senSpec/obs.txt
+senSpec/exp.txt
 
 sir/
 src/*.o
@@ -48,10 +64,14 @@ src/MakefileMac
 test/
 tut/*.awk
 tut/*.sh
+!tut/testAlfy.sh
+!tut/sda.sh
+!tut/eda.sh
 tut/*.fasta
 tut/*.bed
 tut/*.out
 tut/*.ms
-
+tut/exp.txt
+tut/obs.txt
 
 

@@ -3,7 +3,7 @@
 \begin{document}
 
 \title{\ty{alfy}: ALignment-Free local homologY}
-\author{Mirjana Domazet-Lo\v{s}o, Beatriz Vieira-Mourato, and Bernhard Haubold}
+\author{Mirjana Domazet-Lo\v{s}o, Beatriz Vieira Mourato, and Bernhard Haubold}
 \date{\input{date.txt}\!\!, \input{version.txt}}
 \maketitle
 
@@ -59,11 +59,20 @@ from the sequences (but not from their headers):
 cleanSeq.awk foo.fasta > foo2.fasta
 \end{verbatim}
 
-\chapter{Simulating Nearest Neighbors: \ty{ms2nn}}
-\input{ms2nn}
-
 \chapter{Tutorial}
 \input{tut}
+
+\chapter{Auxiliary Programs}
+\section{Simulate Single Crossover: \ty{cross.sh}}
+\input{cross}
+\section{Simulate Multiple Crossovers: \ty{neiSim.sh}}
+\input{neiSim}
+\section{Simulate Nearest Neighbors: \ty{ms2nn}}
+\input{ms2nn}
+\section{Convert \ty{alfy} Output to BED Format: \ty{alfy2bed.awk}}
+\input{alfy2bed}
+\section{Calculate Sensitivity \& Specificity: \ty{senSpec.awk}}
+\input{senSpec}
 
 \chapter{Utility Functions: \ty{util}}
 \input{util}

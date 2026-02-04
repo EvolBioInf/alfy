@@ -1,0 +1,166 @@
+#+begin_export latex
+The script \ty{cross.sh} is rather limited in the scenarios it can
+simulate. We now write a more general script for neighbors
+simulations, \ty{neiSim.sh}, which uses the coalescent simulation
+program \ty{ms}~\cite{hud02:gen} to generate one query sequence and
+one or more subject sequences. Inside \ty{neiSim.sh}, we interact with
+the user, simulate haplotypes, convert them to sequences, store the
+query sequence, and store the subject sequences.
+\bpr{neiSim.sh}{pr:nei}
+#+end_export
+#+begin_src sh <<neiSim.sh>>=
+  ##<<User interaction, Pr. \ref{pr:nei}>>
+  ##<<Generate haplotypes, Pr. \ref{pr:nei}>>
+  ##<<Convert haplotypes to sequences, Pr. \ref{pr:nei}>>
+  ##<<Store query, Pr. \ref{pr:nei}>>
+  ##<<Store subjects, Pr. \ref{pr:nei}>>
+#+end_src
+#+begin_export latex
+\epr In the user interaction we first set the default option values
+for the \ty{ms} command, then we iterate over the options.
+#+end_export
+#+begin_src sh <<User interaction, Pr. \ref{pr:nei}>>=
+  ##<<Set default option values, Pr. \ref{pr:nei}>>
+  ##<<Iterate over options, Pr. \ref{pr:nei}>>
+#+end_src
+#+begin_export latex
+We set the default values for five options, the
+\begin{enumerate}
+\item sample size, \ty{-n}, to 3
+\item $\theta$, \ty{-t}, to 100
+\item $\rho$, \ty{-r}, to 0
+\item sequence length, \ty{-l}, to 10\,kb
+\item seed for random number generator, \ty{-s}, to a random number
+\end{enumerate}
+#+end_export
+#+begin_src sh <<Set default option values, Pr. \ref{pr:nei}>>=
+  n=3
+  t=100
+  r=0
+  l=10000
+  s=$RANDOM
+#+end_src
+#+begin_export latex
+We iterate over the options and respond to our own options. We also
+respond to a plea for help and an unknown option.
+#+end_export
+#+begin_src sh <<Iterate over options, Pr. \ref{pr:nei}>>=
+  while getopts "hn:t:r:l:s:" opt; do
+      case $opt in
+	  ##<<Respond to own option, Pr. \ref{pr:nei}>>
+	  ##<<Respond to help option, Pr. \ref{pr:nei}>>
+	  ##<<Respond to unknown option, Pr. \ref{pr:nei}>>
+      esac
+  done
+#+end_src
+#+begin_export latex
+We set our five options.
+#+end_export
+#+begin_src sh <<Respond to own option, Pr. \ref{pr:nei}>>=
+  n) n=$OPTARG;;
+  t) t=$OPTARG;;
+  r) r=$OPTARG;;
+  l) l=$OPTARG;;
+  s) s=$OPTARG;;
+#+end_src
+#+begin_export latex
+If the user asked for help, we print the usage and exit without an
+error.
+#+end_export
+#+begin_src sh <<Respond to help option, Pr. \ref{pr:nei}>>=
+  h)
+    ##<<Print usage, Pr. \ref{pr:nei}>>
+    exit 0;;
+#+end_src
+#+begin_export latex
+In the usage we print the actual usage message, an explanation of
+\ty{neiSim.sh}, and an example command. Then we print the options.
+#+end_export
+#+begin_src sh <<Print usage, Pr. \ref{pr:nei}>>=
+  ##<<Print usage message, Pr. \ref{pr:nei}>>
+  ##<<Print explanation, Pr. \ref{pr:nei}>>
+  ##<<Print example, Pr. \ref{pr:nei}>>
+  ##<<Print options, Pr. \ref{pr:nei}>>
+#+end_src
+#+begin_export latex
+The usage is a one-liner how to invoke the \ty{neiSim.sh}.
+#+end_export
+#+begin_src sh <<Print usage message, Pr. \ref{pr:nei}>>=
+  printf "Usage: bash neiSim.sh [-h] [option]...\n"
+#+end_src
+#+begin_export latex
+The explanation includes the names of the three output files for the
+query, the subjects, and the haplotypes.
+#+end_export
+#+begin_src sh <<Print explanation, Pr. \ref{pr:nei}>>=
+  printf "Neighbors simulation as one query in\n"
+  printf "\tquery.fasta and one or more subjects\n"
+  printf "\tin subjects.fasta; the underlying\n"
+  printf "\thaplotypes are in haplotypes.ms.\n"
+#+end_src
+#+begin_export latex
+In the example we set the sample size, $n=5$, the mutation rate,
+$\theta=50$, and the recombination rate, $\rho=1$.
+#+end_export
+#+begin_src sh <<Print example, Pr. \ref{pr:nei}>>=
+  printf "Example: bash neiSim.sh -n 5 -t 50 -r 1\n"
+#+end_src
+#+begin_export latex
+We print our five options and their default values.
+#+end_export
+#+begin_src sh <<Print options, Pr. \ref{pr:nei}>>=
+  printf "   -n int\n\tsample size (default $n)\n"
+  printf "   -t float\n\ttheta (default $t)\n"
+  printf "   -r float\n\trho (default $r)\n"
+  printf "   -l int\n\tsequence length (default $l)\n"
+  printf "   -s int\n\tseed (default random integer)\n"
+#+end_src
+#+begin_export latex
+If we find an unknown option, we also print the usage, but this time
+exit with an error.
+#+end_export
+#+begin_src sh <<Respond to unknown option, Pr. \ref{pr:nei}>>=
+  ?)
+    ##<<Print usage, Pr. \ref{pr:nei}>>
+    exit 1;;
+#+end_src
+#+begin_export latex
+We generate the haplotypes by combining \ty{ms} with the options just
+recovered plus tree printing (\ty{-T}), and save them in
+\ty{haplotypes.ms}.
+#+end_export
+#+begin_src sh <<Generate haplotypes, Pr. \ref{pr:nei}>>=
+  ms $n 1 -t $t -r $r $l -seeds 0 0 $s -T > haplotypes.ms
+#+end_src
+#+begin_export latex
+We convert the haplotypes to sequences with \ty{ms2dna}, which we also
+seed to keep results reproducible. Now, the program \ty{ms} labels
+sequences 1, 2,... while \ty{ms2dna} labels them S1, S2,... To get
+uniform labels, we remove the S from the labels generated by
+\ty{ms2dna} before we save the sequences to the temporary file
+\ty{tmp.fasta}.
+#+end_export
+#+begin_src sh <<Convert haplotypes to sequences, Pr. \ref{pr:nei}>>=
+  ms2dna -s $s haplotypes.ms |
+      tr -d S > tmp.fasta
+#+end_src
+#+begin_export latex
+Any of the sequences just generated can be used as query, we pick
+sequence 1 and store it in file \ty{query.fasta}.
+#+end_export
+#+begin_src sh <<Store query, Pr. \ref{pr:nei}>>=
+  getSeq 1 tmp.fasta > query.fasta
+#+end_src
+#+begin_export latex
+The non-query sequences are the subject sequences, which we store in
+\ty{sub\-jects.\-fasta}.
+#+end_export
+#+begin_src sh <<Store subjects, Pr. \ref{pr:nei}>>=
+  getSeq -c 1 tmp.fasta > subjects.fasta
+#+end_src
+#+begin_export latex
+We don't need the temporary file any more, so we delete it.
+#+end_export
+#+begin_src sh <<Store subjects, Pr. \ref{pr:nei}>>=
+  rm tmp.fasta
+#+end_src

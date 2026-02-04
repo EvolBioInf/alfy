@@ -1,0 +1,145 @@
+#+begin_export latex
+We begin our collection of auxiliary programs with a very simple
+simulation experiment, for which we construct three sequences,
+a query, $q$, and two subjects, $s_1$ and $s_2$. As sketched in
+Figure~\ref{fig:hom}, the first half of $q$ is more closely related to
+$s_1$, the second half of $q$ is more closely related to $s_2$.
+
+We can think of $q$ as the result of a crossing over between $s_1$ and
+$s_2$, so we call the script for generating these sequences
+\ty{cross.sh}. Inside \ty{cross.sh} we interact with the user and
+construct the two subject sequences and the query. Since \ty{alfy}
+requires the subject sequences to be in a single file, we also store
+$s_1$ and $s_2$ in one file. \bpr{cross.sh}{pr:cro}
+#+end_export
+#+begin_src sh <<cross.sh>>=
+  ##<<User interaction, Pr. \ref{pr:cro}>>
+  ##<<Construct $s_1$, Pr. \ref{pr:cro}>>
+  ##<<Construct $s_2$, Pr. \ref{pr:cro}>>
+  ##<<Construct $q$, Pr. \ref{pr:cro}>>
+  ##<<Store $s_1$ and $s_2$ in single file, Pr. \ref{pr:cro}>>
+#+end_src
+#+begin_export latex
+\epr
+#+end_export
+#+begin_export latex
+In the user interaction we first set the default option values, then
+we iterate over the options.
+#+end_export
+#+begin_src sh <<User interaction, Pr. \ref{pr:cro}>>=
+  ##<<Set default option values, Pr. \ref{pr:cro}>>
+  ##<<Iterate over options, Pr. \ref{pr:cro}>>
+#+end_src
+#+begin_export latex
+We set defalt values for two options, the sequence length, \ty{-l} to
+10\,kb and the seed for the random number generator, \ty{-s}, to a
+random number taken from the shell.
+#+end_export
+#+begin_src sh <<Set default option values, Pr. \ref{pr:cro}>>=
+  l=10000
+  s=$RANDOM
+#+end_src
+#+begin_export latex
+We iterate over the options and respond to the two options we just
+assigned default values to. We also respond to the help option,
+\ty{-h} or an unknown option by printing the usage. In the case of
+help we then exit without error, in the case of an unknown option with
+an error.
+#+end_export
+#+begin_src sh <<Iterate over options, Pr. \ref{pr:cro}>>=
+  while getopts "hl:s:" opt; do
+      case $opt in
+	  l) l=$OPTARG;;
+	  s) s=$OPTARG;;
+	  h)
+	      ##<<Print usage, Pr. \ref{pr:cro}>>
+	      exit 0;;
+	  ?)
+	      ##<<Print usage, Pr. \ref{pr:cro}>>
+	      exit 1;;
+      esac
+  done
+#+end_src
+#+begin_export latex
+The usage consists of three parts, the actual usage message, an
+explanation of the purpose of \ty{cross.sh}, and an example
+command. Then we print our two options and their default values.
+#+end_export
+#+begin_src sh <<Print usage, Pr. \ref{pr:cro}>>=
+  printf "Usage: bash cross.sh [-h] [option]...\n"
+  printf "Simulate single midpoint crossover between one\n"
+  printf "   query and two subjects in q.fasta and s.fasta.\n"
+  printf "Example: bash cross.sh -s 3\n"
+  printf "   -l int\n\tsequence length (default $l)\n"
+  printf "   -s int\n\tseed (default random integer)\n"
+#+end_src
+#+begin_export latex
+Subject $s_1$ is just a random sequence of the given length. We label
+it \ty{s\_1} and save it in \ty{s1.fasta}.
+#+end_export
+#+begin_src sh <<Construct $s_1$, Pr. \ref{pr:cro}>>=
+  ranseq -l $l -s $s |
+      sed 's/>.*/>s_1/' > s1.fasta
+#+end_src
+#+begin_export latex
+The second subject, $s_2$, is homologous to $s_1$, so we construct
+$s_2$ by mutating $s_1$ at 10\,\% of its positions. This is done with
+the program \ty{mutator}, which we seed with the number used for
+seeding \ty{ranseq} plus one to uncouple the two series of random
+numbers. We call the sequence \ty{s\_2} and store it in \ty{s2.fasta}.
+#+end_export
+#+begin_src sh <<Construct $s_2$, Pr. \ref{pr:cro}>>=
+  s=$(($s + 1))
+  mutator -m 0.1 -s $s s1.fasta |
+      sed 's/>.*/>s_2/' > s2.fasta
+#+end_src
+#+begin_export latex
+We construct the query in two steps. In the first step we cut out the
+first 5\,kb of $s_1$ and mutate them with mutation rate 1\,\%. We
+label the sequence q and store it in \ty{q.fasta}. Again, we increment
+the seed for the random number generator by one.
+#+end_export
+#+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
+  s=$(($s + 1))
+  cutSeq -r 1-5000 s1.fasta |
+      mutator -m 0.01 -s $s |
+      sed 's/>.*/>q/' > q.fasta
+#+end_src
+#+begin_export latex
+In the second step we cut out the second 5\,kb of $s_2$, also mutate
+them with rate 1\,\%, remove the header and append them to $q$. The
+seed is incremented one more time.
+#+end_export
+#+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
+  s=$((s + 1))
+  cutSeq -r 5001-10000 s2.fasta |
+      mutator -m 0.01 -s $s |
+      tail -n +2 >> q.fasta
+#+end_src
+#+begin_export latex
+We store the two subject sequences in a single file, \ty{s.fasta}.
+#+end_export
+#+begin_src sh <<Store $s_1$ and $s_2$ in single file, Pr. \ref{pr:cro}>>=
+  cat s[12].fasta > s.fasta
+#+end_src
+#+begin_export latex
+Now we can run \ty{cross.sh}.
+#+end_export
+#+begin_src sh <<cli>>=
+  bash cross.sh
+#+end_src
+#+begin_export latex
+The program \ty{alfy} does a reasonable job at detecting the crossover
+close to position 5,000. We can run this experiment repeatedly to see
+that the result is stable.
+#+end_export
+#+begin_src sh <<cli>>=
+  alfy -i q.fasta -j s.fasta
+#+end_src
+#+begin_export latex
+\begin{verbatim}
+>q
+1       4995      71.1  s_1
+4996    10000    101.8  s_2
+\end{verbatim}
+#+end_export
