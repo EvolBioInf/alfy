@@ -13,7 +13,7 @@ all:
 	done
 	make -C src
 	cp src/alfy bin
-	make -C ma2nn
+	make -C ms2nn
 	cp ms2nn/ms2nn bin
 data:
 	curl https://owncloud.gwdg.de/index.php/s/ch7WkkXD5GLEjJ7/download -o alfyData.tgz
