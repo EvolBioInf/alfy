@@ -1,13 +1,14 @@
 #+begin_export latex
 \section{Getting Started}
 In this tutorial we use \ty{alfy} to analyze simulated and real
-data. to get started, dependencies are met.  Apart from the programs
-in the Alfy repo, these include the coalescent simulator \ty{ms}, the
-program \ty{ms2dna} for converting the output of \ty{ms} to DNA
-sequences, local Blast, and the programs of the Biobox repo. The
-sources for these programs are listed in Table~\ref{tab:dep}
+data. To get started, we need to make sure the dependencies are met.
+Apart from the programs in the Alfy repo, these include the coalescent
+simulator \ty{ms}, the program \ty{ms2dna} for converting the output
+of \ty{ms} to DNA sequences, local Blast, and the programs of the
+Biobox repo. Table~\ref{tab:dep} shows where to get these
+programs. Make sure they are all in your ``path''.
 
-\begin{table}
+\begin{table}[ht]
   \caption{Dependencies for this tutorial.}\label{tab:dep}
   \begin{center}
   \scalebox{0.9}{
@@ -28,6 +29,10 @@ sources for these programs are listed in Table~\ref{tab:dep}
   \end{center}
 \end{table}
 
+The directory \ty{playground} inside the \ty{alfy} repo contains all
+the necessary files for following the tutorial. Please change into
+that directory.
+
 \section{Simulated Data}
 We begin by simulating single crossover events before we generalize
 this to multiple crossovers.
@@ -39,11 +44,9 @@ middle. So we get the result illustrated in Figure~\ref{fig:hom},
 where the first 5\,kb of the query are more closely elated to $s_1$,
 the rest is more closely related to $s_2$.
 
-We copy \ty{cross.sh} to our working directory and print its help
-message.
+We print the help message of \ty{cross.sh}
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  cp ../scripts/cross.sh .
   bash cross.sh -h
 #+end_src
 #+begin_export latex
@@ -139,12 +142,11 @@ specificity, $\sp$ of \ty{alfy}.
 \end{figure}
 
 In the following, we first familiarize ourselves with the individual
-steps of the workflow in Figure~\ref{fig:wf}, before we summarize
-them into the script \ty{testAlfy.sh}. We begin with \ty{neiSim.sh},
-which we copy to our working directory and print its help message.
+steps of the workflow in Figure~\ref{fig:wf}, before we summarize them
+into the script \ty{testAlfy.sh}. We begin by printing the help
+message of \ty{neiSim.sh}.
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  cp ../scripts/neiSim.sh .
   bash neiSim.sh -h
 #+end_src
 #+begin_export latex
@@ -248,11 +250,10 @@ know that no recombination has taken place. We save the output to
 #+begin_export latex
 We can calculate that 87\,\% of the query is annotated as having
 closest neighbor 2, the remaining 13\,\% as having closest neighbor 3
-using the script \ty{quan\-ti\-fy\-Ge\-no\-types.\-awk}, which we copy
-to our working directory and apply to the \ty{alfy} output.
+using the script \ty{quan\-ti\-fy\-Ge\-no\-types.\-awk}, which we
+apply to the \ty{alfy} output.
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  cp ../scripts/quantifyGenotypes.awk .
   awk -f quantifyGenotypes.awk alfy.out
 #+end_src
 #+begin_export latex
@@ -310,10 +311,13 @@ We now add recombination to the simulation.
 #+end_src
 #+begin_export latex
 The neighbors now fluctuate along the query, where for each
-recombining fragment, \ty{ms2nn} picks the closest subject.
+recombining fragment, \ty{ms2nn} picks the closest subject. This
+constitutes our ``expected'' result, and we store it in file
+\ty{exp.txt}.
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  ms2nn -q 1 haplotypes.ms
+  ms2nn -q 1 haplotypes.ms |
+      tee exp.txt
 #+end_src
 #+begin_export latex
 \begin{verbatim}
@@ -325,11 +329,13 @@ recombining fragment, \ty{ms2nn} picks the closest subject.
 \end{verbatim}
 #+end_export
 #+begin_export latex
-This fluctuation is traced by \ty{alfy}, albeit not perfectly.
+This fluctuation is traced by \ty{alfy}, albeit not perfectly. The
+\ty{alfy} output constitutes our ``observed'' results and we store
+them in file \ty{obs.txt}.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   alfy -i query.fasta -j subjects.fasta |
-      tee alfy.out
+      tee obs.txt
 #+end_src
 #+begin_export latex
 \begin{verbatim}
@@ -353,11 +359,10 @@ the predictions as
 \sp=\frac{\tp}{\tp+\fp},
 \end{equation}
 where $\fp$ are the false positive positions. This calculation is
-implemented in the Awk script \ty{senSpec.awk}, which we copy to our
-working directory and apply to our expected and observed results.
+implemented in the Awk script \ty{senSpec.awk}, which we apply to our
+expected and observed results to find $\sn=\sp=0.97$.
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  cp ../scripts/senSpec.awk .
   awk -f senSpec.awk -v e=exp.txt -v o=obs.txt
 #+end_src
 #+begin_export latex

@@ -8,27 +8,27 @@
 && \rnode[B]{s}{\psframebox{\textcolor{blue}{\ty{senSep.awk}}}}\\
 && $s_{\rm n}, s_{\rm p}$
 \end{psmatrix}
-
+\psset{nodesep=2pt}
 %parameters
-\ncline[nodesepA=2pt]{->}{1,3}{2,3}
+\ncline{->}{1,3}{2,3}
 %neiSim output
-\ncline[nodesepB=2pt]{->}{2,3}{3,1}
-\ncline[nodesepB=2pt]{->}{2,3}{3,3}
+\ncline{->}{2,3}{3,1}
+\ncline{->}{2,3}{3,3}
 \ncline[nodesepB=2pt]{->}{2,3}{3,4}
 
 %to and from alfy
-\ncline[nodesepA=2pt]{->}{3,1}{4,2}
-\ncline[nodesepA=2pt]{->}{3,3}{4,2}
-\ncline[nodesepB=2pt]{->}{4,2}{5,2}
+\ncline{->}{3,1}{4,2}
+\ncline{->}{3,3}{4,2}
+\ncline{->}{4,2}{5,2}
 
 %to and from  ms2nn
-\ncline[nodesep=2pt]{->}{3,4}{4,4}
-\ncline[nodesep=2pt]{->}{4,4}{5,4}
+\ncline{->}{3,4}{4,4}
+\ncline{->}{4,4}{5,4}
 
 
 %to senspec
-\ncline[nodesepA=2pt]{->}{5,2}{6,3}
-\ncline[nodesepA=2pt]{->}{5,4}{6,3}
+\ncline{->}{5,2}{6,3}
+\ncline{->}{5,4}{6,3}
 %to SnSp
-\ncline[nodesepB=2pt]{->}{6,3}{7,3}
+\ncline{->}{6,3}{7,3}
 \end{pspicture}
