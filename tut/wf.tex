@@ -1,12 +1,12 @@
-\begin{pspicture}(0,0)(10.5,7.5)
-\begin{psmatrix}[colsep=0.3cm,rowsep=0.75cm]
+\begin{pspicture}(0,0)(11,7.5)
+\begin{psmatrix}[colsep=0.5cm,rowsep=0.75cm]
   & & parameters & &\\
 & &  \rnode[B]{n}{\psframebox{\textcolor{blue}{\ty{neiSim.sh}}}}  & &\\
 \ty{query.fasta} && \ty{subjects.fasta} & \ty{haplotypes.ms}\\
 & \rnode[B]{a}{\psframebox{\textcolor{red}{\ty{alfy}}}} &&\rnode[B]{m}{\psframebox{\textcolor{blue}{\ty{ms2nn}}}} \\
 &\ty{obs.txt} && \ty{exp.txt}\\
-&& \rnode[B]{s}{\psframebox{\textcolor{blue}{\ty{senSep.awk}}}}\\
-&& $s_{\rm n}, s_{\rm p}$
+&& \rnode[B]{s}{\psframebox{\textcolor{blue}{\ty{accuracy.awk}}}}\\
+&& $a$
 \end{psmatrix}
 \psset{nodesep=2pt}
 %parameters
@@ -24,7 +24,6 @@
 %to and from  ms2nn
 \ncline{->}{3,4}{4,4}
 \ncline{->}{4,4}{5,4}
-
 
 %to senspec
 \ncline{->}{5,2}{6,3}

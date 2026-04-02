@@ -19,6 +19,7 @@ doc/alfyDoc.pdf
 doc/alfyDoc.ps
 doc/alfyDoc.toc
 doc/code/
+doc/accuracy.tex
 doc/cross.tex
 doc/date.txt
 doc/intro.tex
@@ -27,7 +28,6 @@ doc/ms2nn.tex
 doc/neiSim.tex
 doc/pab.tex
 doc/prepAlfy.tex
-doc/senSpec.tex
 doc/sir.tex
 doc/tut.tex
 doc/util.tex
@@ -53,9 +53,6 @@ pab/
 palfy/
 playground/
 prepAlfy/
-
-senSpec/obs.txt
-senSpec/exp.txt
 
 sir/
 src/*.o

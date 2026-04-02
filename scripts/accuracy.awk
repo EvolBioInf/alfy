@@ -1,10 +1,10 @@
 BEGIN {
   if (!e || !o) {
-    m = "Usage: awk -f senSpec.awk "
+    m = "Usage: awk -f accuracy.awk "
     m = m "-v e=<exp.txt> -v o=<obs.txt>"
     print m
-    m = "Calculate sensitivity and speciticity "
-    m = m "from expected and observed nearest neighbors"
+    m = "Calculate accuracy from expected "
+    m = m "and observed nearest neighbors."
     print m
     exit 0
   }
@@ -36,24 +36,19 @@ BEGIN {
     tp += l
   }
   close(cmd)
-  cmd = "bedtools subtract -a %s -b %s"
-  cmd = sprintf(cmd, e, o)
+  cmd = "cat %s"
+  cmd = sprintf(cmd, e)
+  c = 0
   while (cmd | getline) {
-    l = $3 - $2
-    fn += l
+    c++
+    if (c == 1)
+      start = $2
+    end = $3
   }
   close(cmd)
-  cmd = "bedtools subtract -a %s -b %s"
-  cmd = sprintf(cmd, o, e)
-  while (cmd | getline) {
-    l = $3 - $2
-    fp += l
-  }
-  close (cmd)
-  sn = tp / (tp + fn)
-  sp = tp / (tp + fp)
-  printf("#s_n\ts_p\n")
-  printf("%.4f\t%.4f\n", sn, sp)
+  len = end - start
+  acc = tp / len
+  printf("%.4f\n", acc)
   system("rm " e)
   system("rm " o)
 

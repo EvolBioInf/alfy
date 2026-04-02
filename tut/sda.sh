@@ -1,4 +1,3 @@
-cp ../scripts/cross.sh .
 bash cross.sh -h
 bash cross.sh
 alfy -i q.fasta -j s.fasta
@@ -7,7 +6,6 @@ for a in $(seq 20); do
     alfy -i q.fasta -j s.fasta |
           tail -n 2
 done
-cp ../scripts/neiSim.sh .
 bash neiSim.sh -h
 bash neiSim.sh -s 1
 alfy -i query.fasta -j subjects.fasta
@@ -18,7 +16,6 @@ blastn -query query.fasta -subject subjects.fasta \
 bash neiSim.sh -s 2
 alfy -i query.fasta -j subjects.fasta |
     tee alfy.out
-cp ../scripts/quantifyGenotypes.awk .
 awk -f quantifyGenotypes.awk alfy.out
 ms2nn -q 1 haplotypes.ms
 printf "Alfy\tBlast\n"
@@ -32,11 +29,11 @@ tail -n +2 alfy.out |
               cut -f 2
     done
 bash neiSim.sh -r 1 -s 3
-ms2nn -q 1 haplotypes.ms
+ms2nn -q 1 haplotypes.ms |
+    tee exp.txt
 alfy -i query.fasta -j subjects.fasta |
-    tee alfy.out
-cp ../scripts/senSpec.awk .
-awk -f senSpec.awk -v e=exp.txt -v o=obs.txt
+    tee obs.txt
+awk -f accuracy.awk -v e=exp.txt -v o=obs.txt
 for a in $(seq 100); do
     bash testAlfy.sh
 done

@@ -2,10 +2,10 @@
 \section{Getting Started}
 In this tutorial we use \ty{alfy} to analyze simulated and real
 data. To get started, we need to make sure the dependencies are met.
-Apart from the programs in the Alfy repo, these include the coalescent
-simulator \ty{ms}, the program \ty{ms2dna} for converting the output
-of \ty{ms} to DNA sequences, local Blast, and the programs of the
-Biobox repo. Table~\ref{tab:dep} shows where to get these
+Apart from the programs in the Alfy repo, this tutorial depends on the
+coalescent simulator \ty{ms}, the program \ty{ms2dna} for converting
+the output of \ty{ms} to DNA sequences, local Blast, and the programs
+of the Biobox repo. Table~\ref{tab:dep} shows where to get these
 programs. Make sure they are all in your ``path''.
 
 \begin{table}[ht]
@@ -42,9 +42,8 @@ subject sequences to generate one query sequence. By default, the
 three sequences are 10\,kb long and the crossover event is in the
 middle. So we get the result illustrated in Figure~\ref{fig:hom},
 where the first 5\,kb of the query are more closely elated to $s_1$,
-the rest is more closely related to $s_2$.
-
-We print the help message of \ty{cross.sh}
+the rest is more closely related to $s_2$. We print the help message
+of \ty{cross.sh}
 #+end_export
 #+begin_src sh <<sda.sh>>=
   bash cross.sh -h
@@ -122,23 +121,23 @@ quite stable.
 #+begin_export latex
 \subsection*{Multiple Crossovers}
 The simulation scenario implemented in \ty{cross.sh} is rather
-simple. For a more thorough exploration of \ty{alfy}, we need to be
+simple. For a more thorough exploration of \ty{alfy} we need to be
 able to simulate more diverse datasets. Figure~\ref{fig:wf} shows our
-workflow for this. It starts with population genetic parameters,
-which are transformed by the script \ty{neiSim.sh} into haplotypes in
+workflow for this. It starts with population genetic parameters, which
+are transformed by the script \ty{neiSim.sh} into haplotypes in
 \ty{haplotypes.ms}, a corresponding query sequence in \ty{query.fasta}
 and two or more corresponding subject sequences in
 \ty{subjects.fasta}. From the sequence data \ty{alfy} calculates the
 observed annotations, while \ty{ms2nn} extracts the expected
 annotations from the haplotypes. Finally, the observed and expected
-results are compared to calculate the sensitivity, $\sn$, and
-specificity, $\sp$ of \ty{alfy}.
+results are compared to calculate the accuracy, $a$.
 
 \begin{figure}[ht]
-  \input{../tut/wf}
-\caption{Workflow for calculating the sensitivity, $s_{\rm n}$, and
-  specificity, $s_{\rm p}$, of \ty{alfy} (red); auxiliary programs in
-  blue.}\label{fig:wf}
+  \begin{center}
+    \input{../tut/wf}
+  \end{center}
+\caption{Workflow for calculating the accuracy, $a$, of \ty{alfy}
+  (red); auxiliary programs in blue.}\label{fig:wf}
 \end{figure}
 
 In the following, we first familiarize ourselves with the individual
@@ -207,8 +206,8 @@ ms2nn -q 1 haplotypes.ms
 \end{verbatim}
 #+end_export
 #+begin_export latex
-We can also see that sequence 3 is more closely related to the query
-than sequence 2 using Blast.
+We can also use Blast to confirm that sequence 3 is more closely
+related to the query than sequence 2.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   blastn -query query.fasta -subject subjects.fasta \
@@ -248,10 +247,9 @@ know that no recombination has taken place. We save the output to
 \end{verbatim}
 #+end_export
 #+begin_export latex
-We can calculate that 87\,\% of the query is annotated as having
-closest neighbor 2, the remaining 13\,\% as having closest neighbor 3
-using the script \ty{quan\-ti\-fy\-Ge\-no\-types.\-awk}, which we
-apply to the \ty{alfy} output.
+We quantify the genotypes in the \ty{alfy} output to find that 87\,\%
+of the query is annotated as having closest neighbor 2, the remaining
+13\,\% as having closest neighbor 3.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   awk -f quantifyGenotypes.awk alfy.out
@@ -274,8 +272,8 @@ Sequence 2 is also the ``true'' result as given by \ty{ms2nn}.
 \end{verbatim}
 #+end_export
 #+begin_export latex
-Now, local fluctuations in the mutation density can lead to local
-fluctuations of nearest neighbors even in the absence of
+It is well known that local fluctuations in the mutation density can
+lead to local fluctuations of nearest neighbors even in the absence of
 recombination. With Blast we can see that the local annotations of
 \ty{alfy} are correct four out of five times in this particular
 example.
@@ -295,11 +293,10 @@ example.
 #+begin_export latex
 \begin{verbatim}
 Alfy    Blast
-3       3
 2       2
 3       3
-2       3
-3       3
+2       2
+3       2
 2       2
 \end{verbatim}
 #+end_export
@@ -347,23 +344,13 @@ them in file \ty{obs.txt}.
 8026    8145      34.9  3
 8146    10000     79.4  2
 \end{verbatim}
-To quantify the accuracy of \ty{alfy}, we calculate the sensitivity,
-$\sn$, of its prediction as
-\begin{equation}\label{eq:sn}
-\sn=\frac{\tp}{\tp+\fn},
-\end{equation}
-where $\tp$ are the true positive positions and $\fn$ the false
-negative positions. Similarly, we calculate the specificity, $\sp$, of
-the predictions as
-\begin{equation}\label{eq:sp}
-\sp=\frac{\tp}{\tp+\fp},
-\end{equation}
-where $\fp$ are the false positive positions. This calculation is
-implemented in the Awk script \ty{senSpec.awk}, which we apply to our
-expected and observed results to find $\sn=\sp=0.97$.
+We quantify the accuracy of \ty{alfy} as the fraction of correctly
+annotated query positions as implemented in the Awk script
+\ty{accuracy.awk}. We apply this to our expected and observed results to
+find $a=0.97$.
 #+end_export
 #+begin_src sh <<sda.sh>>=
-  awk -f senSpec.awk -v e=exp.txt -v o=obs.txt
+  awk -f accuracy.awk -v e=exp.txt -v o=obs.txt
 #+end_src
 #+begin_export latex
 We now have all the parts in hand for carrying out a systematic
@@ -375,7 +362,7 @@ programs in Figure~\ref{fig:wf} in the script
   ##<<Run \ty{neiSim.sh}, Pr. \ref{pr:ta}>>
   ##<<Run \ty{alfy}, Pr. \ref{pr:ta}>>
   ##<<Run \ty{ms2nn}, Pr. \ref{pr:ta}>>
-  ##<<Run \ty{senSpec.awk}, Pr. \ref{pr:ta}>>
+  ##<<Run \ty{accuracy.awk}, Pr. \ref{pr:ta}>>
 #+end_src
 #+begin_export latex
 \epr
@@ -404,16 +391,14 @@ We use \ty{ms2nn} to extract the expected results from the haplotypes.
   ms2nn -q 1 haplotypes.ms > exp.txt
 #+end_src
 #+begin_export latex
-We calculate the sensitivity and specificity from the observed and
-expected results.
+We calculate the accuracy from the observed and expected results.
 #+end_export
-#+begin_src sh <<Run \ty{senSpec.awk}, Pr. \ref{pr:ta}>>=
-  awk -f senSpec.awk -v e=exp.txt -v o=obs.txt
+#+begin_src sh <<Run \ty{accuracy.awk}, Pr. \ref{pr:ta}>>=
+  awk -f accuracy.awk -v e=exp.txt -v o=obs.txt
 #+end_src
 #+begin_export latex
-Now we can run \ty{testAlfy.sh} in a loop to observe that its
-sensitivity and specificity fluctuates quite widely under the
-simulated scenario.
+Now we can run \ty{testAlfy.sh} in a loop to observe that its accuracy
+fluctuates quite widely under the simulated scenario.
 #+end_export
 #+begin_src sh <<sda.sh>>=
   for a in $(seq 100); do
@@ -422,12 +407,11 @@ simulated scenario.
 #+end_src
 #+begin_export latex
 \begin{verbatim}
-#s_n	s_p
-0.8955	0.8955
-#s_n	s_p
-0.9880	0.9880
-#s_n	s_p
-0.7630	0.7630
+0.7690
+0.9400
+0.6623
+0.5575
+0.4716
 ...
 \end{verbatim}
 #+end_export
@@ -436,10 +420,9 @@ The script \ty{testAlfy.sh} could now be modified to test \ty{alfy}
 under diverse evolutionary scenarios. However, in this tutorial we
 move on to look at real data.
 \section{Real Data}
-Our analysis of real data is centered on HIV genomes. We wish to
-annotate the query strain \ty{A+\-DQ\-083238} using 42 pure strains as
-subject, so we copy the corresponding query and subject files to our
-working directory.
+Our analysis of real data is centered on HIV genomes. We annotate the
+query strain \ty{A+\-DQ\-083238} using the 42 pure strains stored in
+\ty{hiv42.fasta} as subject.
 #+end_export
 #+begin_src sh <<eda.sh>>=
   cp ../data/A+DQ083238.fasta .
@@ -549,9 +532,9 @@ threshold value are marked \ty{nh} for ``no homology''.
 9331    9699     15.8   A1+U51190
 \end{verbatim}
 
-As before, we summarize the annotations, and find that the K
-annotation is now missing altogether and 8.7\% of the annotations are
-revealed as ``weak'' (\ty{nh}).
+As before, we summarize the annotations and find that the K annotation
+is now missing altogether and 8.7\% of the annotations are revealed as
+``weak'' (\ty{nh}).
 #+end_export
 #+begin_src sh <<eda.sh>>=
   alfy -i A+DQ083238.fasta -j hiv42.fasta -M |
@@ -570,7 +553,7 @@ D   2.8
 
 To further investigate what an \ty{nh} annotation means, we can
 extract such a region and blast it against the 42 subject
-sequences. This returns only weak homologues.
+sequences. As expected, this returns only weak homologues.
 #+end_export
 #+begin_src sh <<eda.sh>>=
   cutSeq -r 6556-6705 A+DQ083238.fasta > nh.fasta

@@ -1,6 +1,6 @@
 progs = alfy ms2nn
 shellScripts = cross neiSim
-awkScripts = senSpec
+awkScripts = accuracy
 all: data
 	test -d bin || mkdir bin
 	for shellScript in $(shellScripts); do \
@@ -18,6 +18,8 @@ all: data
 	cp src/alfy bin
 	make -C ms2nn
 	cp ms2nn/ms2nn bin
+	make -C tut
+	cp tut/testAlfy.sh playground
 data: playground
 	curl https://owncloud.gwdg.de/index.php/s/ch7WkkXD5GLEjJ7/download -o alfyData.tgz
 	tar -xvzf alfyData.tgz
@@ -34,10 +36,10 @@ clean:
 	make clean -C ms2nn
 	for shellScript in $(shellScripts); do \
 		make clean -C $$shellScript; \
-		rm scripts/$$shellScript.sh; \
+		rm -f scripts/$$shellScript.sh; \
 	done
 	for awkScript in $(awkScripts); do \
-		make clean -C $$awkScripts; \
-		rm scripts/$$awkShript.awk; \
+		make clean -C $$awkScript; \
+		rm -f scripts/$$awkScript.awk; \
 	done
-	rm -f bin/*
+	rm -fr bin/* playground

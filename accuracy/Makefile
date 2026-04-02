@@ -7,5 +7,5 @@ accuracy.awk: accuracy.org
 test: accuracy.awk
 	bash test.sh
 clean:
-	rm -r accuracy.awk
+	rm -f accuracy.awk
 
