@@ -4,7 +4,7 @@ ownCloud = ~/WinHome/ownCloud
 
 all: alfyDoc.pdf
 
-alfyDoc.pdf: alfyDoc.tex cross.tex header.tex homol.tex ms2nn.tex neiSim.tex senSpec.tex tut.tex util.tex ../ms2nn/ms.tex ../ms2nn/tree.tex ../ms2nn/t1.tex ../ms2nn/t2.tex ../ms2nn/t3.tex
+alfyDoc.pdf: alfyDoc.tex cross.tex header.tex homol.tex ms2nn.tex neiSim.tex accuracy.tex tut.tex util.tex ../ms2nn/ms.tex ../ms2nn/tree.tex ../ms2nn/t1.tex ../ms2nn/t2.tex ../ms2nn/t3.tex
 	echo $(date) | tr '_' ' ' > date.txt
 	echo $(version) | tr '-' ' ' | awk '{printf "%s", $$1; if ($$2) printf "-%s", $$2; printf "\n"}' > version.txt
 	latex alfyDoc
@@ -21,4 +21,4 @@ $(ownCloud)/docs/alfyDoc.pdf: alfyDoc.pdf
 	fi
 clean:
 	rm -f alfyDoc.aux alfyDoc.bbl alfyDoc.bib alfyDoc.blg alfyDoc.d alfyDoc.dvi \
-	alfyDoc.log alfyDoc.pdf ms2nn.tex tut.tex util.tex
+	accuracy.tex alfyDoc.log alfyDoc.pdf cross.tex ms2nn.tex neiSim.tex tut.tex util.tex

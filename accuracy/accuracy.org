@@ -1,0 +1,136 @@
+#+begin_export latex
+We write the Awk program \ty{accuracy.awk} to calculate the accuracy
+of the observed results as the fraction of the query covered by true
+predictions. To calculate the accuracy, we need to intersect
+intervals, for which we use the software package Bedtools. Inside
+\ty{accuracy.awk} the program we first interact with the user. Then we
+convert the input files to BED files, before we calculate the
+accuracy. At the end, we remove the BED files again to leave the
+directory as we found it. \bpr{accuracy.awk}{pr:acc}
+#+end_export
+#+begin_src awk <<accuracy.awk>>=
+  BEGIN {
+    ##<<User interaction, Pr. \ref{pr:acc}>>
+    ##<<Convert input files to BED files, Pr. \ref{pr:acc}>>
+    ##<<Calculate accuracy, Pr. \ref{pr:acc}>>
+    ##<<Remove BED files, Pr. \ref{pr:acc}>>
+  }
+#+end_src
+#+begin_export latex
+\epr When interacting with the user, we make sure we are given the
+files containing the expected and the observed intervals, $e$ and $o$.
+#+end_export
+#+begin_src awk <<User interaction, Pr. \ref{pr:acc}>>=
+  if (!e || !o) {
+    m = "Usage: awk -f accuracy.awk "
+    m = m "-v e=<exp.txt> -v o=<obs.txt>"
+    print m
+    m = "Calculate accuracy from expected "
+    m = m "and observed nearest neighbors."
+    print m
+    exit 0
+  }
+#+end_src
+#+begin_export latex
+To convert the two input files to BED files, we store their names in
+an array that we iterate over. Inside the iteration loop, we create
+the name of the output file by appending ``bed'' to the name of the
+input file. We will append to this output file, so we make sure it is
+empty, before we generate the intervals in BED format.
+#+end_export
+#+begin_src awk <<Convert input files to BED files, Pr. \ref{pr:acc}>>=
+  files[0] = e
+  files[1] = o
+  for (i in files) {
+    file = files[i]
+    out = file ".bed"
+    printf "" > out
+    ##<<Generate BED intervals, Pr. \ref{pr:acc}>>
+  }
+#+end_src
+#+begin_export latex
+We read the current input file using a call to the system command
+\ty{cat} that opens a pipe. Our version of the BED format consists of
+three tab-delimited columns denoting annotation, start, and end. The
+BED format further stipulates that positions are zero-based, and
+intervals are inclusive start, exclusive end. Hence the first five
+positions on chromosome1 would be
+\begin{verbatim}
+chromosome1     0       5
+\end{verbatim}
+We append this interval to the current output file. After we have
+parsed all input, we close the pipe and the output file.
+#+end_export
+#+begin_src awk <<Generate BED intervals, Pr. \ref{pr:acc}>>=
+  cmd = sprintf("cat %s", file)
+  while (cmd | getline) {
+    if ($1 ~ /^>/)
+      continue
+    start = $1 - 1
+    end = $2
+    sbjct = $4
+    printf "%s\t%s\t%s\n",
+      sbjct, start, end >> out
+  }
+  close(cmd)
+  close(out)
+#+end_src
+#+begin_export latex
+To calculate the accuracy, we first set $e$ and $o$ to the BED files
+we have just constructed. Then we calculate the true positives and the
+query length. From these two values we can calculate the accuracy
+and print it.
+#+end_export
+#+begin_src awk <<Calculate accuracy, Pr. \ref{pr:acc}>>=
+  e = files[0] ".bed"
+  o = files[1] ".bed"
+  ##<<Calculate true positives, Pr. \ref{pr:acc}>>
+  ##<<Calculate query length, Pr. \ref{pr:acc}>>
+  ##<<Calculate and print accuracy, Pr. \ref{pr:acc}>>
+#+end_src
+#+begin_export latex
+The true positives are calculated as $\tp=e\cap o$.
+#+end_export
+#+begin_src awk <<Calculate true positives, Pr. \ref{pr:acc}>>=
+  cmd = "bedtools intersect -a %s -b %s"
+  cmd = sprintf(cmd, e, o)
+  while (cmd | getline) {
+    l = $3 - $2
+    tp += l
+  }
+  close(cmd)
+#+end_src
+#+begin_export latex
+We calculate the query length as the difference between the start
+position of the first expected annotation and the end position of the
+last expected annotation. These annotations are now in BED format.
+#+end_export
+#+begin_src awk <<Calculate query length, Pr. \ref{pr:acc}>>=
+  cmd = "cat %s"
+  cmd = sprintf(cmd, e)
+  c = 0
+  while (cmd | getline) {
+    c++
+    if (c == 1)
+      start = $2
+    end = $3
+  }
+  close(cmd)
+  len = end - start
+#+end_src
+#+begin_export latex
+We calculate the accuracy as the fraction of correctly annotated query
+positions and print it.
+#+end_export
+#+begin_src awk <<Calculate and print accuracy, Pr. \ref{pr:acc}>>=
+  acc = tp / len
+  printf("%.4f\n", acc)
+#+end_src
+#+begin_export latex
+The last step is to remove the intermediary BED files.
+#+end_export
+#+begin_src awk <<Remove BED files, Pr. \ref{pr:acc}>>=
+  system("rm " e)
+  system("rm " o)
+#+end_src
+
