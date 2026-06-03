@@ -8,7 +8,7 @@
 
 ** Make =alfy=
 The program =alfy= depends on the divsufsort library. On Debian-like
-system we can install it with
+systems we can install it with
 #+begin_src sh 
 sudo apt install libdivsufsort-dev
 #+end_src
