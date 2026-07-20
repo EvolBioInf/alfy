@@ -52,11 +52,15 @@ of \ty{cross.sh}
 #+begin_export latex
 \begin{verbatim}
 Usage: bash cross.sh [-h] [option]...
-Simulate single midpoint crossover between one
-   query and two subjects in q.fasta and s.fasta.
+Simulate single midpoint crossover between
+   two subjects in s.fasta and one query in q.fasta.
 Example: bash cross.sh -s 3
    -l int
         sequence length (default 10000)
+   -m float
+        mutation rate before crossover (default 0.1)
+   -M float
+        mutation rate after crossover (default 0.01)
    -s int
         seed (default random integer)
 \end{verbatim}

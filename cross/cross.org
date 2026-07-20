@@ -1,9 +1,9 @@
 #+begin_export latex
-We begin our collection of auxiliary programs with a very simple
-simulation experiment, for which we construct three sequences,
-a query, $q$, and two subjects, $s_1$ and $s_2$. As sketched in
-Figure~\ref{fig:hom}, the first half of $q$ is more closely related to
-$s_1$, the second half of $q$ is more closely related to $s_2$.
+We begin our collection of auxiliary programs with a simple simulation
+experiment, for which we construct three sequences, a query, $q$, and
+two subjects, $s_1$ and $s_2$. As sketched in Figure~\ref{fig:hom},
+the first half of $q$ is more closely related to $s_1$, the second
+half of $q$ more closely to $s_2$.
 
 We can think of $q$ as the result of a crossing over between $s_1$ and
 $s_2$, so we call the script for generating these sequences
@@ -31,106 +31,143 @@ we iterate over the options.
   ##<<Iterate over options, Pr. \ref{pr:cro}>>
 #+end_src
 #+begin_export latex
-We set defalt values for two options, the sequence length, \ty{-l} to
-10\,kb and the seed for the random number generator, \ty{-s}, to a
-random number taken from the shell.
+We set default values for four options,
+\begin{enumerate}
+\item sequence length, \ty{-l}, to 10\,kb,
+\item mutation rate before crossover, \ty{-m}, to 0.1,
+\item mutation rate after crossover, \ty{-M}, to 0.01,
+\item seed for random number generator, \ty{-s}, to a random number
+  taken from the shell.
+\end{enumerate}
+Notice that the default mutation rates imply that the divergence time
+before crossing over is ten times greater than the time since
+crossover, but the user can change that.
 #+end_export
 #+begin_src sh <<Set default option values, Pr. \ref{pr:cro}>>=
   l=10000
+  m=0.1
+  M=0.01
   s=$RANDOM
 #+end_src
 #+begin_export latex
-We iterate over the options and respond to the two options we just
-assigned default values to. We also respond to the help option,
-\ty{-h} or an unknown option by printing the usage. In the case of
-help we then exit without error, in the case of an unknown option with
-an error.
+We iterate over the options and respond to the current one.
 #+end_export
 #+begin_src sh <<Iterate over options, Pr. \ref{pr:cro}>>=
-  while getopts "hl:s:" opt; do
+  while getopts "hl:m:M:s:" opt; do
       case $opt in
-	  l) l=$OPTARG;;
-	  s) s=$OPTARG;;
-	  h)
-	      ##<<Print usage, Pr. \ref{pr:cro}>>
-	      exit 0;;
-	  ?)
-	      ##<<Print usage, Pr. \ref{pr:cro}>>
-	      exit 1;;
+  	##<<Respond to option, Pr. \ref{pr:cro}>>
       esac
   done
 #+end_src
 #+begin_export latex
-The usage consists of three parts, the actual usage message, an
-explanation of the purpose of \ty{cross.sh}, and an example
-command. Then we print our two options and their default values.
+We respond to the four two options we just assigned default values to
+by saving the value set by the user. We also respond to the help
+option, \ty{-h}, by printing the usage and exiting without an
+error. If the user entered an unknown option, we also print the usage,
+but then exit with error.
 #+end_export
-#+begin_src sh <<Print usage, Pr. \ref{pr:cro}>>=
-  printf "Usage: bash cross.sh [-h] [option]...\n"
-  printf "Simulate single midpoint crossover between one\n"
-  printf "   query and two subjects in q.fasta and s.fasta.\n"
-  printf "Example: bash cross.sh -s 3\n"
-  printf "   -l int\n\tsequence length (default $l)\n"
-  printf "   -s int\n\tseed (default random integer)\n"
+#+begin_src sh <<Respond to option, Pr. \ref{pr:cro}>>=
+  l) l=$OPTARG;;
+  m) m=$OPTARG;;
+  M) M=$OPTARG;;
+  s) s=$OPTARG;;
+  h)
+      ##<<Print usage, Pr. \ref{pr:cro}>>
+      exit 0;;
+  ?)
+  ##<<Print usage, Pr. \ref{pr:cro}>>
+  exit 1;;
 #+end_src
 #+begin_export latex
-Subject $s_1$ is just a random sequence of the given length. We label
-it \ty{s\_1} and save it in \ty{s1.fasta}.
+The usage consists of three parts, the actual usage message, an
+explanation of the purpose of \ty{cross.sh}, and an example
+command. Then we print the options.
+#+end_export
+#+begin_src sh <<Print usage, Pr. \ref{pr:cro}>>=
+  echo "Usage: bash cross.sh [-h] [option]..."
+  echo "Simulate single midpoint crossover between"
+  msg="two subjects in s.fasta and one query in q.fasta."
+  echo "   $msg"
+  echo "Example: bash cross.sh -s 3"
+  ##<<Print options, Pr. \ref{pr:cro}>>
+#+end_src
+#+begin_export latex
+We print our four options and their default values.
+#+end_export
+#+begin_src sh <<Print options, Pr. \ref{pr:cro}>>=
+  msg="-l int\n\tsequence length (default $l)\n"
+  printf "   $msg"
+  msg="-m float\n\tmutation rate before crossover"
+  msg="$msg (default $m)\n"
+  printf "   $msg"
+  msg="-M float\n\tmutation rate after crossover"
+  msg="$msg (default $M)\n"
+  printf "   $msg"
+  msg="-s int\n\tseed (default random integer)\n"
+  printf "   $msg"
+#+end_src
+#+begin_export latex
+The first subject, $s_1$, is just a random sequence of the given
+length. We label it \ty{s\_1} and save it in \ty{s1.fasta}.
 #+end_export
 #+begin_src sh <<Construct $s_1$, Pr. \ref{pr:cro}>>=
   ranseq -l $l -s $s |
       sed 's/>.*/>s_1/' > s1.fasta
 #+end_src
 #+begin_export latex
-The second subject, $s_2$, is homologous to $s_1$, so we construct
-$s_2$ by mutating $s_1$ at 10\,\% of its positions. This is done with
-the program \ty{mutator}, which we seed with the number used for
-seeding \ty{ranseq} plus one to uncouple the two series of random
+The second subject, $s_2$, is homologous to $s_1$, so we construct it
+by mutating $s_1$ with the mutation rate before crossover. This is
+done with the program \ty{mutator}, which we seed with the number used
+for seeding \ty{ranseq} plus one to uncouple the two series of random
 numbers. We call the sequence \ty{s\_2} and store it in \ty{s2.fasta}.
 #+end_export
 #+begin_src sh <<Construct $s_2$, Pr. \ref{pr:cro}>>=
   s=$(($s + 1))
-  mutator -m 0.1 -s $s s1.fasta |
+  mutator -m $m -s $s s1.fasta |
       sed 's/>.*/>s_2/' > s2.fasta
 #+end_src
 #+begin_export latex
-We construct the query in two steps. In the first step we cut out the
-first 5\,kb of $s_1$ and mutate them with mutation rate 1\,\%. We
-label the sequence q and store it in \ty{q.fasta}. Again, we increment
-the seed for the random number generator by one.
+We construct the query from our pair of subjects in two steps. In the
+first step we cut out the first half of $s_1$ and mutate it with the
+mutation rate since crossover. We label the sequence q and store it in
+\ty{q.fasta}. Again, we increment the seed for the random number
+generator by one.
 #+end_export
 #+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
+  mid=$(($l / 2))
   s=$(($s + 1))
-  cutSeq -r 1-5000 s1.fasta |
-      mutator -m 0.01 -s $s |
+  cutSeq -r 1-$mid s1.fasta |
+      mutator -m $M -s $s |
       sed 's/>.*/>q/' > q.fasta
 #+end_src
 #+begin_export latex
-In the second step we cut out the second 5\,kb of $s_2$, also mutate
-them with rate 1\,\%, remove the header and append them to $q$. The
-seed is incremented one more time.
+In the second step we cut out the second half of $s_2$, also mutate it
+with the mutation rate since crossover, remove the header, and append
+it to $q$. The seed is incremented one more time.
 #+end_export
 #+begin_src sh <<Construct $q$, Pr. \ref{pr:cro}>>=
   s=$((s + 1))
-  cutSeq -r 5001-10000 s2.fasta |
-      mutator -m 0.01 -s $s |
+  cutSeq -r $(($mid + 1))-$l s2.fasta |
+      mutator -m $M -s $s |
       tail -n +2 >> q.fasta
 #+end_src
 #+begin_export latex
-We store the two subject sequences in a single file, \ty{s.fasta}.
+We store the two subject sequences in a single file, \ty{s.fasta}, and
+remove the individual files.
 #+end_export
 #+begin_src sh <<Store $s_1$ and $s_2$ in single file, Pr. \ref{pr:cro}>>=
   cat s[12].fasta > s.fasta
+  rm s[12].fasta
 #+end_src
 #+begin_export latex
-Now we can run \ty{cross.sh}.
+We have now finished writing \ty{cross.sh}, so we can run it.
 #+end_export
 #+begin_src sh <<cli>>=
   bash cross.sh
 #+end_src
 #+begin_export latex
-The program \ty{alfy} does a reasonable job at detecting the crossover
-close to position 5,000. We can run this experiment repeatedly to see
+The program \ty{alfy} does a reasonable job detecting the crossover
+close at position 5,000. We can run this experiment repeatedly to see
 that the result is stable.
 #+end_export
 #+begin_src sh <<cli>>=
